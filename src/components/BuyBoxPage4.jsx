@@ -120,7 +120,7 @@ export function BuyBoxPage4({ form, setForm }) {
     <div className="page-fade">
       <header className="page-head">
         <div className="page-eyebrow">
-          <span className="mono-step mono">04/06</span>
+          <span className="mono-step mono">04/07</span>
           <span className="sep" />
           <span>Distress signals</span>
         </div>

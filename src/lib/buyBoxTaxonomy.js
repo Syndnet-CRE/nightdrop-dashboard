@@ -136,9 +136,11 @@ export const ASSET_CLASSES = [
 // Land sub-asset slugs — passed via `sub_assets[]` on the buy box payload.
 // Backend matcher in matcher_clauses.py routes path_of_growth through the
 // Land Transitional rule (additive AND conditions configurable per buy box).
+// acres_min / acres_max mirror the hard bounds in matcher_clauses.py and buyboxes.js /preview.
+// Keep in sync if backend SQL changes.
 export const LAND_SUB_ASSETS = [
-  { slug: 'urban_infill',       label: 'Infill & Urban Lots' },
-  { slug: 'suburban_fringe',    label: 'Suburban Fringe' },
+  { slug: 'urban_infill',       label: 'Infill & Urban Lots',           acres_max: 3 },
+  { slug: 'suburban_fringe',    label: 'Suburban Fringe',                acres_min: 3, acres_max: 40 },
   { slug: 'agricultural_rural', label: 'Rural & Agricultural Acreage' },
   { slug: 'path_of_growth',     label: 'Transitional / Path of Growth' },
 ];

@@ -209,10 +209,24 @@ export function BuyBoxPage1({ form, setForm }) {
   }
 
   const toggleSubAsset = (slug) => {
-    const next = subAssets.includes(slug)
+    const isRemoving = subAssets.includes(slug)
+    const next = isRemoving
       ? subAssets.filter(s => s !== slug)
       : [...subAssets, slug]
-    setForm({ ...form, sub_assets: next })
+
+    let acresPatch = {}
+    if (!isRemoving) {
+      const def = LAND_SUB_ASSETS.find(s => s.slug === slug)
+      const acresEmpty = !form.phys.acres_min && !form.phys.acres_max
+      if (def && acresEmpty) {
+        acresPatch = {
+          acres_min: def.acres_min != null ? String(def.acres_min) : '',
+          acres_max: def.acres_max != null ? String(def.acres_max) : '',
+        }
+      }
+    }
+
+    setForm({ ...form, sub_assets: next, phys: { ...form.phys, ...acresPatch } })
   }
 
   const toggleState = (code) => {
@@ -292,7 +306,7 @@ export function BuyBoxPage1({ form, setForm }) {
     <div className="page-fade">
       <header className="page-head">
         <div className="page-eyebrow">
-          <span className="mono-step mono">01/06</span>
+          <span className="mono-step mono">01/07</span>
           <span className="sep" />
           <span>Target</span>
         </div>
@@ -305,7 +319,7 @@ export function BuyBoxPage1({ form, setForm }) {
           <div className="section-title">
             <span className="section-title-num">A</span> Asset class
           </div>
-          <span className="section-meta">{sel.length ? <><span className="count active">1</span> selected</> : 'pick one'}</span>
+          <span className="section-meta">{sel.length ? <><span className="count active">{sel.length}</span> selected</> : 'pick one'}</span>
         </div>
         <div className="asset-grid">
           {DISPLAY_CLASSES.map(a => (
@@ -325,6 +339,13 @@ export function BuyBoxPage1({ form, setForm }) {
           <div className="subtype-chips">
             {LAND_SUB_ASSETS.map(sa => {
               const active = subAssets.includes(sa.slug)
+              const acresHint = sa.acres_min != null && sa.acres_max != null
+                ? `${sa.acres_min}–${sa.acres_max} ac`
+                : sa.acres_max != null
+                  ? `< ${sa.acres_max} ac`
+                  : sa.acres_min != null
+                    ? `> ${sa.acres_min} ac`
+                    : null
               return (
                 <button
                   key={sa.slug}
@@ -332,7 +353,8 @@ export function BuyBoxPage1({ form, setForm }) {
                   onClick={() => toggleSubAsset(sa.slug)}
                 >
                   {active && <span className="subtype-chip-check"><Ic.check width="10" height="10" /></span>}
-                  {sa.label}
+                  <span>{sa.label}</span>
+                  {acresHint && <span className="subtype-chip-hint">{acresHint}</span>}
                 </button>
               )
             })}

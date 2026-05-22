@@ -1,5 +1,5 @@
 import { classSchema, CONSTRUCTION_TYPES, FOUNDATION_TYPES, ROOF_TYPES, GARAGE_TYPES } from '../lib/buyBoxFieldSchema'
-import { BUILDING_CLASS_YEAR_DEFAULTS, VALID_BUILDING_CLASSES } from '../lib/buyBoxTaxonomy'
+import { BUILDING_CLASS_YEAR_DEFAULTS, VALID_BUILDING_CLASSES, LAND_SUB_ASSETS } from '../lib/buyBoxTaxonomy'
 import { RangeInputs, SingleInput } from './buyBoxInputs'
 
 function FieldRow({ label, hint, children, compact }) {
@@ -42,6 +42,27 @@ function MultiChips({ options, values, onToggle }) {
 }
 
 // ── Page 2: Property profile ────────────────────────────────────────────────
+
+// Returns a warning string if the user's manual acreage range conflicts with the
+// hard bounds baked into any selected land sub-asset. Returns null if no conflict.
+function acresConflictWarning(subAssets, acresMin, acresMax) {
+  if (!subAssets?.length) return null
+  const min = acresMin ? parseFloat(acresMin) : null
+  const max = acresMax ? parseFloat(acresMax) : null
+  if (min == null && max == null) return null
+
+  for (const slug of subAssets) {
+    const def = LAND_SUB_ASSETS.find(s => s.slug === slug)
+    if (!def) continue
+    if (def.acres_max != null && min != null && min >= def.acres_max)
+      return `${def.label} is under ${def.acres_max} ac — this range will match 0 properties`
+    if (def.acres_max != null && max != null && max > def.acres_max)
+      return `${def.label} is under ${def.acres_max} ac — reduce max or clear the sub-type`
+    if (def.acres_min != null && max != null && max < def.acres_min)
+      return `${def.label} starts at ${def.acres_min} ac — this range will match 0 properties`
+  }
+  return null
+}
 
 export function BuyBoxPage2({ form, setForm }) {
   const phys = form.phys
@@ -104,6 +125,10 @@ export function BuyBoxPage2({ form, setForm }) {
           </FieldRow>
           <FieldRow label="Acreage" hint="≥ 1 acre parcels">
             <RangeInputs minV={phys.acres_min} maxV={phys.acres_max} onMin={v => setPhys('acres_min', v)} onMax={v => setPhys('acres_max', v)} unit="ac" kind="decimal" />
+            {(() => {
+              const warn = acresConflictWarning(form.sub_assets, phys.acres_min, phys.acres_max)
+              return warn ? <div style={{ marginTop: 6, fontSize: 10, color: 'var(--red, #e05252)', fontFamily: 'var(--font-secondary)' }}>⚠ {warn}</div> : null
+            })()}
           </FieldRow>
           <FieldRow label="Lot size" hint="sub-acre parcels (sqft)">
             <RangeInputs minV={phys.lot_sf_min} maxV={phys.lot_sf_max} onMin={v => setPhys('lot_sf_min', v)} onMax={v => setPhys('lot_sf_max', v)} unit="sqft" kind="int" />
@@ -218,6 +243,11 @@ export function BuyBoxPage2({ form, setForm }) {
                 </button>
               ))}
             </div>
+            {fin.equity_preset && !fin.price_min && (
+              <div style={{ marginTop: 6, fontSize: 10, color: '#9DA2B3', fontFamily: 'var(--font-secondary)' }}>
+                Set an assessed value floor above to apply this equity filter.
+              </div>
+            )}
           </FieldRow>
 
           {/* Class-specific */}
@@ -237,16 +267,6 @@ export function BuyBoxPage2({ form, setForm }) {
             </FieldRow>
           )}
 
-          <div style={{ padding: '14px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontSize: 12, color: 'var(--fg)', fontWeight: 600 }}>Assessed value below market</div>
-              <div style={{ fontSize: 11, color: 'var(--fg-mute)', marginTop: 2 }}>Tax assessed &lt; V1 estimated market value</div>
-            </div>
-            <Toggle
-              checked={fin.assessed_below_market}
-              onChange={() => setFin('assessed_below_market', !fin.assessed_below_market)}
-            />
-          </div>
         </div>
       </section>
       </div>

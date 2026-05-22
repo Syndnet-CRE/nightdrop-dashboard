@@ -209,6 +209,13 @@
   transition: background var(--fast), color var(--fast);
 }
 .buy-box-wizard .f-chip-x:hover { background: var(--surface-hi); color: var(--fg); }
+.buy-box-wizard .f-chip.inactive {
+  border-style: dashed;
+  opacity: 0.72;
+}
+.buy-box-wizard .f-chip.inactive .val {
+  color: var(--warning, #F4B73E);
+}
 
 /* ── Geographic concentration (right rail) ── */
 .buy-box-wizard .rail-geo { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-sub); }
@@ -510,6 +517,10 @@
 .buy-box-wizard .subtype-chip-check {
   display: inline-flex; align-items: center; color: var(--green);
 }
+.buy-box-wizard .subtype-chip-hint {
+  font-size: 10px; font-family: var(--font-secondary);
+  opacity: 0.65; margin-left: 2px;
+}
 .buy-box-wizard .subtype-chip-icon {
   opacity: 0.55; flex-shrink: 0;
 }
@@ -717,4 +728,98 @@
 }
 .buy-box-wizard .count.active {
   color: var(--green);
+}
+
+/* ── Slot machine counter ───────────────────────────────────────────────── */
+
+.slot-counter {
+  display: inline-flex;
+  align-items: baseline;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.slot-cell {
+  display: inline-block;
+  width: 0.62em;
+  height: 1em;
+  line-height: 1;
+  text-align: center;
+  overflow: hidden;
+  vertical-align: baseline;
+  position: relative;
+}
+
+.slot-comma {
+  display: inline-block;
+  width: 0.24em;
+  text-align: center;
+  vertical-align: baseline;
+  line-height: 1;
+}
+
+.slot-cell-dash {
+  opacity: 0.55;
+}
+.slot-cell-dash-idle {
+  opacity: 0.32;
+}
+.slot-cell-dash-error {
+  color: var(--danger, #E5484D);
+  opacity: 0.72;
+}
+.slot-counter-idle {
+  cursor: default;
+}
+
+.slot-strip {
+  display: block;
+  animation-name: slot-spin;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+
+.slot-strip-cell {
+  display: block;
+  height: 1em;
+  line-height: 1;
+  text-align: center;
+}
+
+.slot-cell-resolved {
+  animation: slot-pop 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slot-spin {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-10em); }
+}
+
+@keyframes slot-pop {
+  0%   { transform: translateY(-0.22em); opacity: 0.55; }
+  100% { transform: translateY(0);       opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slot-strip {
+    animation: none;
+    transform: none;
+  }
+  .slot-cell-spinning::after {
+    content: '–';
+    position: absolute;
+    inset: 0;
+    text-align: center;
+    opacity: 0.55;
+    line-height: 1;
+  }
+  .slot-cell-spinning > .slot-strip {
+    visibility: hidden;
+  }
+  .slot-cell-resolved {
+    animation: none;
+  }
 }

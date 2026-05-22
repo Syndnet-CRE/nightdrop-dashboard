@@ -8,10 +8,11 @@ import { BuyBoxPage5 } from './BuyBoxPage5';
 import { BuyBoxPage6 } from './BuyBoxPage6';
 import { BuyBoxPage7 } from './BuyBoxPage7';
 import { BuyBoxRightRail } from './BuyBoxRightRail';
+import SlotMachineCounter from './SlotMachineCounter';
 import { Ic } from './buybox-icons';
 import BuyBoxActivatedDialog from './BuyBoxActivatedDialog';
 import { EMPTY_FORM, nativeToPayload, toNativeForm } from '../lib/wizardFormState';
-import { getAssetClass } from '../lib/buyBoxTaxonomy';
+import { getAssetClass, LAND_SUB_ASSETS } from '../lib/buyBoxTaxonomy';
 import '../styles/buy-box-wizard.css';
 import '../styles/buy-box-wizard-pages.css';
 
@@ -36,12 +37,23 @@ function buildFilters(form) {
   const out = [];
   if (form.assets.length) out.push({ id: 'assets', label: 'Assets', val: form.assets.length === 1 ? assetClassTitle(form.assets[0]) : `${form.assets.length} classes` });
   if (form.subtypes?.length) out.push({ id: 'subtypes', label: 'Subtypes', val: `${form.subtypes.length} selected` });
+  if (form.sub_assets?.length) {
+    const labels = form.sub_assets.map(s => LAND_SUB_ASSETS.find(x => x.slug === s)?.label || s);
+    out.push({ id: 'sub_assets', label: 'Land type', val: labels.join(', ') });
+  }
   if (form.geo.states.length) out.push({ id: 'states', label: 'States', val: form.geo.states.join(', ') });
   if (form.geo.metros?.length) out.push({ id: 'metros', label: 'Metros', val: form.geo.metros.length === 1 ? form.geo.metros[0] : `${form.geo.metros.length} metros` });
   if (form.geo.counties.length) out.push({ id: 'counties', label: 'Counties', val: `${form.geo.counties.length}` });
   if (form.geo.zips.length) out.push({ id: 'zips', label: 'Zips', val: form.geo.zips.length === 1 ? form.geo.zips[0] : `${form.geo.zips.length}` });
-  if (form.fin.equity_preset) out.push({ id: 'equity', label: 'Equity', val: `≥ ${form.fin.equity_preset}` });
-  if (form.fin.assessed_below_market) out.push({ id: 'under', label: '', val: 'Under-assessed' });
+  if (form.fin.equity_preset) {
+    const inactive = !form.fin.price_min;
+    out.push({
+      id: 'equity',
+      label: 'Equity',
+      val: inactive ? `≥ ${form.fin.equity_preset} (needs value floor)` : `≥ ${form.fin.equity_preset}`,
+      inactive,
+    });
+  }
   if (form.owner.absentee) out.push({ id: 'absentee', label: '', val: 'Absentee' });
   if (form.owner.hold_min) out.push({ id: 'hold', label: 'Hold', val: `≥${form.owner.hold_min}yr` });
   if (form.owner.out_of_state) out.push({ id: 'oos', label: '', val: 'Out-of-state' });
@@ -80,7 +92,6 @@ function buildSummary(form) {
   if (form.phys.building_classes?.length) arr.push({ label: 'Class', val: form.phys.building_classes.join('/') });
   if (form.fin.price_min || form.fin.price_max) arr.push({ label: 'Price', val: `${form.fin.price_min ? '$' + form.fin.price_min : 'any'}–${form.fin.price_max ? '$' + form.fin.price_max : 'any'}` });
   if (form.fin.equity_preset) arr.push({ label: 'Equity', val: `≥ ${form.fin.equity_preset}` });
-  if (form.fin.assessed_below_market) arr.push({ label: '', val: 'Under-assessed' });
   if (form.owner.entity && form.owner.entity !== 'any') arr.push({ label: 'Entity', val: form.owner.entity });
   if (form.owner.absentee) arr.push({ label: '', val: 'Absentee' });
   if (form.owner.hold_min || form.owner.hold_max) arr.push({ label: 'Hold', val: fmtRange(form.owner.hold_min, form.owner.hold_max) });
@@ -128,32 +139,92 @@ export function BuyBoxWizard({ mode, initialData, onSuccess, onCancel }) {
   const [activating, setActivating] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [activatedForm, setActivatedForm] = useState(null);
+  // previewState drives the slot-machine counter:
+  //   'idle'     — no asset class picked yet → show dashes + "Select an asset class to start."
+  //   'spinning' — request in-flight or debounce window
+  //   'resolved' — real count landed
+  //   'error'    — request failed / timed out → show dashes with reason
+  const [previewState, setPreviewState] = useState(() => {
+    const initialAssets = mode === 'edit' && initialData ? toNativeForm(initialData).assets : [];
+    return initialAssets.length > 0 ? 'spinning' : 'idle';
+  });
+  // errorKind distinguishes which kind of preview failure to surface in the aria/tooltip.
+  // 'timeout' = backend 504, 'server' = 500 / 4xx, null = no error.
+  const [errorKind, setErrorKind] = useState(null);
   const formRef = useRef(form);
   const debounceRef = useRef(null);
+  const abortRef = useRef(null);
   const { contentRef, showHint } = useScrollHint();
 
   useEffect(() => { formRef.current = form; });
 
+  // Watched: every form field that the matcher honors. Match Threshold (form.threshold)
+  // is intentionally excluded — it scores deals at delivery time, not the property
+  // pool count. form.name and form.delivery are UI-only and never affect the count.
   const filterKey = JSON.stringify({
-    assets: form.assets, geo: form.geo, phys: form.phys, fin: form.fin,
-    owner: form.owner, signals: form.signals, logic: form.logic,
-    risk: form.risk, underimproved_land: form.underimproved_land, threshold: form.threshold,
+    assets: form.assets,
+    subtypes: form.subtypes,
+    sub_assets: form.sub_assets,
+    geo: form.geo,
+    phys: form.phys,
+    fin: form.fin,
+    owner: form.owner,
+    signals: form.signals,
+    logic: form.logic,
+    distress_floor: form.distress_floor,
+    utils: form.utils,
+    location: form.location,
+    flags: form.flags,
   });
 
   useEffect(() => {
+    // Gate: until the user picks an asset class, skip the preview request.
+    // A full-table COUNT(*) against properties with no filters would time out.
+    if (!form.assets || form.assets.length === 0) {
+      clearTimeout(debounceRef.current);
+      if (abortRef.current) abortRef.current.abort();
+      setPreviewState('idle');
+      setErrorKind(null);
+      setForm(f => (f.matchCount === null ? f : { ...f, matchCount: null }));
+      return;
+    }
+
+    // Reels start spinning immediately on any input change. The actual request
+    // fires after the 400ms debounce so fast typing only produces one network call.
+    // Any in-flight request is aborted when a newer one fires so a slow stale
+    // response can never overwrite a fresher count.
+    setPreviewState('spinning');
+    setErrorKind(null);
     clearTimeout(debounceRef.current);
+    if (abortRef.current) abortRef.current.abort();
+
     debounceRef.current = setTimeout(async () => {
+      const controller = new AbortController();
+      abortRef.current = controller;
       try {
         const payload = nativeToPayload(formRef.current);
-        const data = await api.post('/api/dealfeed/buy-boxes/preview', payload);
+        const data = await api.post('/api/dealfeed/buy-boxes/preview', payload, { signal: controller.signal });
+        if (controller.signal.aborted) return;
         if (typeof data.estimated_count === 'number') {
           setForm(f => ({ ...f, matchCount: data.estimated_count }));
+          setPreviewState('resolved');
+          setErrorKind(null);
+        } else {
+          setForm(f => ({ ...f, matchCount: null }));
+          setPreviewState('error');
+          setErrorKind(data?.errorKind || 'server');
         }
-      } catch {
-        // preview endpoint may not exist; failure is non-fatal
+      } catch (err) {
+        if (err?.name === 'AbortError' || controller.signal.aborted) return;
+        setForm(f => ({ ...f, matchCount: null }));
+        setPreviewState('error');
+        setErrorKind(err?.status === 504 ? 'timeout' : 'server');
       }
     }, 400);
-    return () => clearTimeout(debounceRef.current);
+    return () => {
+      clearTimeout(debounceRef.current);
+      if (abortRef.current) abortRef.current.abort();
+    };
   }, [filterKey]);
 
   useEffect(() => {
@@ -197,12 +268,12 @@ export function BuyBoxWizard({ mode, initialData, onSuccess, onCancel }) {
     const f = form;
     if (id === 'assets') setForm({ ...f, assets: [], subtypes: [], sub_assets: [] });
     else if (id === 'subtypes') setForm({ ...f, subtypes: [] });
+    else if (id === 'sub_assets') setForm({ ...f, sub_assets: [] });
     else if (id === 'states') setForm({ ...f, geo: { ...f.geo, states: [], counties: [], metros: [] } });
     else if (id === 'metros') setForm({ ...f, geo: { ...f.geo, metros: [] } });
     else if (id === 'counties') setForm({ ...f, geo: { ...f.geo, counties: [] } });
     else if (id === 'zips') setForm({ ...f, geo: { ...f.geo, zips: [] } });
     else if (id === 'equity') setForm({ ...f, fin: { ...f.fin, equity_preset: '' } });
-    else if (id === 'under') setForm({ ...f, fin: { ...f.fin, assessed_below_market: false } });
     else if (id === 'absentee') setForm({ ...f, owner: { ...f.owner, absentee: false } });
     else if (id === 'hold') setForm({ ...f, owner: { ...f.owner, hold_min: '', hold_max: '' } });
     else if (id === 'oos') setForm({ ...f, owner: { ...f.owner, out_of_state: false } });
@@ -225,7 +296,7 @@ export function BuyBoxWizard({ mode, initialData, onSuccess, onCancel }) {
       case 4: return <BuyBoxPage4 form={form} setForm={setForm} />;
       case 5: return <BuyBoxPage5 form={form} setForm={setForm} assetClass={form.assets[0]} />;
       case 6: return <BuyBoxPage6 form={form} setForm={setForm} />;
-      case 7: return <BuyBoxPage7 form={form} setForm={setForm} matchCount={form.matchCount} summary={summary} onActivate={handleActivate} activating={activating} goToStep={setPage} />;
+      case 7: return <BuyBoxPage7 form={form} setForm={setForm} matchCount={form.matchCount} previewState={previewState} errorKind={errorKind} summary={summary} onActivate={handleActivate} activating={activating} goToStep={setPage} />;
       default: return null;
     }
   };
@@ -308,7 +379,8 @@ export function BuyBoxWizard({ mode, initialData, onSuccess, onCancel }) {
               </button>
               <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                 <span style={{ fontFamily: 'var(--font-secondary)', fontSize: 11, color: 'var(--fg-mute)' }}>
-                  Step {page} of 7 · {form.matchCount.toLocaleString('en-US')} matches
+                  Step {page} of 7 · <SlotMachineCounter value={form.matchCount} state={previewState} errorKind={errorKind} />
+                  {previewState === 'idle' ? ' Select an asset class to start.' : ' matches'}
                 </span>
                 {page < 7 ? (
                   <button className="btn btn-primary" onClick={() => setPage(p => p + 1)} disabled={!canGoNext(page, form)}>
@@ -323,7 +395,7 @@ export function BuyBoxWizard({ mode, initialData, onSuccess, onCancel }) {
             </footer>
           </div>
 
-          <BuyBoxRightRail matchCount={form.matchCount} filters={filters} geoStates={form.geo.states} onRemoveFilter={clearFilter} form={form} />
+          <BuyBoxRightRail matchCount={form.matchCount} previewState={previewState} errorKind={errorKind} filters={filters} geoStates={form.geo.states} onRemoveFilter={clearFilter} form={form} />
         </div>
       </div>
     </div>

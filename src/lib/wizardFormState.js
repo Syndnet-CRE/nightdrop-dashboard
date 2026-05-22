@@ -41,8 +41,7 @@ export const EMPTY_FORM = {
   // Financial
   fin: {
     price_min: '', price_max: '',   // → value_min / value_max
-    equity_preset: '',              // '25%' chip → backend min_equity_pct
-    assessed_below_market: false,
+    equity_preset: '',              // '25%' chip → backend min_equity_dollar (computed from value_min)
     price_per_unit_max: '',
     improvement_to_land_max: '',
     development_potential_min: '',
@@ -172,10 +171,21 @@ export function nativeToPayload(form) {
     roof_types: nonEmpty(form.phys.roof_types),
     garage_types: nonEmpty(form.phys.garage_types),
 
-    // Financial
+    // Financial — equity preset is converted to absolute dollars (the matcher
+    // doesn't support a pct filter directly). Requires a value_min floor; if the
+    // user leaves value_min blank we omit the equity filter entirely and the
+    // wizard shows a helper hint. min_equity_pct is also persisted so edit-mode
+    // can reverse the preset chip cleanly (UI-only round-trip — matcher ignores it).
     value_min: toNum(form.fin.price_min), value_max: toNum(form.fin.price_max),
-    min_equity_pct: form.fin.equity_preset ? (EQUITY_MAP[form.fin.equity_preset] ?? null) : null,
-    assessed_below_market: form.fin.assessed_below_market || false,
+    min_equity_pct: (() => {
+      const pct = form.fin.equity_preset ? EQUITY_MAP[form.fin.equity_preset] : null;
+      return pct != null ? Math.round(pct * 100) : null;
+    })(),
+    min_equity_dollar: (() => {
+      const pct = form.fin.equity_preset ? EQUITY_MAP[form.fin.equity_preset] : null;
+      const floor = toNum(form.fin.price_min);
+      return pct != null && floor != null ? Math.round(pct * floor) : null;
+    })(),
     price_per_unit_max: toNum(form.fin.price_per_unit_max),
     improvement_to_land_max: toNum(form.fin.improvement_to_land_max),
     development_potential_min: toNum(form.fin.development_potential_min),
@@ -239,7 +249,26 @@ export function toNativeForm(b) {
   const rawClass = b.asset_class || (b.asset_classes && b.asset_classes[0]) || '';
   const normalizedClass = normalizeAssetClassSlug(rawClass);
 
-  const reversedEquity = Object.entries(EQUITY_MAP).find(([, v]) => v === b.min_equity_pct)?.[0] || '';
+  // Equity round-trip. We write both min_equity_pct (UI-only, 0–100 integer) and
+  // min_equity_dollar (matcher-active) on POST/PATCH. On reload, try in order:
+  //   1. min_equity_pct as a percent integer (e.g. 25 → '25%')
+  //   2. min_equity_pct as a decimal fraction (legacy, e.g. 0.25 → '25%')
+  //   3. min_equity_dollar / value_min → derived percent
+  const reversedEquity = (() => {
+    const pctRaw = b.min_equity_pct;
+    if (pctRaw != null) {
+      const asDecimalKey = Object.entries(EQUITY_MAP).find(([, v]) => v === pctRaw)?.[0];
+      if (asDecimalKey) return asDecimalKey;
+      const asPercentKey = Object.entries(EQUITY_MAP).find(([, v]) => Math.round(v * 100) === pctRaw)?.[0];
+      if (asPercentKey) return asPercentKey;
+    }
+    if (b.min_equity_dollar != null && b.value_min != null && b.value_min > 0) {
+      const derived = b.min_equity_dollar / b.value_min;
+      const match = Object.entries(EQUITY_MAP).find(([, v]) => Math.abs(v - derived) < 0.01);
+      if (match) return match[0];
+    }
+    return '';
+  })();
   const reversedThreshold = Object.entries(THRESHOLD_MAP).find(([, v]) => v === b.match_threshold)?.[0] || 'balanced';
 
   const ownerTypes = b.owner_types;
@@ -284,7 +313,6 @@ export function toNativeForm(b) {
     fin: {
       price_min: b.value_min ?? '', price_max: b.value_max ?? '',
       equity_preset: reversedEquity,
-      assessed_below_market: b.assessed_below_market || false,
       price_per_unit_max: b.price_per_unit_max ?? '',
       improvement_to_land_max: b.improvement_to_land_max ?? '',
       development_potential_min: b.development_potential_min ?? '',

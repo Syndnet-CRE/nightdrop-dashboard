@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import SlotMachineCounter from './SlotMachineCounter';
 
 function pad2(n) { return String(n).padStart(2, '0'); }
 
@@ -23,7 +24,7 @@ function deriveStatTrio(form) {
   return { equityVal, equitySub, holdVal, holdSub, occupancyVal, occupancySub }
 }
 
-export function BuyBoxRightRail({ matchCount, filters = [], geoStates = [], onRemoveFilter, form }) {
+export function BuyBoxRightRail({ matchCount, previewState = 'resolved', errorKind = null, filters = [], geoStates = [], onRemoveFilter, form }) {
   const [clock, setClock] = useState(() => {
     const now = new Date();
     return `${pad2(now.getHours())}:${pad2(now.getMinutes())}:${pad2(now.getSeconds())}`;
@@ -69,9 +70,9 @@ export function BuyBoxRightRail({ matchCount, filters = [], geoStates = [], onRe
         <div className="quote-block">
           <div className="quote-label">Live match pool</div>
           <div className={`quote-value${pulse ? ' recalc' : ''}`}>
-            {matchCount !== null && matchCount !== undefined ? matchCount.toLocaleString('en-US') : '--'}
+            <SlotMachineCounter value={matchCount} state={previewState} errorKind={errorKind} />
           </div>
-          {delta !== 0 && (
+          {previewState === 'resolved' && delta !== 0 && (
             <div className="quote-delta">
               <span className={`quote-delta-val ${delta > 0 ? 'pos' : 'neg'}`}>
                 {delta > 0 ? '+' : ''}{delta.toLocaleString('en-US')}
@@ -79,7 +80,15 @@ export function BuyBoxRightRail({ matchCount, filters = [], geoStates = [], onRe
               <span>vs. prev</span>
             </div>
           )}
-          <div className="quote-sub">properties matched to criteria</div>
+          <div className="quote-sub">
+            {previewState === 'idle'
+              ? 'Select an asset class to start.'
+              : previewState === 'error' && errorKind === 'timeout'
+              ? 'Preview timed out. Try narrower filters.'
+              : previewState === 'error'
+              ? 'Backend error. Counter will retry on next edit.'
+              : 'properties matched to criteria'}
+          </div>
         </div>
 
         <div className="stat-trio">
@@ -124,7 +133,11 @@ export function BuyBoxRightRail({ matchCount, filters = [], geoStates = [], onRe
             <div className="quote-label" style={{ marginBottom: 10 }}>Active filters</div>
             <div className="filter-chips">
               {filters.map((f, i) => (
-                <span key={i} className="f-chip">
+                <span
+                  key={i}
+                  className={`f-chip${f.inactive ? ' inactive' : ''}`}
+                  title={f.inactive ? 'This filter is not currently narrowing your pool.' : undefined}
+                >
                   {f.label && <span className="label">{f.label}</span>}
                   <span className="val">{f.val}</span>
                   {onRemoveFilter && (

@@ -32,16 +32,20 @@ async function request(path, options = {}) {
   }
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(err.message || err.error || `API error ${res.status}`);
+    const body = await res.json().catch(() => ({ message: res.statusText }));
+    const error = new Error(body.message || body.error || `API error ${res.status}`);
+    error.status = res.status;
+    error.body = body;
+    throw error;
   }
 
   return res.json();
 }
 
+// opts may carry { signal } for AbortController-based request cancellation.
 export const api = {
-  get: (path) => request(path),
-  post: (path, body) => request(path, { method: 'POST', body: JSON.stringify(body) }),
-  patch: (path, body) => request(path, { method: 'PATCH', body: JSON.stringify(body) }),
-  delete: (path) => request(path, { method: 'DELETE' }),
+  get: (path, opts = {}) => request(path, { ...opts }),
+  post: (path, body, opts = {}) => request(path, { method: 'POST', body: JSON.stringify(body), ...opts }),
+  patch: (path, body, opts = {}) => request(path, { method: 'PATCH', body: JSON.stringify(body), ...opts }),
+  delete: (path, opts = {}) => request(path, { method: 'DELETE', ...opts }),
 };

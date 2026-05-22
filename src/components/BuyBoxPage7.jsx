@@ -1,4 +1,5 @@
 import { Ic } from './buybox-icons'
+import SlotMachineCounter from './SlotMachineCounter'
 
 const CADENCES = [
   { id: 'daily', title: 'Daily', sub: 'Top matches every morning', time: '06:00 AM EST' },
@@ -6,7 +7,7 @@ const CADENCES = [
   { id: 'realtime', title: 'Real-time', sub: 'Pushed as they hit the criteria', time: 'No SLA' },
 ]
 
-export function BuyBoxPage7({ form, setForm, matchCount, summary, onActivate, activating, goToStep }) {
+export function BuyBoxPage7({ form, setForm, matchCount, previewState = 'resolved', summary, onActivate, activating, goToStep }) {
   const name = form.name || ''
   const delivery = form.delivery || { cadence: 'daily', max: 25 }
   const cadence = CADENCES.find(c => c.id === delivery.cadence) ?? CADENCES[0]
@@ -36,7 +37,9 @@ export function BuyBoxPage7({ form, setForm, matchCount, summary, onActivate, ac
         </div>
         <div className="review-count">
           <div className="review-count-label">Live match pool</div>
-          <div className="review-count-val">{matchCount.toLocaleString('en-US')}</div>
+          <div className="review-count-val">
+            <SlotMachineCounter value={matchCount} state={previewState} />
+          </div>
           <div className="review-count-sub">↑ ready for delivery</div>
         </div>
       </div>
