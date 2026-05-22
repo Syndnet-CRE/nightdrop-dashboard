@@ -1,4 +1,4 @@
-<!-- Generated: 2026-05-20 | Files scanned: ~95 | Token estimate: ~700 -->
+<!-- Generated: 2026-05-22 | Files scanned: ~98 | Token estimate: ~780 -->
 # Architecture — nightdrop-dashboard
 
 React 19 + Vite 8 SPA. JSX, no TypeScript. Plain CSS with tokens.
@@ -17,9 +17,11 @@ Browser
 BrowserRouter
   AuthProvider              (src/hooks/useAuth.jsx)
     ToastProvider           (src/contexts/ToastContext.jsx)
-      App                   (defines AppShell, DealDetailPage, DealDetailModal inline)
-        AppShell            (view state)
+      App                   (defines AppShell, DealDetailPage, DealDetailModal,
+                             InitialRouteGate inline)
+        AppShell            (view state, default `view = 'map'`)
           ReadStateProvider / DealStateProvider / DealsProvider
+            InitialRouteGate              (post-load: zero buy boxes → /buy-boxes/new)
             TopHeader | LeftPanel | Views | DealDetailPage | DealDetailModal
 ```
 
@@ -27,6 +29,9 @@ BrowserRouter
 - View switching: state-driven (`view` string in AppShell, sidebar click → `setView(...)`).
 - URL-driven only for deal detail (`/deal/:id`) and the buy box wizard
   (`/buy-boxes/new`, `/buy-boxes/:id/edit`).
+- Default post-auth landing path: `/map` (initial `view = 'map'`). Bare `/` and
+  `/login` URLs normalize to `/map`. Legacy `/dashboard` URL still routes to
+  AppShell with the existing `dashboard` view for back-compat.
 - Admin/invites gated to `subscriber.email === 'brady@parcyl.ai'`.
 
 ## Top-level dirs
@@ -50,7 +55,12 @@ src/
 ```
 BuyBoxWizard (7 steps)
   → form state (wizardFormState.EMPTY_FORM shape)
-  → debounced POST /api/dealfeed/buy-boxes/preview (400ms)        ← live match count
+  → previewState machine: idle (no asset class) → spinning → resolved | error
+  → debounced POST /api/dealfeed/buy-boxes/preview (400ms, AbortController)
+       backend spawns agents/preview_count.py → build_where_from_payload SQL
+       → SELECT COUNT(*) FROM properties WHERE ... → {estimated_count}
+       shares the same matcher_clauses builders the nightly engine uses, so
+       the live counter and nightly delivery cannot disagree on filter SQL.
   → on activate: POST /api/dealfeed/buy-boxes                     ← create
                  OR PATCH /api/dealfeed/buy-boxes/:id             ← edit
 ```
