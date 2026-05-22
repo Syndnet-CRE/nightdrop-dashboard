@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Routes, Route, useNavigate, useMatch, useLocation } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { useDeals, DealsProvider } from './contexts/DealsContext';
@@ -100,6 +100,30 @@ function PauseBoxConfirm({ buyBox, onClose }) {
   );
 }
 
+// One-shot landing gate: after first buy-box load, redirect users with zero
+// buy boxes to the wizard. Only fires on landing paths so explicit deep links
+// (deal detail, settings, the wizard itself) are left alone.
+const LANDING_PATHS = new Set(['/map', '/dashboard']);
+
+function InitialRouteGate() {
+  const { buyBoxes, loading, error } = useDeals();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const hasRunRef = useRef(false);
+
+  useEffect(() => {
+    if (hasRunRef.current) return;
+    if (loading || error) return;
+    if (!LANDING_PATHS.has(location.pathname)) return;
+    hasRunRef.current = true;
+    if (buyBoxes.length === 0) {
+      navigate('/buy-boxes/new', { replace: true });
+    }
+  }, [buyBoxes, loading, error, location.pathname, navigate]);
+
+  return null;
+}
+
 
 function AppShell() {
   const addToast = useToast();
@@ -108,7 +132,7 @@ function AppShell() {
   const location = useLocation();
   const dealMatch = useMatch('/deal/:dealId');
   const onboardingMatch = useMatch('/onboarding');
-  const [view, setView] = useState('dashboard');
+  const [view, setView] = useState('map');
   const [confirmDanger, setConfirmDanger] = useState(null);
   const [pausingBuyBox, setPausingBuyBox] = useState(null);
   const [kpis, setKpis] = useState(null);
@@ -139,11 +163,11 @@ function AppShell() {
   }, [subscriber, loading, navigate]);
 
   // Normalize URL: if subscriber is loaded and we're at the bare "/" or "/login",
-  // push to "/dashboard" so the URL bar reflects the actual view.
+  // push to "/map" so the URL bar reflects the default post-onboarding view.
   useEffect(() => {
     if (loading || !subscriber) return;
     if (location.pathname === '/' || location.pathname === '/login') {
-      navigate('/dashboard', { replace: true });
+      navigate('/map', { replace: true });
     }
   }, [loading, subscriber, location.pathname, navigate]);
 
@@ -178,6 +202,7 @@ function AppShell() {
     <ReadStateProvider>
     <DealStateProvider>
     <DealsProvider>
+      <InitialRouteGate />
       <div className="app has-sidebar">
         <TopHeader />
 

@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ThumbsUp, ThumbsDown, ChevronDown, ChevronUp, Star, Download, Link2, EyeOff, Flag, MessageCircle } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, Star, Download, Link2, EyeOff, Flag, MessageCircle, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ScoreBadge from '../ScoreBadge';
 import OverflowMenu from '../OverflowMenu';
 import DealChatThread from './DealChatThread';
-import { fmt, fmtMoney } from '../../lib/format';
+import { anchorMetric } from '../../lib/anchorMetric';
 import { api } from '../../lib/api';
 import { useDeals } from '../../contexts/DealsContext.jsx';
 
@@ -23,44 +23,9 @@ function fmtTimestamp(sentAt) {
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
-const QUICK_FACTS_CONFIG = {
-  self_storage: [
-    { label: 'Net Rentable SF', key: 'building_sf', format: v => v ? `${Number(v).toLocaleString()} SF` : '—' },
-    { label: 'Assessed Value',  key: 'assessed_value', format: fmtMoney },
-    { label: 'Years Held',      key: 'owner_since', format: v => v ? `${new Date().getFullYear() - new Date(v).getFullYear()} yrs` : '—' },
-  ],
-  land: [
-    { label: 'Lot Size',   key: 'acres',    format: v => v ? `${Number(v).toFixed(2)} ac` : '—' },
-    { label: 'Zoning',     key: 'zoning',   format: fmt },
-    { label: 'Years Held', key: 'owner_since', format: v => v ? `${new Date().getFullYear() - new Date(v).getFullYear()} yrs` : '—' },
-  ],
-  multifamily: [
-    { label: 'Units',          key: 'units',    format: v => v ? `${v} units` : '—' },
-    { label: 'Value/Unit',     key: 'assessed_value', format: (v, deal) => deal.units ? fmtMoney(v / deal.units) : '—' },
-    { label: 'Ownership Type', key: 'owner_type', format: fmt },
-  ],
-  industrial: [
-    { label: 'Building SF', key: 'building_sf',  format: v => v ? `${Number(v).toLocaleString()} SF` : '—' },
-    { label: 'Assessed',    key: 'assessed_value', format: fmtMoney },
-    { label: 'Years Held',  key: 'owner_since', format: v => v ? `${new Date().getFullYear() - new Date(v).getFullYear()} yrs` : '—' },
-  ],
-  retail: [
-    { label: 'GLA',        key: 'building_sf',    format: v => v ? `${Number(v).toLocaleString()} SF` : '—' },
-    { label: 'Zoning',     key: 'zoning',         format: fmt },
-    { label: 'Last Sale',  key: 'last_sale_date', format: v => v ? new Date(v).getFullYear() : '—' },
-  ],
-};
-
-const DEFAULT_FACTS = [
-  { label: 'Lot Size',      key: 'acres',          format: v => v ? `${Number(v).toFixed(2)} ac` : '—' },
-  { label: 'Assessed',      key: 'assessed_value', format: fmtMoney },
-  { label: 'Years Held',    key: 'owner_since', format: v => v ? `${new Date().getFullYear() - new Date(v).getFullYear()} yrs` : '—' },
-];
-
 function normalizeAssetClass(raw) {
   const s = (raw || '').toLowerCase();
   if (!s) return '';
-  // Match against the 10-class MVP taxonomy from backend.
   if (s.includes('self storage') || s.includes('mini-warehouse') || s.includes('mini warehouse')) return 'self_storage';
   if (s.includes('mobile') || s.includes('manufactured home') || s.includes('rv park')) return 'mobile_home_rv';
   if (s.includes('multifamily') || s.includes('duplex') || s.includes('triplex') || s.includes('quadruplex') || s.includes('apartment') || s.includes('residential income') || s.includes('loft')) return 'multifamily';
@@ -74,9 +39,28 @@ function normalizeAssetClass(raw) {
   return s.replace(/\s+/g, '_');
 }
 
-function quickFacts(deal) {
-  const ac = normalizeAssetClass(deal.asset_class || deal.asset);
-  return QUICK_FACTS_CONFIG[ac] || DEFAULT_FACTS;
+const ASSET_CLASS_LABEL = {
+  self_storage: 'Self Storage',
+  multifamily: 'Multifamily',
+  mobile_home_rv: 'Mobile Home / RV',
+  residential_sfr: 'SFR',
+  land: 'Land',
+  industrial: 'Industrial',
+  retail: 'Retail',
+  gas_station_c_store: 'Gas Station',
+  office: 'Office',
+  special_purpose: 'Special Purpose',
+};
+
+function humanizeOwnerType(raw) {
+  if (!raw) return null;
+  const t = String(raw).trim();
+  if (!t) return null;
+  if (t.toLowerCase().includes('llc')) return 'LLC';
+  if (t.toLowerCase().includes('trust')) return 'Trust';
+  if (t.toLowerCase().includes('corp') || t.toLowerCase().includes('inc')) return 'Corporate';
+  if (t.toLowerCase() === 'individual') return 'Individual';
+  return t.length > 14 ? `${t.slice(0, 12)}…` : t;
 }
 
 function signalColor(sig) {
@@ -87,67 +71,25 @@ function signalColor(sig) {
   return 'green';
 }
 
-function ExpandedDetail({ deal }) {
-  const bj = deal.briefJson || deal.brief_json || {};
-  const fields = [
-    ['Owner', fmt(deal.owner_name || deal.owner)],
-    ['Owner Type', fmt(deal.owner_type)],
-    ['Owner Since', deal.owner_since ? new Date(deal.owner_since).toLocaleDateString('en-US', { year: 'numeric', month: 'short' }) : '—'],
-    ['Mailing Address', fmt(deal.owner_mailing || deal.mailing)],
-    ['Assessed Value', fmtMoney(deal.assessed_value || deal.value)],
-    ['Last Sale', deal.last_sale_date ? `${new Date(deal.last_sale_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}${deal.last_sale_price ? ` · ${fmtMoney(deal.last_sale_price)}` : ''}` : '—'],
-    ['Lot Size', deal.acres ? `${Number(deal.acres).toFixed(2)} ac` : (deal.lot_sf ? `${Number(deal.lot_sf).toLocaleString()} SF` : '—')],
-    ['Building SF', deal.building_sf ? `${Number(deal.building_sf).toLocaleString()} SF` : '—'],
-    ['Zoning', fmt(deal.zoning)],
-    ['APN', fmt(deal.apn)],
-    ['Tax Delinquent', deal.tax_delinquent ? `Yes — ${fmtMoney(deal.tax_delinquent)}` : 'No'],
-  ];
-
-  const signals = bj.signal_tags || deal.signals || [];
-
-  return (
-    <div className="feed-deal-expand">
-      <div className="feed-deal-expand-grid">
-        {fields.map(([label, value]) => (
-          <div key={label} className="feed-deal-expand-row">
-            <span className="feed-deal-expand-label">{label}</span>
-            <span className="feed-deal-expand-value">{value}</span>
-          </div>
-        ))}
-      </div>
-      {signals.length > 0 && (
-        <div className="feed-deal-signals">
-          <div className="feed-deal-signals-label">Distress Signals</div>
-          <div className="feed-deal-signals-list">
-            {signals.map((s, i) => {
-              const color = signalColor(s);
-              const label = typeof s === 'string' ? s : s.label || s.type || String(s);
-              return <span key={i} className={`feed-deal-signal-pill ${color}`}>{label}</span>;
-            })}
-          </div>
-        </div>
-      )}
-      <div className="feed-deal-expand-cta">
-        <a href={`/deal/${deal.id}`} className="btn primary sm">Open full detail</a>
-      </div>
-    </div>
-  );
+function signalLabel(s) {
+  if (typeof s === 'string') return s.trim() || null;
+  if (!s || typeof s !== 'object') return null;
+  const v = s.tag || s.label || s.description || s.type;
+  return (typeof v === 'string' && v.trim()) ? v : null;
 }
 
-export default function FeedDealCard({ deal, onHide, isRead: isReadProp }) {
+export default function FeedDealCard({ deal, onHide, isRead: isReadProp, onNavigateAway }) {
   const navigate = useNavigate();
   const { postFeedback } = useDeals();
   const [isRead, setIsRead] = useState(deal.is_read || isReadProp || false);
   const [saved, setSaved] = useState(deal.saved || false);
   const [hidden, setHidden] = useState(false);
-  const [expanded, setExpanded] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [notRelevantUndo, setNotRelevantUndo] = useState(deal.feedback === 'not_relevant');
   const cardRef = useRef(null);
   const readTimerRef = useRef(null);
   const hasTracked = useRef(isRead);
 
-  // Feedback is the single source of truth from DealsContext via the deal prop
   const fb = deal.feedback || null;
 
   const markRead = useCallback(async () => {
@@ -197,6 +139,11 @@ export default function FeedDealCard({ deal, onHide, isRead: isReadProp }) {
     navigator.clipboard.writeText(`${window.location.origin}/deal/${deal.id}`);
   }
 
+  function openDetail() {
+    onNavigateAway?.();
+    navigate(`/deal/${deal.id}`);
+  }
+
   const overflowItems = [
     { label: 'Save Deal',    icon: <Star size={14} />,     onClick: handleSave },
     { label: 'Export PDF',   icon: <Download size={14} />, disabled: true, disabledTip: 'Coming soon — deal export' },
@@ -207,30 +154,36 @@ export default function FeedDealCard({ deal, onHide, isRead: isReadProp }) {
 
   if (hidden) return null;
 
-  const facts = quickFacts(deal);
   const notRelevant = fb === 'not_relevant';
+  const assetClassKey = normalizeAssetClass(deal.asset_class || deal.asset);
+  const assetClassLabel = ASSET_CLASS_LABEL[assetClassKey] || (deal.asset_class || deal.asset || '');
+  const metric = anchorMetric(deal, assetClassKey);
+  const cityLine = deal.city || [deal.property_city, deal.property_state, deal.property_zip].filter(Boolean).join(', ');
+  const ownerType = humanizeOwnerType(deal.owner_type);
   const bj = deal.briefJson || deal.brief_json || {};
+  const rawSignals = bj.signal_tags || deal.signals || [];
+  const resolvedSignals = rawSignals
+    .map(s => ({ signal: s, label: signalLabel(s) }))
+    .filter(x => x.label);
+  const visibleSignals = resolvedSignals.slice(0, 3);
+  const overflowCount = Math.max(0, resolvedSignals.length - 3);
   const headline = bj.headline || null;
-  const nextAction = bj.next_action || null;
+  const score = deal.score || deal.match_score;
+
+  const imageUrl = (MAPBOX_TOKEN && deal.lat && deal.lng)
+    ? `https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/static/${deal.lng},${deal.lat},16/320x320@2x?access_token=${MAPBOX_TOKEN}&logo=false&attribution=false`
+    : null;
 
   return (
     <article
       ref={cardRef}
-      className={`feed-deal-card ${!isRead ? 'unread' : ''} ${notRelevant ? 'dimmed' : ''}`}
+      className={`feed-deal-card horizontal${!isRead ? ' unread' : ''}${notRelevant ? ' dimmed' : ''}`}
     >
-      <div className="feed-deal-byline">
-        <span className="feed-deal-avatar">N</span>
-        <span className="feed-deal-agent">Nightdrop Agent</span>
-        <span className="feed-deal-dot">·</span>
-        <span className="feed-deal-ts">{fmtTimestamp(deal.sentAt)}</span>
-        <OverflowMenu items={overflowItems} className="feed-deal-overflow" />
-      </div>
-
-      <div className="feed-deal-image-wrap" onClick={() => navigate(`/deal/${deal.id}`)}>
-        {MAPBOX_TOKEN && deal.lat && deal.lng ? (
+      <div className="feed-deal-image-wrap" onClick={openDetail}>
+        {imageUrl ? (
           <img
             className="feed-deal-image"
-            src={`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/static/${deal.lng},${deal.lat},16/1024x280@2x?access_token=${MAPBOX_TOKEN}&logo=false&attribution=false`}
+            src={imageUrl}
             alt={deal.addr || deal.address}
             loading="lazy"
             onError={e => {
@@ -242,39 +195,61 @@ export default function FeedDealCard({ deal, onHide, isRead: isReadProp }) {
         ) : null}
         <div
           className="feed-deal-image-fallback"
-          style={{ display: MAPBOX_TOKEN && deal.lat && deal.lng ? 'none' : 'flex' }}
+          style={{ display: imageUrl ? 'none' : 'flex' }}
         >
-          <span className="feed-deal-image-placeholder">{deal.asset_class || deal.asset || 'Property'}</span>
+          <span className="feed-deal-image-placeholder">{assetClassLabel || 'Property'}</span>
         </div>
-        <ScoreBadge score={deal.score || deal.match_score} className="feed-deal-score" />
       </div>
 
-      <div className="feed-deal-body">
-        <div className="feed-deal-address">{deal.addr || deal.address}</div>
-        <div className="feed-deal-city">{deal.city || [deal.property_city, deal.property_state, deal.property_zip].filter(Boolean).join(', ')}</div>
-
-        <div className="feed-deal-facts">
-          {facts.map(({ label, key, format }) => (
-            <div key={label} className="feed-deal-fact">
-              <span className="feed-deal-fact-label">{label}</span>
-              <span className="feed-deal-fact-value">{format(deal[key], deal)}</span>
+      <div className="feed-deal-content">
+        <div className="feed-deal-header">
+          <div className="feed-deal-header-text">
+            <div className="feed-deal-address">{deal.addr || deal.address}</div>
+            <div className="feed-deal-meta">
+              <span>{cityLine}</span>
+              {assetClassLabel && <span className="feed-deal-meta-dot">·</span>}
+              {assetClassLabel && <span>{assetClassLabel}</span>}
+              {deal.sentAt && <span className="feed-deal-meta-dot">·</span>}
+              {deal.sentAt && <span>{fmtTimestamp(deal.sentAt)}</span>}
             </div>
-          ))}
+          </div>
+          <div className="feed-deal-header-right">
+            {score != null && <ScoreBadge score={score} className="feed-deal-score-inline" />}
+            <OverflowMenu items={overflowItems} className="feed-deal-overflow" />
+          </div>
         </div>
+
+        <div className="feed-deal-anchor">
+          <span className="feed-deal-anchor-primary">{metric.primary}</span>
+          {metric.secondary && (
+            <>
+              <span className="feed-deal-anchor-dot">·</span>
+              <span className="feed-deal-anchor-secondary">{metric.secondary}</span>
+            </>
+          )}
+        </div>
+
+        {(ownerType || visibleSignals.length > 0) && (
+          <div className="feed-deal-pills">
+            {ownerType && <span className="feed-deal-owner-pill">{ownerType}</span>}
+            {visibleSignals.map(({ signal, label }, i) => (
+              <span key={i} className={`feed-deal-signal-pill ${signalColor(signal)}`}>{label}</span>
+            ))}
+            {overflowCount > 0 && (
+              <button
+                type="button"
+                className="feed-deal-signal-pill more"
+                onClick={openDetail}
+                title="See all signals"
+              >
+                +{overflowCount}
+              </button>
+            )}
+          </div>
+        )}
 
         {headline && (
           <p className="feed-deal-headline">{headline}</p>
-        )}
-
-        {deal.narrative && (
-          <p className="feed-deal-narrative">{deal.narrative}</p>
-        )}
-
-        {nextAction && (
-          <div className="feed-deal-next-action">
-            <span className="feed-deal-next-action-label">Next Action</span>
-            <span className="feed-deal-next-action-text">{nextAction}</span>
-          </div>
         )}
 
         {notRelevant && notRelevantUndo ? (
@@ -315,17 +290,17 @@ export default function FeedDealCard({ deal, onHide, isRead: isReadProp }) {
                 <Star size={16} fill={saved ? 'currentColor' : 'none'} />
               </button>
             </div>
-            <span className="feed-deal-box-pill">Box: {deal.box || deal.buy_box_name}</span>
+            {(deal.box || deal.buy_box_name) && (
+              <span className="feed-deal-box-pill">Box: {deal.box || deal.buy_box_name}</span>
+            )}
             <button
-              className="feed-deal-expand-btn"
-              onClick={() => setExpanded(e => !e)}
+              className="feed-deal-detail-btn"
+              onClick={openDetail}
             >
-              View Details {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              View Details <ArrowRight size={14} />
             </button>
           </div>
         )}
-
-        {expanded && <ExpandedDetail deal={deal} />}
 
         {chatOpen && (
           <DealChatThread

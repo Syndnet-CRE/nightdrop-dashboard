@@ -610,12 +610,12 @@
   align-items: flex-start;
   height: 100%;
   gap: 0;
-  /* 12px top gap matches the breathing room above both floating rails
-     so the deal feed column tops align with them (not flush against pipeline). */
+  /* 12px top gap matches the breathing room above the right rail
+     so the deal feed column top aligns with it (not flush against pipeline). */
   padding-top: 12px;
-  /* Reserve horizontal space for both floating rails so the deal column
-     stays centered between them. Left = 12 + 270 + 12. Right = 12 + 360 + 12. */
-  padding-left: 294px;
+  /* Left rail removed in Phase 1 repaint; only the floating right rail
+     still reserves horizontal space. Right = 12 + 360 + 12 = 384. */
+  padding-left: var(--s-4);
   padding-right: 384px;
 }
 
@@ -698,7 +698,7 @@
 .tonights-run-detail { color: var(--fg-3); }
 .tonights-run-last { color: var(--fg-4); font-style: italic; }
 
-/* ── Feed Deal Card ─────────────────────────────────────────── */
+/* ── Feed Deal Card (horizontal: image left, content right) ───── */
 .feed-deal-card {
   background: var(--bg-card);
   border: 1px solid var(--border-1);
@@ -708,6 +708,11 @@
   transition: border-color var(--dur-base), box-shadow var(--dur-base);
   position: relative;
   flex-shrink: 0;
+}
+
+.feed-deal-card.horizontal {
+  display: flex;
+  align-items: stretch;
 }
 
 /* Every direct child of .feed-center must keep its intrinsic height.
@@ -720,53 +725,30 @@
   box-shadow: 0 0 0 1px rgba(29,175,41,0.2), 0 6px 24px rgba(29,175,41,0.08), var(--shadow-md);
 }
 
-.feed-deal-card.unread {
-  border-left: 3px solid var(--nightdrop-green-700);
+.feed-deal-card.unread::before {
+  content: '';
+  position: absolute;
+  top: var(--s-3);
+  bottom: var(--s-3);
+  left: 0;
+  width: 3px;
+  background: var(--nightdrop-green-700);
+  border-radius: 0 2px 2px 0;
+  z-index: 1;
 }
 
 .feed-deal-card.dimmed { opacity: 0.6; }
 
-.feed-deal-byline {
-  display: flex;
-  align-items: center;
-  gap: var(--s-2);
-  padding: var(--s-3) var(--s-4) 0;
-  position: relative;
-}
-
-.feed-deal-avatar {
-  width: 24px;
-  height: 24px;
-  background: var(--nightdrop-green-700);
-  color: #fff;
-  border-radius: 50%;
-  font-size: 11px;
-  font-weight: var(--w-bold);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.feed-deal-agent { font-size: 12px; font-weight: var(--w-semibold); color: var(--fg-3); }
-.feed-deal-dot { color: var(--fg-4); font-size: 12px; }
-.feed-deal-ts { font-size: 12px; color: var(--fg-4); }
-
-.feed-deal-overflow {
-  margin-left: auto;
-  opacity: 0;
-  transition: opacity var(--dur-fast);
-}
-.feed-deal-card:hover .feed-deal-overflow { opacity: 1; }
-
+/* Image column: 205×205 square at desktop, full-width 180px on collapse. */
 .feed-deal-image-wrap {
   position: relative;
-  height: 220px;
-  min-height: 220px;
-  margin-top: var(--s-3);
+  width: 205px;
+  min-width: 205px;
+  height: 205px;
   cursor: pointer;
   background: var(--bg-subtle);
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .feed-deal-image {
@@ -790,90 +772,169 @@
 }
 
 .feed-deal-image-placeholder {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: var(--w-semibold);
   letter-spacing: var(--track-eyebrow);
   text-transform: uppercase;
   color: var(--fg-3);
-  padding: 6px 12px;
+  padding: 4px 8px;
   border: 1px solid var(--border-2);
   border-radius: var(--r-pill);
   background: var(--bg-card);
+  text-align: center;
+  max-width: 80%;
 }
 
-/* ScoreBadge positioning on card image */
-.feed-deal-score.score-badge {
-  position: absolute;
-  top: var(--s-3);
-  right: var(--s-3);
+/* Right-side content column */
+.feed-deal-content {
+  flex: 1;
+  min-width: 0;
+  padding: var(--s-3) var(--s-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
 }
 
-.feed-deal-body { padding: var(--s-4); }
+.feed-deal-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+}
+
+.feed-deal-header-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.feed-deal-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex-shrink: 0;
+}
 
 .feed-deal-address {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: var(--w-bold);
   color: var(--fg-1);
   line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.feed-deal-city {
-  font-size: 13px;
+.feed-deal-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
   color: var(--fg-4);
   margin-top: 2px;
 }
 
-.feed-deal-facts {
+.feed-deal-meta-dot { color: var(--fg-5, var(--fg-4)); opacity: 0.6; }
+
+.feed-deal-score-inline { flex-shrink: 0; }
+
+.feed-deal-overflow {
+  opacity: 0;
+  transition: opacity var(--dur-fast);
+}
+.feed-deal-card:hover .feed-deal-overflow { opacity: 1; }
+
+/* Anchor metric line (replaces the old 3-fact row). */
+.feed-deal-anchor {
   display: flex;
-  gap: var(--s-5);
-  margin-top: var(--s-4);
-  padding-top: var(--s-4);
-  border-top: 1px solid var(--border-2);
-}
-
-.feed-deal-fact {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.feed-deal-fact-label {
-  font-size: 10px;
-  font-weight: var(--w-semibold);
-  text-transform: uppercase;
-  letter-spacing: var(--track-eyebrow);
-  color: var(--fg-4);
-}
-
-.feed-deal-fact-value {
+  align-items: baseline;
+  gap: var(--s-2);
   font-size: 14px;
-  font-weight: var(--w-semibold);
+  line-height: 1.2;
+}
+
+.feed-deal-anchor-primary {
+  font-weight: var(--w-bold);
   color: var(--fg-1);
+  font-size: 15px;
 }
 
-.feed-deal-narrative {
-  font-size: 14px;
-  line-height: var(--lh-loose);
-  color: rgba(255, 255, 255, 0.9);
-  margin-top: var(--s-4);
+.feed-deal-anchor-dot {
+  color: var(--fg-4);
+  opacity: 0.6;
 }
 
-[data-theme="light"] .feed-deal-narrative { color: var(--fg-2); }
+.feed-deal-anchor-secondary {
+  color: var(--fg-3);
+  font-weight: var(--w-medium);
+}
+
+/* Owner + distress pills row. */
+.feed-deal-pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.feed-deal-owner-pill {
+  font-size: 11px;
+  font-weight: var(--w-semibold);
+  letter-spacing: 0.02em;
+  padding: 2px var(--s-2);
+  border-radius: var(--r-pill);
+  background: var(--bg-subtle);
+  color: var(--fg-2);
+  border: 1px solid var(--border-1);
+}
+
+.feed-deal-signal-pill {
+  font-size: 11px;
+  padding: 2px var(--s-2);
+  border-radius: var(--r-pill);
+  background: var(--pill-amber-bg);
+  color: var(--pill-amber-fg);
+  font-weight: var(--w-medium);
+  border: none;
+  cursor: default;
+}
+.feed-deal-signal-pill.red   { background: var(--pill-red-bg);   color: var(--pill-red-fg); }
+.feed-deal-signal-pill.amber { background: var(--pill-amber-bg); color: var(--pill-amber-fg); }
+.feed-deal-signal-pill.green { background: var(--pill-green-bg); color: var(--pill-green-fg); }
+.feed-deal-signal-pill.more {
+  background: var(--bg-subtle);
+  color: var(--fg-3);
+  cursor: pointer;
+}
+.feed-deal-signal-pill.more:hover { color: var(--fg-1); }
+
+.feed-deal-headline {
+  font-size: 13px;
+  font-weight: var(--w-medium);
+  color: var(--fg-2);
+  margin: 0;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+[data-theme="light"] .feed-deal-headline { color: var(--fg-1); }
 
 .feed-deal-actions {
   display: flex;
   align-items: center;
   gap: var(--s-3);
-  margin-top: var(--s-4);
-  padding-top: var(--s-3);
+  margin-top: auto;
+  padding-top: var(--s-2);
   border-top: 1px solid var(--border-2);
 }
 
-.feed-deal-reactions { display: flex; gap: var(--s-2); }
+.feed-deal-reactions { display: flex; gap: var(--s-1); }
 
 .feed-deal-reaction-btn {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border: none;
   border-radius: var(--r-sm);
   background: transparent;
@@ -895,29 +956,35 @@
   border: 1px solid var(--border-1);
   border-radius: var(--r-pill);
   padding: 2px 8px;
+  white-space: nowrap;
 }
 
-.feed-deal-expand-btn {
+.feed-deal-detail-btn {
   margin-left: auto;
   display: flex;
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  font-weight: var(--w-medium);
-  color: var(--fg-3);
+  font-weight: var(--w-semibold);
+  color: var(--nightdrop-green-500);
   background: transparent;
   border: none;
   cursor: pointer;
-  transition: color var(--dur-fast);
+  padding: 4px 8px;
+  border-radius: var(--r-xs);
+  transition: color var(--dur-fast), background var(--dur-fast);
 }
-.feed-deal-expand-btn:hover { color: var(--fg-1); }
+.feed-deal-detail-btn:hover {
+  color: var(--nightdrop-green-700);
+  background: rgba(29, 175, 41, 0.08);
+}
 
 .feed-deal-not-relevant {
   display: flex;
   align-items: center;
   gap: var(--s-3);
-  margin-top: var(--s-4);
-  padding-top: var(--s-3);
+  margin-top: auto;
+  padding-top: var(--s-2);
   border-top: 1px solid var(--border-2);
   font-size: 13px;
   color: var(--fg-3);
@@ -934,85 +1001,101 @@
 }
 .link-btn:hover { text-decoration: underline; }
 
-/* ── Card Expanded Detail ─────────────────────────────────────── */
-.feed-deal-expand {
-  margin-top: var(--s-4);
-  padding-top: var(--s-4);
-  border-top: 1px solid var(--border-2);
+/* ── Feed Toolbar (filter chips + sort) ───────────────────────── */
+.feed-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-4) var(--s-3);
+  background: var(--bg-page);
+  position: sticky;
+  /* Sits just under the sticky WeekDayTabs (~56px desktop). */
+  top: 56px;
+  z-index: 2;
 }
 
-.feed-deal-expand-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--s-1) var(--s-4);
+.feed-toolbar-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  flex: 1;
 }
 
-.feed-deal-expand-row { display: flex; flex-direction: column; gap: 2px; padding: var(--s-1) 0; }
-.feed-deal-expand-label { font-size: 11px; color: var(--fg-4); font-weight: var(--w-semibold); text-transform: uppercase; letter-spacing: var(--track-eyebrow); }
-.feed-deal-expand-value { font-size: 13px; color: var(--fg-1); }
+.feed-toolbar-sort {
+  position: relative;
+  flex-shrink: 0;
+}
 
-.feed-deal-signals { margin-top: var(--s-4); }
-.feed-deal-signals-label { font-size: 11px; font-weight: var(--w-semibold); color: var(--fg-4); text-transform: uppercase; letter-spacing: var(--track-eyebrow); margin-bottom: var(--s-2); }
-.feed-deal-signals-list { display: flex; flex-wrap: wrap; gap: var(--s-2); }
-.feed-deal-signal-pill {
-  font-size: 11px;
-  padding: 2px var(--s-2);
-  border-radius: var(--r-pill);
-  background: var(--pill-amber-bg);
-  color: var(--pill-amber-fg);
+.feed-sort-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
   font-weight: var(--w-medium);
+  color: var(--fg-2);
+  background: var(--bg-card);
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: border-color var(--dur-fast), color var(--dur-fast);
 }
-.feed-deal-signal-pill.red   { background: var(--pill-red-bg);   color: var(--pill-red-fg); }
-.feed-deal-signal-pill.amber { background: var(--pill-amber-bg); color: var(--pill-amber-fg); }
-.feed-deal-signal-pill.green { background: var(--pill-green-bg); color: var(--pill-green-fg); }
-
-/* ── Feed card headline (renders only when bj.headline exists) ── */
-.feed-deal-headline {
-  font-size: 14px;
-  font-weight: var(--w-semibold);
-  color: rgba(255, 255, 255, 0.98);
-  margin-top: var(--s-3);
-  margin-bottom: 0;
-  line-height: var(--lh-snug);
+.feed-sort-btn:hover {
+  border-color: var(--accent);
+  color: var(--fg-1);
 }
 
-[data-theme="light"] .feed-deal-headline { color: var(--fg-1); }
+.feed-sort-label { color: var(--fg-4); }
+.feed-sort-value { color: var(--fg-1); font-weight: var(--w-semibold); }
 
-/* ── Feed card recommended action ─────────────────────────────── */
-.feed-deal-next-action {
+.feed-sort-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 140px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-sm);
+  box-shadow: var(--shadow-md);
+  padding: 4px;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  margin-top: var(--s-3);
-  padding: var(--s-2) var(--s-3);
-  background: rgba(29, 175, 41, 0.12);
-  border-left: 2px solid var(--nightdrop-green-500);
-  border-radius: 0 var(--r-xs) var(--r-xs) 0;
+  z-index: 10;
 }
 
-[data-theme="light"] .feed-deal-next-action {
-  background: var(--accent-soft);
-}
-
-.feed-deal-next-action-label {
-  font-size: 10px;
-  font-weight: var(--w-bold);
-  letter-spacing: var(--track-eyebrow);
-  text-transform: uppercase;
-  color: var(--nightdrop-green-300);
-}
-
-[data-theme="light"] .feed-deal-next-action-label { color: var(--green-deep); }
-
-.feed-deal-next-action-text {
+.feed-sort-item {
+  text-align: left;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.85);
-  line-height: var(--lh-normal);
+  font-weight: var(--w-medium);
+  color: var(--fg-2);
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  border-radius: var(--r-xs);
+  cursor: pointer;
+  transition: background var(--dur-fast), color var(--dur-fast);
 }
+.feed-sort-item:hover { background: var(--bg-subtle); color: var(--fg-1); }
+.feed-sort-item.active { background: var(--accent-soft, rgba(29,175,41,0.12)); color: var(--nightdrop-green-500); }
 
-[data-theme="light"] .feed-deal-next-action-text { color: var(--fg-2); }
-
-.feed-deal-expand-cta { margin-top: var(--s-4); }
+/* ── ≤640px: collapse horizontal card to stacked (image on top) ─ */
+@media (max-width: 640px) {
+  .feed-deal-card.horizontal {
+    flex-direction: column;
+  }
+  .feed-deal-image-wrap {
+    width: 100%;
+    min-width: 0;
+    height: 180px;
+  }
+  .feed-deal-content {
+    padding: var(--s-3) var(--s-4) var(--s-4);
+  }
+  .feed-deal-address {
+    white-space: normal;
+  }
+}
 
 /* ── Agent Message Card ─────────────────────────────────────── */
 .agent-message-card {
@@ -2488,51 +2571,23 @@
   padding: 0 var(--s-3);
 }
 
-/* responsive tier 2 (1401–1700px): shrink rails so the deal feed
-   stays readable on a 14"–16" laptop. Chips stay 2x2. */
+/* responsive tier 2 (1401–1700px): shrink right rail so the deal feed
+   stays readable on a 14"–16" laptop. */
 @media (max-width: 1700px) and (min-width: 1401px) {
-  .left-rail-floating  { width: 240px; }
   .right-rail-floating { width: 320px; }
-  .feed-content-row    { padding-left: 264px; padding-right: 344px; }
+  .feed-content-row    { padding-right: 344px; }
 }
 
-/* responsive tier 3 (1181–1400px): MacBook Air width. Squeeze rails
-   harder and reflow chips back to a vertical 1x4 stack. */
+/* responsive tier 3 (1181–1400px): MacBook Air width. */
 @media (max-width: 1400px) and (min-width: 1181px) {
-  .left-rail-floating  { width: 200px; }
   .right-rail-floating { width: 260px; }
-  .feed-content-row    { padding-left: 224px; padding-right: 284px; }
-
-  .left-rail-filter-chips {
-    display: flex;
-    flex-direction: column;
-    gap: var(--s-2);
-  }
-  .left-rail-filter-chips .feed-filter-chip {
-    justify-content: flex-start;
-    padding: 8px 10px;
-  }
-  .left-rail-filter-chips .feed-filter-chip-count {
-    margin-left: auto;
-  }
-
-  /* NextRun clock fits the 200px rail without clipping. */
-  .left-rail-nextrun-card .pipeline-cd-num { font-size: 22px !important; }
-  .left-rail-nextrun-card .pipeline-cd-sep { font-size: 16px !important; }
+  .feed-content-row    { padding-right: 284px; }
 }
 
 /* responsive: hide floating right rail below 1180px and remove its reserved padding */
 @media (max-width: 1180px) {
   .right-rail-floating { display: none; }
-  .feed-content-row { padding-right: 0; }
-}
-
-/* responsive: hide floating LEFT rail at the same breakpoint, restore padding,
-   and surface the chips + Tonight's Run card inside the left panel. */
-@media (max-width: 1180px) {
-  .left-rail-floating { display: none; }
-  .feed-content-row { padding-left: 0; }
-  .left-panel-narrow-only { display: block; }
+  .feed-content-row { padding-right: var(--s-4); }
 }
 
 @media (max-width: 768px) {

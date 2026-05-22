@@ -43,7 +43,7 @@ export function AuthProvider({ children }) {
               setToken(data.token);
               setSubscriber(data.subscriber);
               if (location.pathname === '/' || location.pathname === '/login') {
-                navigate('/dashboard', { replace: true });
+                navigate('/map', { replace: true });
               }
               return;
             }

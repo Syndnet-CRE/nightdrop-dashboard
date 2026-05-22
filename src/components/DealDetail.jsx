@@ -429,11 +429,16 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
               {deal.absentee_owner && (
                 <span className="dd-signal-pill amber">Absentee Owner</span>
               )}
-              {signals.map((sig, i) => (
-                <span key={i} className={`dd-signal-pill ${signalColor(sig)}`}>
-                  {sig.label || sig.description || sig.type || String(sig)}
-                </span>
-              ))}
+              {signals.map((sig, i) => {
+                const raw = typeof sig === 'string' ? sig : (sig?.tag || sig?.label || sig?.description || sig?.type);
+                const label = (typeof raw === 'string' && raw.trim()) ? raw : null;
+                if (!label) return null;
+                return (
+                  <span key={i} className={`dd-signal-pill ${signalColor(sig)}`}>
+                    {label}
+                  </span>
+                );
+              })}
             </div>
           )}
           {bj.next_action && (
@@ -622,7 +627,9 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
                       {signals.map((sig, i) => {
                         const color = signalColor(sig);
                         const dotColor = color === 'red' ? 'red' : color === 'amber' ? 'orange' : 'green';
-                        const label = sig.label || sig.description || sig.type || String(sig);
+                        const raw = typeof sig === 'string' ? sig : (sig?.tag || sig?.label || sig?.description || sig?.type);
+                        const label = (typeof raw === 'string' && raw.trim()) ? raw : null;
+                        if (!label) return null;
                         const type = (sig.type || sig.category || '').replace(/_/g, ' ') || 'General';
                         return (
                           <tr key={i}>

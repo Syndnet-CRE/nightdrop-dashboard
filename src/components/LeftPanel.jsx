@@ -3,21 +3,13 @@ import {
   LayoutDashboard, Map, Layers, Calendar, Settings,
   UserCircle, Plus, Users, Bookmark, Sparkles, Database,
   TrendingUp, Flame, Target, Clock,
-  Inbox, Mail, Star, Sun, Moon,
+  Sun, Moon,
 } from 'lucide-react';
 
 function getStoredTheme() {
   return document.documentElement.getAttribute('data-theme') || 'dark';
 }
 import { useDeals } from '../contexts/DealsContext';
-import TonightsRunCard from './feed/TonightsRunCard';
-
-const FILTERS = [
-  { id: 'all',    label: 'All',    Icon: Inbox },
-  { id: 'unread', label: 'Unread', Icon: Mail },
-  { id: 'saved',  label: 'Saved',  Icon: Star },
-  { id: 'hot',    label: 'Hot',    Icon: Flame },
-];
 
 function MetricTile({ Icon, label, value, accent, active, disabled, onClick, title }) {
   const className = [
@@ -81,7 +73,7 @@ function MiniBarChart({ data }) {
 }
 
 export default function LeftPanel({ view, setView, kpis, onCreateBuyBox, unreadCount, feedFilter, setFeedFilter }) {
-  const { buyBoxes, deals } = useDeals();
+  const { buyBoxes } = useDeals();
   const [theme, setTheme] = useState(getStoredTheme);
 
   function toggleTheme() {
@@ -91,15 +83,8 @@ export default function LeftPanel({ view, setView, kpis, onCreateBuyBox, unreadC
     document.documentElement.setAttribute('data-theme', next);
   }
 
-  const filterCounts = {
-    all:    deals.length,
-    unread: deals.filter(d => !d.is_read).length,
-    saved:  deals.filter(d => !!d.saved).length,
-    hot:    deals.filter(d => d.feedback === 'hot' || (d.score || d.match_score || 0) >= 8).length,
-  };
-
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard',      Icon: LayoutDashboard },
+    { id: 'dashboard', label: 'Deal Feed',      Icon: LayoutDashboard },
     { id: 'map',       label: 'Map',            Icon: Map },
     { id: 'boxes',     label: 'Buy Boxes',      Icon: Layers },
     { id: 'calendar',  label: 'Calendar',       Icon: Calendar },
@@ -204,35 +189,6 @@ export default function LeftPanel({ view, setView, kpis, onCreateBuyBox, unreadC
               <MiniBarChart data={kpis.run_history} />
             </div>
           </>
-        )}
-
-        {view === 'dashboard' && setFeedFilter && (
-          <div className="left-panel-narrow-only">
-            <div className="left-panel-divider" />
-            <div className="left-panel-buy-boxes">
-              <div className="left-panel-section-header">
-                <span className="left-panel-section-label">Filter</span>
-              </div>
-              <div className="left-panel-filter-chips">
-                {FILTERS.map(({ id, label, Icon }) => (
-                  <button
-                    key={id}
-                    className={`feed-filter-chip${feedFilter === id ? ' active' : ''}`}
-                    onClick={() => setFeedFilter(id)}
-                  >
-                    <Icon size={13} />
-                    <span>{label}</span>
-                    <span className="feed-filter-chip-count">{filterCounts[id]}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="left-panel-divider" />
-            <div className="left-panel-tonights-run">
-              <TonightsRunCard kpis={kpis} />
-            </div>
-          </div>
         )}
 
         <div className="left-panel-bottom">

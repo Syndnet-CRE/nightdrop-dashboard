@@ -1,11 +1,14 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { Star, Flame, Mail, Inbox } from 'lucide-react';
 import { useDeals } from '../contexts/DealsContext';
 import FeedDealCard from '../components/feed/FeedDealCard';
 import ChatFab from '../components/feed/ChatFab';
 import RightRail from '../components/RightRail';
-import LeftRail from '../components/LeftRail';
+import FeedToolbar from '../components/feed/FeedToolbar';
 import WeekDayTabs from '../components/feed/WeekDayTabs';
+
+const SCROLL_KEY = 'nightdrop-feed-scroll';
+const SORT_KEY   = 'nightdrop-feed-sort';
 
 function sameDay(a, b) {
   return (
@@ -23,15 +26,48 @@ function isWithinLastWeek(deal) {
   return t >= Date.now() - 7 * 24 * 60 * 60 * 1000;
 }
 
-export function DashboardView({ kpis, searchQuery, filter = 'all', setFilter = () => {} }) {
+const SIGNAL_WEIGHT = { red: 3, amber: 2, green: 1 };
+
+function signalScore(deal) {
+  const bj = deal.briefJson || deal.brief_json || {};
+  const list = bj.signal_tags || deal.signals || [];
+  let total = 0;
+  for (const s of list) {
+    const raw = (typeof s === 'string' ? s : (s.type || s.category || s.label || '')).toLowerCase();
+    if (raw.includes('tax') || raw.includes('lien') || raw.includes('delinq') || raw.includes('forecl')) {
+      total += SIGNAL_WEIGHT.red;
+    } else if (raw.includes('vacan') || raw.includes('code') || raw.includes('rising') || raw.includes('absentee')) {
+      total += SIGNAL_WEIGHT.amber;
+    } else {
+      total += SIGNAL_WEIGHT.green;
+    }
+  }
+  return total;
+}
+
+function loadSort() {
+  try {
+    const v = sessionStorage.getItem(SORT_KEY);
+    return v || 'recency';
+  } catch { return 'recency'; }
+}
+
+export function DashboardView({ searchQuery, filter = 'all', setFilter = () => {} }) {
   const { deals, loading } = useDeals();
   const [hiddenIds, setHiddenIds] = useState(new Set());
   const [selectedDealId, setSelectedDealId] = useState(null);
   const [selectedDay, setSelectedDay] = useState(null);
+  const [sort, setSortState] = useState(loadSort);
+  const scrollRef = useRef(null);
+
+  const setSort = useCallback((next) => {
+    setSortState(next);
+    try { sessionStorage.setItem(SORT_KEY, next); } catch { /* storage disabled */ }
+  }, []);
 
   const filteredDeals = useMemo(() => {
     const q = (searchQuery || '').toLowerCase().trim();
-    return deals
+    const list = deals
       .filter(d => !hiddenIds.has(d.id))
       .filter(d => {
         if (filter === 'unread') return !d.is_read;
@@ -51,7 +87,19 @@ export function DashboardView({ kpis, searchQuery, filter = 'all', setFilter = (
         if (!d.sentAt) return false;
         return sameDay(new Date(d.sentAt), selectedDay);
       });
-  }, [deals, hiddenIds, searchQuery, filter, selectedDay]);
+
+    const sorted = [...list];
+    if (sort === 'score') {
+      sorted.sort((a, b) => (b.score || b.match_score || 0) - (a.score || a.match_score || 0));
+    } else if (sort === 'value') {
+      sorted.sort((a, b) => (b.assessed_value || 0) - (a.assessed_value || 0));
+    } else if (sort === 'distress') {
+      sorted.sort((a, b) => signalScore(b) - signalScore(a));
+    } else {
+      sorted.sort((a, b) => new Date(b.sentAt || 0) - new Date(a.sentAt || 0));
+    }
+    return sorted;
+  }, [deals, hiddenIds, searchQuery, filter, selectedDay, sort]);
 
   function handleHide(id) {
     setHiddenIds(prev => new Set([...prev, id]));
@@ -64,22 +112,67 @@ export function DashboardView({ kpis, searchQuery, filter = 'all', setFilter = (
     hot:    deals.filter(d => !hiddenIds.has(d.id) && (d.feedback === 'hot' || (d.score || d.match_score || 0) >= 8)).length,
   }), [deals, hiddenIds]);
 
+  // Persist scroll position to sessionStorage so navigating to /deal/:id
+  // and back restores the user's place in the feed.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    let raf = 0;
+    function onScroll() {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        try { sessionStorage.setItem(SCROLL_KEY, String(el.scrollTop)); } catch { /* ignore */ }
+      });
+    }
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      el.removeEventListener('scroll', onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (loading) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    let saved;
+    try { saved = sessionStorage.getItem(SCROLL_KEY); } catch { saved = null; }
+    if (saved == null) return;
+    const top = Number(saved);
+    if (!Number.isFinite(top) || top <= 0) return;
+    // Two-tier restore: synchronous attempt covers cached renders; a
+    // delayed retry covers async card-image layout shifts pushing the
+    // scrollable height up after first paint.
+    el.scrollTop = top;
+    const id = setTimeout(() => {
+      if (Math.abs(el.scrollTop - top) > 4) el.scrollTop = top;
+    }, 120);
+    return () => clearTimeout(id);
+  }, [loading]);
+
+  const handleNavigateAway = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    try { sessionStorage.setItem(SCROLL_KEY, String(el.scrollTop)); } catch { /* ignore */ }
+  }, []);
+
   return (
     <div className="feed-layout">
       <div className="feed-scroll-area">
         <div className="feed-content-row">
-          <LeftRail
-            filter={filter}
-            setFilter={setFilter}
-            counts={counts}
-            kpis={kpis}
-          />
-
-          <div className="feed-center-col">
+          <div className="feed-center-col" ref={scrollRef}>
             <WeekDayTabs
               deals={deals}
               selectedDay={selectedDay}
               onSelectDay={setSelectedDay}
+            />
+            <FeedToolbar
+              filter={filter}
+              setFilter={setFilter}
+              counts={counts}
+              sort={sort}
+              setSort={setSort}
             />
             <div className="feed-center" id="feed-scroll">
               {loading ? (
@@ -118,6 +211,7 @@ export function DashboardView({ kpis, searchQuery, filter = 'all', setFilter = (
                       key={deal.id}
                       deal={deal}
                       onHide={handleHide}
+                      onNavigateAway={handleNavigateAway}
                     />
                   ))}
                 </>

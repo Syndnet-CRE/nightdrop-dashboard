@@ -18,7 +18,7 @@ export function LoginView() {
       await login(email, password);
       const returnTo = sessionStorage.getItem('nd_return_url');
       sessionStorage.removeItem('nd_return_url');
-      navigate(returnTo && returnTo !== '/login' ? returnTo : '/dashboard');
+      navigate(returnTo && returnTo !== '/login' ? returnTo : '/map');
     } catch (err) {
       setError(err.message || 'Invalid credentials');
     } finally {
