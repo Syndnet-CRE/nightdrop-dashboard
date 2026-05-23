@@ -10,6 +10,8 @@ import { BreadcrumbStrip } from './DealDetail/BreadcrumbStrip.jsx';
 import { IdentityColumn } from './DealDetail/IdentityColumn.jsx';
 import { WhyFlaggedCard } from './DealDetail/WhyFlaggedCard.jsx';
 import { PipelineStatusCard } from './DealDetail/PipelineStatusCard.jsx';
+import { NarrativeSection } from './DealDetail/NarrativeSection.jsx';
+import { RecommendedAction } from './DealDetail/RecommendedAction.jsx';
 import { fmt, fmtMoney, hasVal } from '../lib/format.js';
 import { useDeals } from '../contexts/DealsContext.jsx';
 import { useReadState } from '../contexts/ReadStateContext';
@@ -437,6 +439,11 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
         <IdentityColumn deal={deal} />
         <WhyFlaggedCard deal={deal} signals={signals} />
         <PipelineStatusCard deal={deal} />
+      </div>
+
+      <div className="dd-narrative-wrap">
+        <NarrativeSection deal={deal} />
+        <RecommendedAction deal={deal} />
       </div>
 
       <div className="dd-body" style={{ flex: 1 }}>

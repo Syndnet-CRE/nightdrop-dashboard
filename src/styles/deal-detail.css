@@ -2393,3 +2393,135 @@
 @media (max-width: 768px) {
   .dd-identity-thumbs { grid-template-columns: 1fr; }
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Phase 3 — Full AI narrative + Recommended Action
+   ───────────────────────────────────────────────────────────── */
+
+.dd-narrative-wrap {
+  max-width: 1400px;
+  width: min(calc(100% - 40px), 1400px);
+  margin: var(--s-7) auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+
+.dd-narrative {
+  background: var(--card);
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-md);
+  padding: var(--s-6) var(--s-7);
+  transition: background var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-fast) var(--ease-out);
+}
+.dd-narrative:hover { background: var(--bg-card-hover); border-color: var(--border-strong); }
+
+.dd-narrative-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: var(--s-4);
+  padding-bottom: var(--s-3);
+  border-bottom: 1px solid var(--border-1);
+}
+.dd-narrative-eyebrow {
+  font-size: 11px;
+  font-weight: var(--w-bold);
+  letter-spacing: var(--track-eyebrow);
+  text-transform: uppercase;
+  color: var(--primary);
+}
+[data-theme="light"] .dd-narrative-eyebrow { color: var(--chart-2); }
+
+.dd-narrative-headline {
+  font-family: var(--font-sans);
+  font-size: 22px;
+  font-weight: var(--w-bold);
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+  color: var(--fg-1);
+  margin: 0;
+}
+
+.dd-narrative-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+.dd-narrative-paragraph {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--fg-2);
+  max-width: 65ch;
+  margin: 0;
+}
+.dd-narrative-paragraph strong {
+  color: var(--fg-1);
+  font-weight: var(--w-bold);
+}
+
+/* ── Recommended Action callout ───────────────────────────── */
+.dd-recommended-action {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: var(--s-4);
+  align-items: flex-start;
+  padding: var(--s-5) var(--s-6);
+  background: color-mix(in srgb, var(--primary) 10%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border-1));
+  border-left: 4px solid var(--primary);
+  border-radius: var(--r-md);
+  transition: background var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out);
+}
+[data-theme="light"] .dd-recommended-action {
+  background: color-mix(in srgb, var(--chart-2) 8%, var(--card));
+  border-color: color-mix(in srgb, var(--chart-2) 28%, var(--border-1));
+  border-left-color: var(--chart-2);
+}
+.dd-recommended-action-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  flex-shrink: 0;
+}
+[data-theme="light"] .dd-recommended-action-icon {
+  background: var(--chart-2);
+}
+.dd-recommended-action-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dd-recommended-action-label {
+  font-size: 11px;
+  font-weight: var(--w-bold);
+  letter-spacing: var(--track-eyebrow);
+  text-transform: uppercase;
+  color: var(--primary);
+}
+[data-theme="light"] .dd-recommended-action-label { color: var(--chart-2); }
+.dd-recommended-action-text {
+  font-size: 15px;
+  font-weight: var(--w-semibold);
+  line-height: 1.5;
+  color: var(--fg-1);
+  margin: 0;
+  max-width: 70ch;
+}
+
+[data-theme="light"] .dd-narrative {
+  box-shadow: 0 1px 2px rgba(13,13,13,0.05),
+              0 1px 1px rgba(13,13,13,0.03);
+}
+[data-theme="light"] .dd-narrative:hover {
+  box-shadow: 0 4px 12px rgba(13,13,13,0.08),
+              0 2px 4px rgba(13,13,13,0.04);
+}
