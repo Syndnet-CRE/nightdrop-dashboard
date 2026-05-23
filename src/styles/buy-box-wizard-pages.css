@@ -247,7 +247,7 @@
   width: 16px; height: 16px; background: var(--fg-2); border-radius: 999px; transition: all var(--fast) var(--ease);
 }
 .buy-box-wizard .toggle.on { background: var(--green); border-color: var(--green); }
-.buy-box-wizard .toggle.on::after { background: #06200B; left: 17px; }
+.buy-box-wizard .toggle.on::after { background: var(--primary-foreground); left: 17px; }
 
 /* ── Page 4: Distress ── */
 .buy-box-wizard .signal-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
@@ -282,7 +282,7 @@
   width: 14px; height: 14px; background: var(--fg-2); border-radius: 999px; transition: all var(--fast) var(--ease);
 }
 .buy-box-wizard .signal.on .signal-toggle { background: var(--green); border-color: var(--green); }
-.buy-box-wizard .signal.on .signal-toggle::after { background: #06200B; left: 15px; }
+.buy-box-wizard .signal.on .signal-toggle::after { background: var(--primary-foreground); left: 15px; }
 .buy-box-wizard .signal-body { flex: 1; min-width: 0; }
 .buy-box-wizard .signal-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
 .buy-box-wizard .signal-title { font-size: 14px; font-weight: 600; color: var(--fg); }
@@ -767,7 +767,7 @@
   opacity: 0.32;
 }
 .slot-cell-dash-error {
-  color: var(--danger, #E5484D);
+  color: var(--danger, var(--destructive));
   opacity: 0.72;
 }
 .slot-counter-idle {

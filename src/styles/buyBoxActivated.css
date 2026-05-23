@@ -40,7 +40,7 @@
   place-items: center;
   border-radius: 999px;
   background: var(--green-tint, rgba(29, 175, 41, 0.18));
-  color: var(--green, #5BCC48);
+  color: var(--green, var(--primary));
   animation: bba-pop 600ms var(--ease, cubic-bezier(0.22, 1, 0.36, 1)) 200ms both;
 }
 
@@ -57,7 +57,7 @@
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--green, #5BCC48);
+  color: var(--green, var(--primary));
   margin-bottom: 16px;
 }
 
@@ -122,7 +122,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-.bba-cell__val--accent { color: var(--green, #5BCC48); }
+.bba-cell__val--accent { color: var(--green, var(--primary)); }
 
 .bba-cell__sub {
   margin-top: 4px;
@@ -163,14 +163,14 @@
 }
 
 .bba-btn--primary {
-  background: var(--green, #5BCC48);
-  border-color: var(--green, #5BCC48);
+  background: var(--green, var(--primary));
+  border-color: var(--green, var(--primary));
   color: #0D0D0D;
 }
 
 .bba-btn--primary:hover {
-  background: var(--green-light, #89EA60);
-  border-color: var(--green-light, #89EA60);
+  background: var(--green-light, var(--chart-1));
+  border-color: var(--green-light, var(--chart-1));
 }
 
 .bba-btn--secondary {

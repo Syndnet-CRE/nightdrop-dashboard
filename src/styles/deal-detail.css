@@ -369,7 +369,7 @@
 }
 
 .dd-deal-nav-btn {
-  background: #1DAF29;
+  background: var(--primary);
   border: none;
   border-radius: 999px;
   padding: 5px 14px;
@@ -944,7 +944,7 @@
 .dd-action-primary {
   background: var(--green);
   border-color: var(--green);
-  color: #06200B;
+  color: var(--primary-foreground);
   font-weight: var(--w-bold);
   box-shadow: 0 1px 0 rgba(13, 13, 13, 0.04);
 }
@@ -1112,7 +1112,7 @@
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
-[data-theme="dark"] .dd-brief-asset-chip { color: #4FE26B; background: rgba(91,204,72,0.18); }
+[data-theme="dark"] .dd-brief-asset-chip { color: var(--chart-1); background: rgba(91,204,72,0.18); }
 
 .dd-brief-fact-stack {
   display: flex;
@@ -1176,7 +1176,7 @@
   background: var(--bg-subtle);
   color: var(--fg-2);
 }
-[data-theme="dark"] .dd-brief-owner-type.institutional { color: #4FE26B; }
+[data-theme="dark"] .dd-brief-owner-type.institutional { color: var(--chart-1); }
 
 /* Center narrative */
 .dd-brief-narrative {
@@ -1234,7 +1234,7 @@
   text-transform: uppercase;
   color: var(--green-deep);
 }
-[data-theme="dark"] .dd-brief-next-action-label { color: #4FE26B; }
+[data-theme="dark"] .dd-brief-next-action-label { color: var(--chart-1); }
 .dd-brief-next-action-text {
   font-size: var(--t-cap);
   color: var(--fg-1);
@@ -1715,14 +1715,14 @@
 .dd-stage-item.completed .dd-stage-pip {
   background: var(--green);
   border-color: var(--green);
-  color: #06200B;
+  color: var(--primary-foreground);
 }
 .dd-stage-item.completed .dd-stage-label { color: var(--fg-2); }
 
 .dd-stage-item.current .dd-stage-pip {
   background: var(--green);
   border-color: var(--green);
-  color: #06200B;
+  color: var(--primary-foreground);
   box-shadow: 0 0 0 4px rgba(91, 204, 72, 0.18);
 }
 .dd-stage-item.current .dd-stage-label {

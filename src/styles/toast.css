@@ -51,19 +51,19 @@
   border-radius: 50%;
 }
 
-.toast-success::before { background: var(--success, #1DAF29); }
-.toast-error::before   { background: var(--danger,  #E5484D); }
+.toast-success::before { background: var(--success, var(--primary)); }
+.toast-error::before   { background: var(--danger,  var(--destructive)); }
 .toast-info::before    { background: var(--info,    #3E7BFA); }
 
 /* ── Variant background tints ────────────────────────────── */
 .toast-success {
-  border-color: color-mix(in srgb, var(--success, #1DAF29) 30%, var(--border-1));
-  background: color-mix(in srgb, var(--success, #1DAF29) 8%, var(--bg-card, #1E1E24));
+  border-color: color-mix(in srgb, var(--success, var(--primary)) 30%, var(--border-1));
+  background: color-mix(in srgb, var(--success, var(--primary)) 8%, var(--bg-card, #1E1E24));
 }
 
 .toast-error {
-  border-color: color-mix(in srgb, var(--danger, #E5484D) 30%, var(--border-1));
-  background: color-mix(in srgb, var(--danger, #E5484D) 8%, var(--bg-card, #1E1E24));
+  border-color: color-mix(in srgb, var(--danger, var(--destructive)) 30%, var(--border-1));
+  background: color-mix(in srgb, var(--danger, var(--destructive)) 8%, var(--bg-card, #1E1E24));
 }
 
 .toast-info {
@@ -108,13 +108,13 @@
 }
 
 [data-theme="light"] .toast-success {
-  border-color: color-mix(in srgb, var(--success, #1DAF29) 40%, var(--border-1));
-  background: color-mix(in srgb, var(--success, #1DAF29) 6%, #ffffff);
+  border-color: color-mix(in srgb, var(--success, var(--primary)) 40%, var(--border-1));
+  background: color-mix(in srgb, var(--success, var(--primary)) 6%, #ffffff);
 }
 
 [data-theme="light"] .toast-error {
-  border-color: color-mix(in srgb, var(--danger, #E5484D) 40%, var(--border-1));
-  background: color-mix(in srgb, var(--danger, #E5484D) 6%, #ffffff);
+  border-color: color-mix(in srgb, var(--danger, var(--destructive)) 40%, var(--border-1));
+  background: color-mix(in srgb, var(--danger, var(--destructive)) 6%, #ffffff);
 }
 
 [data-theme="light"] .toast-info {

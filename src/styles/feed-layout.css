@@ -164,7 +164,7 @@
 /* ── Dead zone submitted-count pulse (fires each hour) ─────── */
 @keyframes pt-count-pulse {
   0%   { transform: scale(1);    color: inherit; }
-  40%  { transform: scale(1.45); color: #C2FF9C; }
+  40%  { transform: scale(1.45); color: var(--chart-1); }
   100% { transform: scale(1);    color: inherit; }
 }
 

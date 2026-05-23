@@ -5,9 +5,9 @@
   --bg: #0D0D0D; --surface: #1E1E24; --surface-2: #25252C;
   --surface-sub: rgba(255,255,255,0.04); --surface-hi: rgba(255,255,255,0.06);
   --fg: #F4F5F7; --fg-2: #B6BBC4; --fg-mute: #9097A1;
-  --green: #5BCC48; --green-deep: #1DAF29; --green-light: #89EA60;
-  --green-tint: rgba(29,175,41,0.18); --green-tint-fg: #4FE26B;
-  --warn: #F4B73E; --danger: #E5484D;
+  --green: var(--primary); --green-deep: var(--primary); --green-light: var(--chart-1);
+  --green-tint: rgba(29,175,41,0.18); --green-tint-fg: var(--chart-1);
+  --warn: #F4B73E; --danger: var(--destructive);
   --border: rgba(255,255,255,0.10); --border-sub: rgba(255,255,255,0.06); --border-hi: rgba(255,255,255,0.18);
   --dot: #2a2a2a;
   --r-chip: 4px; --r-input: 6px; --r-card: 10px; --r-card-lg: 14px; --r-pill: 999px;
@@ -89,7 +89,7 @@
   width: 20px; height: 20px; display: grid; place-items: center;
   border-radius: 999px; border: 1px solid var(--border); color: var(--fg-mute);
 }
-.buy-box-wizard .step.active .step-num { background: var(--green); color: #06200B; border-color: var(--green); font-weight: 700; }
+.buy-box-wizard .step.active .step-num { background: var(--green); color: var(--primary-foreground); border-color: var(--green); font-weight: 700; }
 .buy-box-wizard .step.done .step-num { background: rgba(91,204,72,0.12); color: var(--green); border-color: rgba(91,204,72,0.4); }
 .buy-box-wizard .step.done .step-num::before { content: "✓"; font-family: var(--font-ui); font-size: 11px; font-weight: 700; }
 .buy-box-wizard .step.done .step-num-text { display: none; }
@@ -192,11 +192,11 @@
 .buy-box-wizard .btn-ghost:hover:not(:disabled) { color: var(--fg); background: var(--surface-hi); }
 .buy-box-wizard .btn-secondary { background: var(--surface); border-color: var(--border-sub); }
 .buy-box-wizard .btn-secondary:hover:not(:disabled) { background: var(--surface-2); border-color: var(--border); }
-.buy-box-wizard .btn-primary { background: var(--green); color: #06200B; font-weight: 700; }
+.buy-box-wizard .btn-primary { background: var(--green); color: var(--primary-foreground); font-weight: 700; }
 .buy-box-wizard .btn-primary:hover:not(:disabled) { background: var(--green-light); }
 .buy-box-wizard .btn-primary .kbd { background: rgba(0,0,0,0.18); border-color: rgba(0,0,0,0.18); color: rgba(6,32,11,0.7); }
 .buy-box-wizard .btn-fire {
-  background: var(--green); color: #06200B; font-weight: 800;
+  background: var(--green); color: var(--primary-foreground); font-weight: 800;
   font-size: 16px; padding: 14px 22px; letter-spacing: -0.01em;
 }
 .buy-box-wizard .btn-fire:hover:not(:disabled) { background: var(--green-light); transform: translateY(-1px); }

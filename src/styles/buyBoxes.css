@@ -186,7 +186,7 @@
 }
 .bb-card:hover {
   background: var(--surface-hi, #22222a);
-  border-color: var(--accent, #1DAF29);
+  border-color: var(--accent, var(--primary));
   box-shadow: 0 0 0 1px rgba(29,175,41,0.2), 0 4px 16px rgba(29,175,41,0.08);
 }
 .bb-card:active { cursor: grabbing; }
