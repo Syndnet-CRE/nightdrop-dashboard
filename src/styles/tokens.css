@@ -54,12 +54,20 @@
   --phantom:  #1E1E24;
   --black:    #000000;
 
-  /* ── Semantic foreground (consume shadcn tokens) ────────── */
+  /* ── Semantic foreground (consume shadcn tokens) ──────────
+     Legacy --fg-3 / --fg-4 / --fg-disabled aliases get a neutral gray
+     instead of --muted-foreground, because the spec value for
+     --muted-foreground is a brand green (#2d9221 light / #a3a3a3 dark)
+     and the dashboard uses these aliases for labels, timestamps,
+     captions, and footers where green would break information hierarchy.
+     --muted-foreground itself stays at the spec value for any future
+     shadcn-style consumer that explicitly opts into it. */
+  --text-muted-neutral: #6b7280;
   --fg-1: var(--foreground);
   --fg-2: var(--foreground);
-  --fg-3: var(--muted-foreground);
-  --fg-4: var(--muted-foreground);
-  --fg-disabled: var(--muted-foreground);
+  --fg-3: var(--text-muted-neutral);
+  --fg-4: var(--text-muted-neutral);
+  --fg-disabled: #9ca3af;
 
   /* ── Semantic background ────────────────────────────────── */
   --bg-page:    var(--background);
@@ -67,10 +75,15 @@
   --bg-card:    var(--card);
   --bg-inverse: var(--foreground);
 
-  /* ── Borders / dividers ─────────────────────────────────── */
-  --border-1: var(--border);
+  /* ── Borders / dividers ─────────────────────────────────────
+     Spec --border (#e5e7eb light) is too faint on pure-white cards
+     for the existing card-heavy layout. --border-1 (the load-bearing
+     "card / table / input outline" alias) takes a darker neutral in
+     light mode so cards and field boundaries actually demarcate.
+     --border-2 stays at spec for true hairlines. */
+  --border-1: #d4d4d8;
   --border-2: var(--border);
-  --border-strong: var(--muted-foreground);
+  --border-strong: #71717a;
 
   /* ── Accent / interaction
      Per the shadcn meaning swap (Decision 2 / 2026-05-22):
@@ -184,9 +197,9 @@
 
   /* ── Feed / layout surface tokens ──────────────────────────── */
   --bg-card-hover:  var(--secondary);
-  --bg-agent-card:  var(--accent);
+  --bg-agent-card:  var(--secondary);
   --bg-user-card:   var(--secondary);
-  --bg-nav-active:  var(--accent);
+  --bg-nav-active:  var(--secondary);
   --left-panel-w:   280px;
   --left-panel-collapsed-w: 60px;
   --top-header-h:   88px;
@@ -246,6 +259,16 @@
   --ring:                   #2da200;
   --chart-1:                #7af74d;
   --chart-2:                #2da200;
+
+  /* Dark mode reuses --muted-foreground (#a3a3a3 is already neutral gray)
+     so the legacy aliases stay readable without a separate value. */
+  --text-muted-neutral: #a3a3a3;
+  --fg-disabled: #71717a;
+
+  /* Dark mode borders are crisp enough at spec value — restore the
+     light-mode darker override back to the spec --border. */
+  --border-1: var(--border);
+  --border-strong: var(--muted-foreground);
 
   /* Link colour stays readable on the new dark surface */
   --link: #6BA8F2;

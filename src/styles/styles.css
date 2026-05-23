@@ -26,8 +26,10 @@
   --blue: #1755C8;
   --blue-bg: #E6EEFC;
   --link: #1755C8;
-  --topbar-bg: var(--primary);
-  --topbar-bg-2: color-mix(in srgb, var(--primary) 80%, black);
+  /* Topbar uses --chart-2 (darker primary) in light mode for visual weight
+     — bright --primary green on white reads neon at the top of the page. */
+  --topbar-bg: var(--chart-2);
+  --topbar-bg-2: color-mix(in srgb, var(--chart-2) 80%, black);
   --topbar-fg: var(--primary-foreground);
   --shadow-card: 0 1px 2px rgba(13,13,13,0.04), 0 1px 1px rgba(13,13,13,0.03);
   --shadow-pop: 0 12px 32px rgba(13,13,13,0.14), 0 2px 6px rgba(13,13,13,0.06);
