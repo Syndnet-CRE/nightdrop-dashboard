@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
-import { Expand } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Expand, Maximize2 } from 'lucide-react';
 import { AerialThumb } from '../AerialThumb.jsx';
 import { fmt, fmtMoney, hasVal } from '../../lib/format.js';
+import { loadGoogleMapsSdk } from '../../lib/googleMapsLoader.js';
 import { SignalSeverityTable } from './SignalSeverityTable.jsx';
 
 const GOOGLE_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
@@ -141,11 +142,17 @@ function BriefNarrative({ bj, deal }) {
 function initialStreetViewStatus(lat, lng) {
   if (!lat || !lng) return 'no_coords';
   if (!GOOGLE_MAPS_KEY) return 'no_key';
-  return 'loading';
+  return 'checking';
 }
 
-function StreetViewPanel({ lat, lng }) {
+// Interactive panorama embedded in a fixed-size tile.
+// Drag = pan, scroll = zoom, double-click = lift the current view into a
+// full-screen overlay panorama. Lazy-loads the Maps JS SDK on first mount.
+function InteractiveStreetView({ lat, lng, onExpand }) {
+  const containerRef = useRef(null);
+  const panoramaRef = useRef(null);
   const [status, setStatus] = useState(() => initialStreetViewStatus(lat, lng));
+
   useEffect(() => {
     if (!lat || !lng || !GOOGLE_MAPS_KEY) return undefined;
     let cancelled = false;
@@ -160,19 +167,75 @@ function StreetViewPanel({ lat, lng }) {
     return () => { cancelled = true; };
   }, [lat, lng]);
 
-  if (status === 'available') {
-    const src = `https://maps.googleapis.com/maps/api/streetview?size=600x480&location=${lat},${lng}&fov=80&pitch=0&key=${GOOGLE_MAPS_KEY}`;
-    return <img className="dd-brief-streetview-img" src={src} alt="Street view of property" loading="lazy" />;
+  useEffect(() => {
+    if (status !== 'available' || !containerRef.current) return undefined;
+    let cancelled = false;
+    setStatus('loading_sdk');
+    loadGoogleMapsSdk(GOOGLE_MAPS_KEY)
+      .then((google) => {
+        if (cancelled || !containerRef.current) return;
+        panoramaRef.current = new google.maps.StreetViewPanorama(containerRef.current, {
+          position: { lat: Number(lat), lng: Number(lng) },
+          pov: { heading: 0, pitch: 0 },
+          zoom: 1,
+          addressControl: false,
+          fullscreenControl: false,
+          motionTrackingControl: false,
+          showRoadLabels: false,
+          linksControl: true,
+          panControl: false,
+          zoomControl: true,
+          enableCloseButton: false,
+        });
+        setStatus('ready');
+      })
+      .catch(() => { if (!cancelled) setStatus('sdk_error'); });
+    return () => {
+      cancelled = true;
+      panoramaRef.current = null;
+    };
+  }, [status, lat, lng]);
+
+  function handleDoubleClick(e) {
+    e.preventDefault();
+    if (status !== 'ready' || !panoramaRef.current || !onExpand) return;
+    const pov = panoramaRef.current.getPov?.() || { heading: 0, pitch: 0, zoom: 1 };
+    const pos = panoramaRef.current.getPosition?.();
+    onExpand({
+      lat: pos?.lat() ?? Number(lat),
+      lng: pos?.lng() ?? Number(lng),
+      heading: pov.heading ?? 0,
+      pitch: pov.pitch ?? 0,
+      zoom: panoramaRef.current.getZoom?.() ?? 1,
+    });
   }
-  const msg =
-    status === 'no_key' ? 'Street view requires API key' :
-    status === 'no_coords' ? 'No coordinates available' :
-    status === 'loading' ? 'Loading…' :
-    'Street view not available for this address';
-  return <div className="dd-brief-streetview-empty"><span>{msg}</span></div>;
+
+  if (status === 'no_key' || status === 'no_coords' || status === 'unavailable' || status === 'sdk_error') {
+    const msg =
+      status === 'no_key' ? 'Street view requires API key' :
+      status === 'no_coords' ? 'No coordinates available' :
+      status === 'sdk_error' ? 'Street view failed to load' :
+      'Street view not available for this address';
+    return <div className="dd-brief-streetview-empty"><span>{msg}</span></div>;
+  }
+
+  return (
+    <div className="dd-brief-streetview-live" onDoubleClick={handleDoubleClick}>
+      <div ref={containerRef} className="dd-brief-streetview-container" />
+      {(status === 'checking' || status === 'loading_sdk' || status === 'available') && (
+        <div className="dd-brief-streetview-overlay-loading">
+          <span>{status === 'checking' ? 'Checking coverage…' : 'Loading street view…'}</span>
+        </div>
+      )}
+      {status === 'ready' && (
+        <span className="dd-brief-streetview-hint" aria-hidden="true">Double-click to expand</span>
+      )}
+    </div>
+  );
 }
 
-function ExpandModal({ url, onClose, alt }) {
+// Image expand modal — used for the satellite tile only.
+function ImageExpandModal({ url, onClose, alt }) {
   useEffect(() => {
     function onKey(e) { if (e.key === 'Escape') onClose(); }
     document.addEventListener('keydown', onKey);
@@ -186,21 +249,60 @@ function ExpandModal({ url, onClose, alt }) {
   );
 }
 
+// Floating fullscreen panorama overlay opened by double-click on the embedded view.
+function StreetViewExpandModal({ pov, onClose }) {
+  const containerRef = useRef(null);
+  useEffect(() => {
+    function onKey(e) { if (e.key === 'Escape') onClose(); }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  useEffect(() => {
+    if (!containerRef.current || !GOOGLE_MAPS_KEY) return undefined;
+    let cancelled = false;
+    loadGoogleMapsSdk(GOOGLE_MAPS_KEY).then((google) => {
+      if (cancelled || !containerRef.current) return;
+      new google.maps.StreetViewPanorama(containerRef.current, {
+        position: { lat: pov.lat, lng: pov.lng },
+        pov: { heading: pov.heading, pitch: pov.pitch },
+        zoom: pov.zoom ?? 1,
+        addressControl: true,
+        fullscreenControl: false,
+        motionTrackingControl: true,
+        showRoadLabels: true,
+        zoomControl: true,
+      });
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [pov]);
+
+  return (
+    <div className="dd-streetview-modal" onClick={onClose} role="dialog" aria-modal="true">
+      <button className="dd-streetview-modal-close" onClick={onClose} aria-label="Close street view">&times;</button>
+      <div
+        className="dd-streetview-modal-stage"
+        onClick={(e) => e.stopPropagation()}
+        onDoubleClick={(e) => e.stopPropagation()}
+      >
+        <div ref={containerRef} className="dd-streetview-modal-container" />
+      </div>
+    </div>
+  );
+}
+
 function BriefImagesStack({ deal }) {
-  const [expanded, setExpanded] = useState(null);
+  const [satExpanded, setSatExpanded] = useState(null);
+  const [streetExpanded, setStreetExpanded] = useState(null);
   const { lat, lng, id } = deal;
   const satelliteUrl = lat && lng
     ? `https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/static/${lng},${lat},17/1200x960@2x?access_token=${import.meta.env.VITE_MAPBOX_TOKEN}&logo=false&attribution=false`
-    : null;
-  const streetViewLargeUrl = (lat && lng && GOOGLE_MAPS_KEY)
-    ? `https://maps.googleapis.com/maps/api/streetview?size=1200x960&location=${lat},${lng}&fov=80&pitch=0&key=${GOOGLE_MAPS_KEY}`
     : null;
 
   return (
     <div className="dd-brief-images">
       <button
         className="dd-brief-image-tile"
-        onClick={() => satelliteUrl && setExpanded({ url: satelliteUrl, alt: 'Satellite aerial' })}
+        onClick={() => satelliteUrl && setSatExpanded({ url: satelliteUrl, alt: 'Satellite aerial' })}
         disabled={!satelliteUrl}
         aria-label="Expand satellite view"
         type="button"
@@ -209,18 +311,25 @@ function BriefImagesStack({ deal }) {
         <span className="dd-brief-image-label">Satellite</span>
         {satelliteUrl && <span className="dd-brief-image-expand"><Expand size={14} /></span>}
       </button>
-      <button
-        className="dd-brief-image-tile"
-        onClick={() => streetViewLargeUrl && setExpanded({ url: streetViewLargeUrl, alt: 'Street view' })}
-        disabled={!streetViewLargeUrl}
-        aria-label="Expand street view"
-        type="button"
-      >
-        <StreetViewPanel lat={lat} lng={lng} />
+      <div className="dd-brief-image-tile dd-brief-image-tile--live" aria-label="Interactive street view">
+        <InteractiveStreetView lat={lat} lng={lng} onExpand={(pov) => setStreetExpanded(pov)} />
         <span className="dd-brief-image-label">Street View</span>
-        {streetViewLargeUrl && <span className="dd-brief-image-expand"><Expand size={14} /></span>}
-      </button>
-      {expanded && <ExpandModal url={expanded.url} alt={expanded.alt} onClose={() => setExpanded(null)} />}
+        {GOOGLE_MAPS_KEY && lat && lng && (
+          <button
+            type="button"
+            className="dd-brief-image-expand dd-brief-image-expand--btn"
+            onClick={() => {
+              const initial = { lat: Number(lat), lng: Number(lng), heading: 0, pitch: 0, zoom: 1 };
+              setStreetExpanded(initial);
+            }}
+            aria-label="Expand street view"
+          >
+            <Maximize2 size={14} />
+          </button>
+        )}
+      </div>
+      {satExpanded && <ImageExpandModal url={satExpanded.url} alt={satExpanded.alt} onClose={() => setSatExpanded(null)} />}
+      {streetExpanded && <StreetViewExpandModal pov={streetExpanded} onClose={() => setStreetExpanded(null)} />}
     </div>
   );
 }
