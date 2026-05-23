@@ -110,7 +110,7 @@
   padding: 8px 10px; min-height: 44px; display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
   transition: border-color var(--fast) var(--ease);
 }
-.buy-box-wizard .chip-input:focus-within { border-color: rgba(91,204,72,0.4); box-shadow: var(--ring); }
+.buy-box-wizard .chip-input:focus-within { border-color: rgba(91,204,72,0.4); box-shadow: var(--ring-shadow); }
 .buy-box-wizard .chip {
   display: inline-flex; align-items: center; gap: 6px; padding: 4px 4px 4px 10px;
   background: var(--green-tint); color: var(--green-tint-fg); border-radius: var(--r-chip);

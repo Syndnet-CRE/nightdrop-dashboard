@@ -37,7 +37,7 @@
   outline: none;
   transition: border-color var(--dur-fast);
 }
-.acc-search:focus { border-color: var(--accent); }
+.acc-search:focus { border-color: var(--primary); }
 .acc-search::placeholder { color: var(--fg-4); }
 
 .acc-invite-btn {
@@ -45,7 +45,7 @@
   align-items: center;
   gap: 6px;
   padding: 7px 14px;
-  background: var(--accent);
+  background: var(--primary);
   color: var(--on-accent);
   border: none;
   border-radius: var(--r-sm);
@@ -83,7 +83,7 @@
   white-space: nowrap;
 }
 .acc-filter-tab:hover { background: var(--bg-subtle); }
-.acc-filter-tab.active { background: var(--bg-subtle); box-shadow: inset 0 -2px 0 var(--accent); }
+.acc-filter-tab.active { background: var(--bg-subtle); box-shadow: inset 0 -2px 0 var(--primary); }
 
 .acc-filter-count {
   font-size: 15px;
@@ -130,13 +130,13 @@
   width: 220px;
   transition: border-color var(--dur-fast);
 }
-.acc-field input:focus { border-color: var(--accent); }
+.acc-field input:focus { border-color: var(--primary); }
 .acc-field input::placeholder { color: var(--fg-4); }
 
 .acc-panel-send {
   height: 34px;
   padding: 0 16px;
-  background: var(--accent);
+  background: var(--primary);
   color: var(--on-accent);
   border: none;
   border-radius: var(--r-sm);

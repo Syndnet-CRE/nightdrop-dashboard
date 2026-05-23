@@ -5,67 +5,101 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&family=DM+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
-:root {
-  /* ── Brand / Primary Greens ─────────────────────────────── */
-  --nightdrop-ink:        #0D0D0D;   /* Primary "black" from guidelines */
-  --nightdrop-green-900:  #0E7A18;   /* Decorative nav band / deep accent */
-  --nightdrop-green-700:  #1DAF29;   /* Deep brand green */
-  --nightdrop-green-500:  #5BCC48;   /* Mid brand green */
-  --nightdrop-green-300:  #89EA60;   /* Light brand green / accent */
+:root, [data-theme="light"] {
+  /* ─────────────────────────────────────────────────────────
+     Shadcn-style design tokens — LIGHT theme (source of truth)
+     Locked 2026-05-22.
+     ───────────────────────────────────────────────────────── */
+  --background:             #ffffff;
+  --card:                   #ffffff;
+  --foreground:             #333333;
+  --card-foreground:        #333333;
+  --popover:                #ffffff;
+  --popover-foreground:     #333333;
+  --primary:                #49be1d;
+  --primary-foreground:     #ffffff;
+  --secondary:              #f3f4f6;
+  --secondary-foreground:   #50634b;
+  --muted:                  #a2f040;
+  --muted-foreground:       #2d9221;
+  --accent:                 #ddfadd;
+  --accent-foreground:      #646464;
+  --destructive:            #ef4444;
+  --destructive-foreground: #ffffff;
+  --border:                 #e5e7eb;
+  --input:                  #e5e7eb;
+  --ring:                   #2da200;
+  --chart-1:                #53d11c;
+  --chart-2:                #008806;
+
+  /* ── Brand greens (anchors rewired to shadcn primary) ───── */
+  --nightdrop-ink:        #0D0D0D;
+  --nightdrop-green-900:  var(--primary);
+  --nightdrop-green-700:  var(--primary);
+  --nightdrop-green-500:  var(--primary);
+  --nightdrop-green-300:  var(--chart-1);
 
   /* Convenience aliases */
-  --green:             var(--nightdrop-green-500);
-  --green-deep:        var(--nightdrop-green-700);
-  --green-bright:      var(--nightdrop-green-300);
+  --green:             var(--primary);
+  --green-deep:        var(--primary);
+  --green-bright:      var(--chart-1);
 
-  /* ── Grayscale (named per brand guide) ──────────────────── */
-  --cloud:    #EDEFF7;   /* 01 — page bg, hairlines on light */
-  --smoke:    #D3D6E0;   /* 02 — borders, dividers */
-  --steel:    #BCBFCC;   /* 03 — disabled fg */
-  --space:    #9DA2B3;   /* 04 — placeholder / muted fg */
-  --graphite: #6E7180;   /* 05 — secondary fg */
-  --arsenic:  #40424D;   /* 06 — primary body fg on light */
-  --phantom:  #1E1E24;   /* 07 — heading fg / surfaces on dark */
-  --black:    #000000;   /* 08 */
+  /* ── Grayscale (kept for spec compatibility) ────────────── */
+  --cloud:    #EDEFF7;
+  --smoke:    #D3D6E0;
+  --steel:    #BCBFCC;
+  --space:    #9DA2B3;
+  --graphite: #6E7180;
+  --arsenic:  #40424D;
+  --phantom:  #1E1E24;
+  --black:    #000000;
 
-  /* ── Semantic foreground ────────────────────────────────── */
-  --fg-1: var(--nightdrop-ink);    /* primary text / headings */
-  --fg-2: var(--arsenic);       /* body */
-  --fg-3: var(--graphite);      /* secondary / captions */
-  --fg-4: var(--space);          /* tertiary / placeholder */
-  --fg-disabled: var(--steel);
+  /* ── Semantic foreground (consume shadcn tokens) ────────── */
+  --fg-1: var(--foreground);
+  --fg-2: var(--foreground);
+  --fg-3: var(--muted-foreground);
+  --fg-4: var(--muted-foreground);
+  --fg-disabled: var(--muted-foreground);
 
   /* ── Semantic background ────────────────────────────────── */
-  --bg-page:    #FAFBFD;
-  --bg-subtle:  var(--cloud);
-  --bg-card:    #FFFFFF;
-  --bg-inverse: var(--nightdrop-ink);
+  --bg-page:    var(--background);
+  --bg-subtle:  var(--secondary);
+  --bg-card:    var(--card);
+  --bg-inverse: var(--foreground);
 
   /* ── Borders / dividers ─────────────────────────────────── */
-  --border-1: var(--smoke);
-  --border-2: var(--cloud);
-  --border-strong: var(--arsenic);
+  --border-1: var(--border);
+  --border-2: var(--border);
+  --border-strong: var(--muted-foreground);
 
-  /* ── Accent / interaction ───────────────────────────────── */
-  --accent:        var(--nightdrop-green-700);   /* primary CTA bg */
-  --accent-hover:  #18991F;                    /* derived: ~darken green-700 */
-  --accent-press:  #14801A;
-  --accent-soft:   #E8FAE6;                    /* tint surface */
-  --on-accent:     #FFFFFF;
-  --link:          #1366CC;                    /* light mode link */
+  /* ── Accent / interaction
+     Per the shadcn meaning swap (Decision 2 / 2026-05-22):
+     - --accent is the neutral surface tone (set in the shadcn block above)
+     - --accent-hover / --accent-press / --on-accent retain their CTA semantics
+       so legacy consumers keep working without rename — values now derive
+       from --primary instead of the old standalone --accent green.
+     ───────────────────────────────────────────────────────── */
+  --accent-hover:  var(--primary);
+  --accent-press:  var(--primary);
+  --accent-soft:   var(--accent);
+  --on-accent:     var(--primary-foreground);
+  --link:          #1366CC;
 
-  /* Status (derived for product UI; not in brand guide) */
-  --success: var(--nightdrop-green-700);
+  /* Status (warning + info kept; success / danger ride new tokens) */
+  --success: var(--primary);
   --warning: #F4B73E;
-  --danger:  #E5484D;
+  --danger:  var(--destructive);
   --info:    #3E7BFA;
 
   /* ── Pill / badge tokens ────────────────────────────────── */
-  --pill-green-bg: #DAF5DC;  --pill-green-fg: #0E7A18;
+  --pill-green-bg: color-mix(in srgb, var(--primary) 14%, var(--background));
+  --pill-green-fg: var(--primary);
   --pill-amber-bg: #FDF1D5;  --pill-amber-fg: #8a5a00;
-  --pill-red-bg:   #FBDDDF;  --pill-red-fg:   #B0292E;
+  --pill-red-bg:   color-mix(in srgb, var(--destructive) 14%, var(--background));
+  --pill-red-fg:   var(--destructive);
   --pill-blue-bg:  #D9E8FB;  --pill-blue-fg:  #0F4A99;
-  --pill-gray-bg:  #EDEFF7;  --pill-gray-fg:  #40424D;
+  --pill-gray-bg:  var(--secondary);
+  --pill-gray-fg:  var(--muted-foreground);
 
   /* ── Typography ─────────────────────────────────────────── */
   --font-sans: 'Manrope', system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -130,11 +164,12 @@
   --shadow-sm: 0 2px 6px rgba(13, 13, 13, 0.06), 0 1px 2px rgba(13, 13, 13, 0.04);
   --shadow-md: 0 8px 24px rgba(13, 13, 13, 0.08), 0 2px 6px rgba(13, 13, 13, 0.04);
   --shadow-lg: 0 24px 48px rgba(13, 13, 13, 0.12), 0 4px 12px rgba(13, 13, 13, 0.06);
-  --shadow-glow: 0 0 0 6px rgba(29, 175, 41, 0.18);
+  --shadow-glow: 0 0 0 6px color-mix(in srgb, var(--ring) 18%, transparent);
 
-  /* Rings (focus / selection) */
-  --ring: 0 0 0 3px rgba(29, 175, 41, 0.35);
-  --ring-danger: 0 0 0 3px rgba(229, 72, 77, 0.35);
+  /* Rings (focus / selection) — `--ring` is the color token (shadcn);
+     `--ring-shadow` is the focus-halo shorthand legacy consumers use. */
+  --ring-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 35%, transparent);
+  --ring-danger: 0 0 0 3px color-mix(in srgb, var(--destructive) 35%, transparent);
 
   /* Motion */
   --ease-out: cubic-bezier(.22, 1, .36, 1);
@@ -148,39 +183,38 @@
   --dot-grid-size: 24px;
 
   /* ── Feed / layout surface tokens ──────────────────────────── */
-  --bg-card-hover:  #F0F2F8;
-  --bg-agent-card:  #F0FAF0;
-  --bg-user-card:   #F5F7FF;
-  --bg-nav-active:  #E8FAE6;
+  --bg-card-hover:  var(--secondary);
+  --bg-agent-card:  var(--accent);
+  --bg-user-card:   var(--secondary);
+  --bg-nav-active:  var(--accent);
   --left-panel-w:   280px;
   --left-panel-collapsed-w: 60px;
   --top-header-h:   88px;
   --pipeline-h:     0px;
   --right-rail-w:   360px;
 
-  /* ── Wizard-specific tokens (dark mode only) ─────────────── */
-  --fg-light-mute: #C8CAD6;
-  --green-text-fg: #4FE26B;
-  --success-red-fg: #F46B6F;
-  --wizard-dark-bg: #06200B;
+  /* ── Wizard-specific tokens ──────────────────────────────── */
+  --fg-light-mute: var(--muted-foreground);
+  --green-text-fg: var(--primary);
+  --success-red-fg: var(--destructive);
+  --wizard-dark-bg: var(--primary-foreground);
 
-  /* ── buyBoxes.css compatibility aliases ─────────────────── */
-  --bg: var(--bg-page);
-  --fg: var(--fg-1);
-  --fg-dim: var(--fg-3);
-  --fg-muted: var(--fg-4);
-  --fg-inverse: var(--nightdrop-ink);
-  --accent-hi: var(--accent-hover);
-  --accent-tint: var(--accent-soft);
-  --surface: var(--bg-card);
-  --surface-hi: var(--bg-card-hover);
-  --surface-hi-2: var(--bg-subtle);
-  --bg-sunken: var(--bg-subtle);
-  --border: var(--border-1);
-  --border-faint: var(--border-2);
+  /* ── buyBoxes.css + legacy compatibility aliases ──────────── */
+  --bg: var(--background);
+  --fg: var(--foreground);
+  --fg-dim: var(--muted-foreground);
+  --fg-muted: var(--muted-foreground);
+  --fg-inverse: var(--primary-foreground);
+  --accent-hi: var(--primary);
+  --accent-tint: var(--accent);
+  --surface: var(--card);
+  --surface-hi: var(--secondary);
+  --surface-hi-2: var(--secondary);
+  --bg-sunken: var(--secondary);
+  --border-faint: var(--border);
   --warn: var(--warning);
-  --danger-hi: color-mix(in srgb, var(--danger) 70%, white);
-  --danger-tint: color-mix(in srgb, var(--danger) 15%, transparent);
+  --danger-hi: color-mix(in srgb, var(--destructive) 70%, white);
+  --danger-tint: color-mix(in srgb, var(--destructive) 15%, transparent);
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -188,39 +222,36 @@
    Applied via [data-theme="dark"] on <html>
    ───────────────────────────────────────────────────────────── */
 [data-theme="dark"] {
-  --fg-1:      #F4F5F7;
-  --fg-2:      #D8DBE0;
-  --fg-3:      #B6BBC4;
-  --fg-4:      #9097A1;
-  --graphite:  #C8CDD4;
-  --space:     #9097A1;
-  --arsenic:   #E6E7EA;
-  --smoke:     rgba(255,255,255,0.12);
-  --cloud:     rgba(255,255,255,0.06);
-  --bg-page:   #0D0D0D;
-  --bg-card:   #1E1E24;
-  --bg-subtle: rgba(255,255,255,0.04);
-  --border-1:  rgba(255,255,255,0.10);
-  --border-2:  rgba(255,255,255,0.06);
-  --link:      #6BA8F2;
-  --pill-green-bg: rgba(29,175,41,0.18);   --pill-green-fg: #4FE26B;
-  --pill-amber-bg: rgba(244,183,62,0.16);  --pill-amber-fg: #F4B73E;
-  --pill-red-bg:   rgba(229,72,77,0.16);   --pill-red-fg:   #F46B6F;
-  --pill-blue-bg:  rgba(62,123,250,0.18);  --pill-blue-fg:  #6BA8F2;
-  --pill-gray-bg:  rgba(255,255,255,0.08); --pill-gray-fg:  #9DA2B3;
+  /* ─────────────────────────────────────────────────────────
+     Shadcn-style design tokens — DARK theme overrides
+     ───────────────────────────────────────────────────────── */
+  --background:             #171717;
+  --card:                   #262626;
+  --foreground:             #e5e5e5;
+  --card-foreground:        #e5e5e5;
+  --popover:                #262626;
+  --popover-foreground:     #e5e5e5;
+  --primary:                #2da200;
+  --primary-foreground:     #ffffff;
+  --secondary:              #262626;
+  --secondary-foreground:   #e5e5e5;
+  --muted:                  #262626;
+  --muted-foreground:       #a3a3a3;
+  --accent:                 #191818;
+  --accent-foreground:      #ebebeb;
+  --destructive:            #ef4444;
+  --destructive-foreground: #ffffff;
+  --border:                 #404040;
+  --input:                  #404040;
+  --ring:                   #2da200;
+  --chart-1:                #7af74d;
+  --chart-2:                #2da200;
+
+  /* Link colour stays readable on the new dark surface */
+  --link: #6BA8F2;
 
   /* Dot grid background — visible dots on dark */
   --dot-grid-color: #2a2a2a;
-
-  /* ── Feed / layout surface tokens (dark overrides) ─────────── */
-  --bg-card-hover:  #252530;
-  --bg-agent-card:  #1E2A1F;
-  --bg-user-card:   #2A2A35;
-  --bg-nav-active:  #0E1A10;
-
-  /* ── buyBoxes.css dark overrides ────────────────────────── */
-  --surface-hi-2: rgba(255,255,255,0.08);
-  --bg-sunken: #080809;
 }
 
 /* ─────────────────────────────────────────────────────────────

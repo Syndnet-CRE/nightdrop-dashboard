@@ -135,9 +135,9 @@
   background: none;
 }
 .dd-btn.primary {
-  background: var(--accent);
+  background: var(--primary);
   color: var(--on-accent);
-  border-color: var(--accent);
+  border-color: var(--primary);
 }
 .dd-btn.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
 .dd-btn.primary:active { background: var(--accent-press); border-color: var(--accent-press); }
@@ -545,7 +545,7 @@
   line-height: var(--lh-loose);
   transition: border-color var(--dur-fast) var(--ease-out);
 }
-.dd-note-input:focus { outline: none; border-color: var(--accent); }
+.dd-note-input:focus { outline: none; border-color: var(--primary); }
 .dd-note-input::placeholder { color: var(--fg-4); }
 .dd-add-note-btn { flex-shrink: 0; align-self: flex-end; }
 .dd-notes-thread {
@@ -953,8 +953,8 @@
   border-color: var(--green-bright);
 }
 .dd-action-primary.active {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--primary);
+  border-color: var(--primary);
   color: var(--on-accent);
 }
 

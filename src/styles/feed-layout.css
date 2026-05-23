@@ -721,7 +721,7 @@
 .feed-center > * { flex-shrink: 0; }
 
 .feed-deal-card:hover {
-  border-color: var(--accent);
+  border-color: var(--primary);
   box-shadow: 0 0 0 1px rgba(29,175,41,0.2), 0 6px 24px rgba(29,175,41,0.08), var(--shadow-md);
 }
 
@@ -1041,7 +1041,7 @@
   transition: border-color var(--dur-fast), color var(--dur-fast);
 }
 .feed-sort-btn:hover {
-  border-color: var(--accent);
+  border-color: var(--primary);
   color: var(--fg-1);
 }
 
@@ -1660,7 +1660,7 @@
   transition: border-color var(--dur-base), box-shadow var(--dur-base);
 }
 .rail-card:hover {
-  border-color: var(--accent);
+  border-color: var(--primary);
   box-shadow: 0 0 0 1px rgba(29,175,41,0.2), 0 6px 24px rgba(29,175,41,0.08), var(--shadow-md);
 }
 
@@ -1715,7 +1715,7 @@
   cursor: pointer;
 }
 .right-rail-bb-card:hover {
-  border-color: var(--accent);
+  border-color: var(--primary);
   box-shadow: 0 0 0 1px rgba(29,175,41,0.2), 0 4px 16px rgba(29,175,41,0.08);
 }
 
