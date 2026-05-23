@@ -1,14 +1,8 @@
-import { useState } from 'react';
 import {
   LayoutDashboard, Map, Layers, Calendar, Settings,
   UserCircle, Plus, Users, Bookmark, Sparkles, Database,
   TrendingUp, Flame, Target, Clock,
-  Sun, Moon,
 } from 'lucide-react';
-
-function getStoredTheme() {
-  return document.documentElement.getAttribute('data-theme') || 'dark';
-}
 import { useDeals } from '../contexts/DealsContext';
 
 function MetricTile({ Icon, label, value, accent, active, disabled, onClick, title }) {
@@ -74,14 +68,6 @@ function MiniBarChart({ data }) {
 
 export default function LeftPanel({ view, setView, kpis, onCreateBuyBox, unreadCount, feedFilter, setFeedFilter }) {
   const { buyBoxes } = useDeals();
-  const [theme, setTheme] = useState(getStoredTheme);
-
-  function toggleTheme() {
-    const next = theme === 'dark' ? 'light' : 'dark';
-    setTheme(next);
-    localStorage.setItem('nightdrop-theme', next);
-    document.documentElement.setAttribute('data-theme', next);
-  }
 
   const navItems = [
     { id: 'dashboard', label: 'Deal Feed',      Icon: LayoutDashboard },
@@ -205,17 +191,6 @@ export default function LeftPanel({ view, setView, kpis, onCreateBuyBox, unreadC
           >
             <Settings size={18} />
             <span className="left-panel-nav-label">Settings</span>
-          </button>
-          <button
-            className="left-panel-nav-item left-panel-theme-toggle"
-            onClick={toggleTheme}
-            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-            style={{ display: 'none' }}
-          >
-            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-            <span className="left-panel-nav-label">
-              {theme === 'dark' ? 'Light mode' : 'Dark mode'}
-            </span>
           </button>
         </div>
 

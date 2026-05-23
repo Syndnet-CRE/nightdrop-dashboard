@@ -1,7 +1,13 @@
 import { useState } from 'react';
+import { Sun, Moon } from 'lucide-react';
 import { I } from '../components/Icons';
 import { useAuth } from '../hooks/useAuth';
 import { api } from '../lib/api';
+
+function getStoredTheme() {
+  if (typeof document === 'undefined') return 'dark';
+  return document.documentElement.getAttribute('data-theme') || 'dark';
+}
 
 export function SettingsView({ onConfirmDanger }) {
   const { subscriber } = useAuth();
@@ -15,6 +21,14 @@ export function SettingsView({ onConfirmDanger }) {
   const [pwConfirm, setPwConfirm] = useState('');
   const [pwSaving, setPwSaving] = useState(false);
   const [pwToast, setPwToast] = useState(null);
+  const [theme, setTheme] = useState(getStoredTheme);
+
+  function applyTheme(next) {
+    if (next === theme) return;
+    setTheme(next);
+    try { localStorage.setItem('nightdrop-theme', next); } catch { /* localStorage may be blocked */ }
+    document.documentElement.setAttribute('data-theme', next);
+  }
 
   const profileFullName = fullName || s.full_name || '';
   const profileCompany = company || s.company || '';
@@ -95,6 +109,35 @@ export function SettingsView({ onConfirmDanger }) {
             {pwToast && <span style={{ fontSize: 12, color: pwToast.ok ? '#4CAF50' : 'var(--destructive)' }}>{pwToast.msg}</span>}
           </div>
           </form>
+        </div>
+
+        <div className="settings-section">
+          <h3>Appearance</h3>
+          <div className="theme-switcher" role="radiogroup" aria-label="Color theme">
+            <button
+              type="button"
+              role="radio"
+              aria-checked={theme === 'light'}
+              className={`theme-switcher-opt${theme === 'light' ? ' active' : ''}`}
+              onClick={() => applyTheme('light')}
+            >
+              <Sun size={14} strokeWidth={2.2} />
+              <span>Light</span>
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={theme === 'dark'}
+              className={`theme-switcher-opt${theme === 'dark' ? ' active' : ''}`}
+              onClick={() => applyTheme('dark')}
+            >
+              <Moon size={14} strokeWidth={2.2} />
+              <span>Dark</span>
+            </button>
+          </div>
+          <p className="theme-switcher-help">
+            Choose how the dashboard looks. Your selection is saved to this browser.
+          </p>
         </div>
 
         <div className="settings-section">
