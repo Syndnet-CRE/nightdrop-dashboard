@@ -1813,15 +1813,19 @@
 
 /* Full-viewport shell for the standalone deal detail page.
    Mounted directly at the root of AppShell when on /deal/:id (not modal).
-   No left nav, no top header — just the deal detail page edge to edge. */
+   No left nav, no top header — just the deal detail page edge to edge.
+   Uses natural document scrolling (NOT internal overflow) so the sticky
+   breadcrumb tracks window.scrollY for its on-scroll collapse behavior. */
 .dd-fullscreen {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  overflow-y: auto;
-  overflow-x: hidden;
+  min-height: 100vh;
   background: var(--background);
   color: var(--foreground);
+}
+html:has(.dd-fullscreen),
+body:has(.dd-fullscreen),
+#root:has(.dd-fullscreen) {
+  height: auto;
+  min-height: 100%;
 }
 
 .dd-fullscreen .dd-root {
@@ -1835,16 +1839,45 @@
   position: sticky;
   top: 0;
   z-index: 30;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  justify-content: space-between;
   gap: var(--s-4);
   padding: 10px var(--s-6);
-  background: var(--card);
+  background: color-mix(in srgb, var(--card) 92%, transparent);
   border-bottom: 1px solid var(--border-1);
   min-height: 52px;
   backdrop-filter: blur(10px) saturate(140%);
   -webkit-backdrop-filter: blur(10px) saturate(140%);
+  transition: padding var(--dur-fast) var(--ease-out),
+              min-height var(--dur-fast) var(--ease-out);
+}
+.dd-breadcrumb.compact { padding: 6px var(--s-6); min-height: 48px; }
+
+/* Center cluster appears when the page has scrolled past the upper grid
+   — injects address + compact score scale inline so the user always knows
+   what they're looking at. */
+.dd-breadcrumb-center {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 0;
+  justify-content: center;
+  animation: dd-breadcrumb-center-in 160ms var(--ease-out) both;
+}
+.dd-breadcrumb-compact-address {
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: var(--w-semibold);
+  color: var(--fg-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 480px;
+}
+@keyframes dd-breadcrumb-center-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 .dd-breadcrumb-left,
 .dd-breadcrumb-right {

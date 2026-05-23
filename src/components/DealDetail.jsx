@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { StageIndicator } from './DealDetail/StageIndicator.jsx';
 import { BreadcrumbStrip } from './DealDetail/BreadcrumbStrip.jsx';
+import { useStickyCollapse } from '../hooks/useStickyCollapse.js';
 import { IdentityColumn } from './DealDetail/IdentityColumn.jsx';
 import { WhyFlaggedCard } from './DealDetail/WhyFlaggedCard.jsx';
 import { PipelineStatusCard } from './DealDetail/PipelineStatusCard.jsx';
@@ -19,6 +20,7 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
   const { postFeedback, toggleSaved, updateStatus } = useDeals();
   const { markRead } = useReadState();
   const addToast = useToast();
+  const collapsed = useStickyCollapse(280);
   const [hotLoading, setHotLoading] = useState(false);
 
   useEffect(() => { markRead(deal.id); }, [deal.id, markRead]);
@@ -27,6 +29,7 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
   const attomId = deal.attomId || deal.attom_id;
   const currentStatus = deal.status || 'new';
   const signals = bj.signal_tags || bj.distress_signals || deal.signals || [];
+  const score = deal.distress_score ?? deal.score;
 
   async function handleMarkHot() {
     setHotLoading(true);
@@ -82,6 +85,8 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
         isNotRelevant={deal.feedback === 'not_relevant'}
         onToggleNotRelevant={handleToggleNotRelevant}
         onCopyLink={handleShare}
+        compactAddress={collapsed ? (deal.address || 'Unknown Address') : null}
+        compactScore={collapsed ? score : null}
       />
 
       <StageIndicator status={currentStatus} onStageChange={handleStatusChange} />
