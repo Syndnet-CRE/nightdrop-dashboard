@@ -245,6 +245,26 @@ export function getAssetClass(id) {
   return ASSET_CLASSES.find(c => c.id === normalized) || null;
 }
 
+// Asset class palette — distinct hues per MVP class for graphs, badges, legends.
+// Greys for unknown / unresolved classes so they read as secondary.
+const ASSET_CLASS_COLORS = {
+  self_storage:        '#F4B73E',
+  multifamily:         '#6366F1',
+  mobile_home_rv:      '#14B8A6',
+  residential_sfr:     '#3E7BFA',
+  land:                '#5BCC48',
+  industrial:          '#475569',
+  retail:              '#F97316',
+  gas_station_c_store: '#EAB308',
+  office:              '#A855F7',
+  special_purpose:     '#EC4899',
+};
+
+export function getAssetClassColor(id) {
+  const normalized = normalizeAssetClassSlug(id);
+  return ASSET_CLASS_COLORS[normalized] || '#9DA2B3';
+}
+
 export function formatUseCodes(asset_class, asset_use_codes) {
   if (!asset_class || !asset_use_codes?.length) return '';
   const cls = getAssetClass(asset_class);

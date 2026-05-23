@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useDeals } from '../contexts/DealsContext';
 import { DEALS as MOCK_DEALS, BUY_BOXES as MOCK_BUY_BOXES } from '../data/mockData';
 import { DealMap } from '../components/DealMap';
@@ -90,6 +91,23 @@ export function MapView({ onOpenDeal }) {
     setExpandedCardId(id);
     if (id) setFocusDealId(id);
   }, []);
+
+  // Honor ?focus=<dealId> on mount (deep-link from owner portfolio table, etc.)
+  // URL-driven side effect — the linter dislikes setState inside effects, but
+  // this is the canonical pattern for syncing query params into local state.
+  const [searchParams, setSearchParams] = useSearchParams();
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    const focusParam = searchParams.get('focus');
+    if (!focusParam) return;
+    setFocusDealId(focusParam);
+    setExpandedCardId(focusParam);
+    setCollapsed(false);
+    const next = new URLSearchParams(searchParams);
+    next.delete('focus');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Pin click on map: expand card in panel, auto-open panel; no flyTo (user is already viewing pin)
   const handlePinClick = useCallback((deal) => {
