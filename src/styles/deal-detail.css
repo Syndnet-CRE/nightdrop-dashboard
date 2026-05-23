@@ -1806,3 +1806,239 @@
   background: color-mix(in srgb, var(--chart-2) 8%, var(--background));
   border-left-color: var(--chart-2);
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Phase 1 — Full-viewport takeover + Breadcrumb strip
+   ───────────────────────────────────────────────────────────── */
+
+/* Full-viewport shell for the standalone deal detail page.
+   Mounted directly at the root of AppShell when on /deal/:id (not modal).
+   No left nav, no top header — just the deal detail page edge to edge. */
+.dd-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.dd-fullscreen .dd-root {
+  min-height: 100vh;
+  width: 100%;
+  background: var(--background);
+}
+
+/* Breadcrumb strip — top of the deal page above stage indicator. */
+.dd-breadcrumb {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding: 10px var(--s-6);
+  background: var(--card);
+  border-bottom: 1px solid var(--border-1);
+  min-height: 52px;
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+}
+.dd-breadcrumb-left,
+.dd-breadcrumb-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dd-breadcrumb-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  border-radius: var(--r-sm);
+  font-family: var(--font-sans);
+  font-size: var(--t-cap);
+  font-weight: var(--w-semibold);
+  color: var(--fg-2);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.dd-breadcrumb-back:hover {
+  background: var(--bg-subtle);
+  color: var(--fg-1);
+}
+.dd-breadcrumb-back:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.dd-breadcrumb-divider {
+  display: inline-block;
+  width: 1px;
+  height: 20px;
+  background: var(--border-1);
+  margin: 0 6px;
+}
+.dd-breadcrumb-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-sm);
+  color: var(--fg-2);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out),
+              color var(--dur-fast) var(--ease-out);
+}
+.dd-breadcrumb-nav-btn:hover:not(:disabled) {
+  background: var(--bg-subtle);
+  border-color: var(--border-strong);
+  color: var(--fg-1);
+}
+.dd-breadcrumb-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.dd-breadcrumb-position {
+  font-family: 'Inter', var(--font-sans);
+  font-feature-settings: 'tnum', 'zero';
+  font-size: 12px;
+  font-weight: var(--w-semibold);
+  color: var(--fg-2);
+  padding: 0 8px;
+  min-width: 110px;
+  text-align: center;
+}
+
+/* Right-cluster action buttons */
+.dd-breadcrumb-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-family: var(--font-sans);
+  font-size: var(--t-cap);
+  font-weight: var(--w-semibold);
+  color: var(--fg-2);
+  background: transparent;
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out),
+              color var(--dur-fast) var(--ease-out);
+}
+.dd-breadcrumb-action:hover:not(:disabled) {
+  background: var(--bg-subtle);
+  border-color: var(--border-strong);
+  color: var(--fg-1);
+}
+.dd-breadcrumb-action:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.dd-breadcrumb-action:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Active state for Add-to-List (saved) — green outline + tint */
+.dd-breadcrumb-action.active {
+  background: color-mix(in srgb, var(--primary) 10%, var(--card));
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* Mark as Hot — dominant primary CTA */
+.dd-breadcrumb-hot {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+}
+.dd-breadcrumb-hot:hover:not(:disabled) {
+  background: var(--green-bright);
+  border-color: var(--green-bright);
+  color: var(--primary-foreground);
+}
+.dd-breadcrumb-hot.active {
+  background: var(--chart-2);
+  border-color: var(--chart-2);
+  color: var(--primary-foreground);
+}
+
+/* More menu trigger + dropdown */
+.dd-more-menu { position: relative; }
+.dd-more-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-sm);
+  color: var(--fg-2);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out),
+              color var(--dur-fast) var(--ease-out);
+}
+.dd-more-trigger:hover {
+  background: var(--bg-subtle);
+  border-color: var(--border-strong);
+  color: var(--fg-1);
+}
+.dd-more-trigger:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.dd-more-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 60;
+  min-width: 180px;
+  padding: 4px;
+  background: var(--popover, var(--card));
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dd-more-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  border-radius: var(--r-sm);
+  text-align: left;
+  font-family: var(--font-sans);
+  font-size: var(--t-cap);
+  color: var(--fg-1);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.dd-more-item:hover { background: var(--bg-subtle); }
+.dd-more-item.active { color: var(--destructive); }
+.dd-more-item:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+
+/* Mobile: collapse position label, hide non-essential breadcrumb actions */
+@media (max-width: 768px) {
+  .dd-breadcrumb { padding: 8px var(--s-3); }
+  .dd-breadcrumb-position { display: none; }
+  .dd-breadcrumb-action span:not(.dd-breadcrumb-position) { display: none; }
+  .dd-breadcrumb-action { padding: 6px 8px; }
+  .dd-breadcrumb-back span { display: none; }
+}

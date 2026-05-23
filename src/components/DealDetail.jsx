@@ -7,6 +7,7 @@ import { SectionNav } from './DealDetail/SectionNav.jsx';
 import { ScoreScale } from './DealDetail/ScoreScale.jsx';
 import { BriefBlock } from './DealDetail/BriefBlock.jsx';
 import { StageIndicator } from './DealDetail/StageIndicator.jsx';
+import { BreadcrumbStrip } from './DealDetail/BreadcrumbStrip.jsx';
 import { fmt, fmtMoney, hasVal } from '../lib/format.js';
 import { useDeals } from '../contexts/DealsContext.jsx';
 import { useReadState } from '../contexts/ReadStateContext';
@@ -44,7 +45,7 @@ function boolFmt(v) {
 }
 
 export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) {
-  const { postFeedback, updateStatus, logContact, fetchContacts, contacts, dealNotes, fetchDealNotes, createDealNote } = useDeals();
+  const { postFeedback, toggleSaved, updateStatus, logContact, fetchContacts, contacts, dealNotes, fetchDealNotes, createDealNote } = useDeals();
   const { markRead } = useReadState();
   const addToast = useToast();
   const collapsed = useStickyCollapse(120);
@@ -101,6 +102,22 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
     } catch {
       addToast('Could not copy link', 'error');
     }
+  }
+
+  async function handleToggleSaved() {
+    const next = !deal.saved;
+    await toggleSaved(deal.id, next);
+    addToast(next ? 'Added to your list' : 'Removed from your list', next ? 'success' : 'info');
+  }
+
+  async function handleToggleNotRelevant() {
+    const isUndo = deal.feedback === 'not_relevant';
+    await postFeedback(deal.id, isUndo ? null : 'not_relevant');
+    addToast(
+      isUndo ? 'Marked relevant again' : 'Marked as not relevant',
+      isUndo ? 'info' : 'success'
+    );
+    if (!isUndo && onClose) onClose();
   }
 
   async function handleLogContact(formData) {
@@ -317,6 +334,22 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
 
   return (
     <div className="dd-root">
+      <BreadcrumbStrip
+        onBack={onClose}
+        dealIndex={dealIndex ?? -1}
+        totalDeals={deals?.length ?? 0}
+        onPrev={() => onNavigateDeal && onNavigateDeal(deals[dealIndex - 1])}
+        onNext={() => onNavigateDeal && onNavigateDeal(deals[dealIndex + 1])}
+        onShare={handleShare}
+        saved={!!deal.saved}
+        onToggleSaved={handleToggleSaved}
+        isHot={deal.feedback === 'hot'}
+        onToggleHot={handleMarkHot}
+        hotLoading={hotLoading}
+        isNotRelevant={deal.feedback === 'not_relevant'}
+        onToggleNotRelevant={handleToggleNotRelevant}
+        onCopyLink={handleShare}
+      />
       <SectionNav sections={sectionDefs} />
       <StageIndicator status={currentStatus} onStageChange={handleStatusChange} />
       <div className="dd-nav-band" />
@@ -656,14 +689,6 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
         </div>
 
       </div>
-
-      {deals && deals.length > 1 && onNavigateDeal && (
-        <div className="dd-nav-float">
-          <button className="dd-deal-nav-btn" onClick={() => onNavigateDeal(deals[dealIndex - 1])} disabled={dealIndex <= 0}>← Prev</button>
-          <span className="dd-deal-nav-count">Deal {dealIndex + 1} of {deals.length}</span>
-          <button className="dd-deal-nav-btn" onClick={() => onNavigateDeal(deals[dealIndex + 1])} disabled={dealIndex >= deals.length - 1}>Next →</button>
-        </div>
-      )}
 
       {contactModalOpen && (
         <ContactLogModal

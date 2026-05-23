@@ -86,6 +86,18 @@ export function DealsProvider({ children }) {
     await api.patch(`/api/dealfeed/deals/${dealId}/notes`, { notes: text });
   }, []);
 
+  // Toggle the saved flag — backs the "Add to List" action on the deal detail
+  // breadcrumb. Optimistic, falls back silently on failure so the UI stays
+  // responsive even if the network is flaky.
+  const toggleSaved = useCallback(async (dealId, next) => {
+    setDeals(prev => prev.map(d => d.id === dealId ? { ...d, saved: next } : d));
+    try {
+      await api.patch(`/api/dealfeed/deals/${dealId}/save`, { saved: next });
+    } catch {
+      // optimistic update stays; will resync on next refetch
+    }
+  }, []);
+
   const updateStatus = useCallback(async (dealId, status) => {
     setDeals(prev => prev.map(d => d.id === dealId ? { ...d, status } : d));
     try {
@@ -153,7 +165,7 @@ export function DealsProvider({ children }) {
   }, []);
 
   return (
-    <DealsCtx.Provider value={{ deals, buyBoxes, contacts, dealNotes, portfolios, loading, error, refetch: fetchAll, postFeedback, saveNote, updateStatus, fetchContacts, logContact, patchBuyBox, deleteBuyBox, fetchDealNotes, createDealNote, fetchOwnerPortfolio }}>
+    <DealsCtx.Provider value={{ deals, buyBoxes, contacts, dealNotes, portfolios, loading, error, refetch: fetchAll, postFeedback, saveNote, toggleSaved, updateStatus, fetchContacts, logContact, patchBuyBox, deleteBuyBox, fetchDealNotes, createDealNote, fetchOwnerPortfolio }}>
       {children}
     </DealsCtx.Provider>
   );

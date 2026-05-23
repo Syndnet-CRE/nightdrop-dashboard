@@ -22,7 +22,6 @@ import { ForgotPasswordView } from './views/ForgotPasswordView';
 import { ResetPasswordView } from './views/ResetPasswordView';
 import { InviteClaimView } from './views/InviteClaimView';
 import { api } from './lib/api';
-import { useToast } from './contexts/ToastContext';
 
 (() => {
   const t = localStorage.getItem('nightdrop-theme') || 'dark';
@@ -51,7 +50,7 @@ function DealDetailPage({ dealId }) {
   const dealIndex = deals.findIndex(d => String(d.id) === dealId);
 
   return (
-    <div className="dd-page-glass">
+    <div className="dd-fullscreen">
       <DealDetail
         deal={deal}
         onClose={() => navigate(-1)}
@@ -126,7 +125,6 @@ function InitialRouteGate() {
 
 
 function AppShell() {
-  const addToast = useToast();
   const { subscriber, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -198,79 +196,87 @@ function AppShell() {
 
   if (!subscriber) return null;
 
+  // Full-viewport takeover for the standalone deal detail route.
+  // When the user clicks into a deal from anywhere except the map (which keeps
+  // the existing modal-over-map behavior via `isModal`), the deal detail page
+  // owns the entire viewport — no TopHeader, no LeftPanel, no app chrome.
+  // The only way back out is the breadcrumb's "Back to Deals" link or Esc.
+  const isFullDeal = isOnDeal && !isModal;
+
   return (
     <ReadStateProvider>
     <DealStateProvider>
     <DealsProvider>
-      <InitialRouteGate />
-      <div className="app has-sidebar">
-        <TopHeader />
+      {!isFullDeal && <InitialRouteGate />}
 
-        <div className="app-body">
-          <LeftPanel
-            view={isOnDeal && !isModal ? null : view}
-            setView={handleSetView}
-            kpis={kpis}
-            onCreateBuyBox={() => navigate('/buy-boxes/new')}
-            unreadCount={kpis?.unread_count || 0}
-            feedFilter={feedFilter}
-            setFeedFilter={setFeedFilter}
-          />
+      {isFullDeal && (
+        <Routes>
+          <Route path="/deal/:dealId" element={<DealDetailPage dealId={dealMatch.params.dealId}/>} />
+        </Routes>
+      )}
 
-          <main className={`app-content${noScroll ? ' no-scroll' : ''}`} data-screen-label={view}>
-            <Routes>
-              <Route path="/buy-boxes/new" element={<BuyBoxPage mode="new" />} />
-              <Route path="/buy-boxes/:id/edit" element={<BuyBoxPage mode="edit" />} />
-              <Route path="/*" element={
-                <>
-                  {isOnDeal && !isModal && (
-                    <DealDetailPage dealId={dealMatch.params.dealId}/>
-                  )}
+      {!isFullDeal && (
+        <div className="app has-sidebar">
+          <TopHeader />
 
-                  {(!isOnDeal || isModal) && (
-                    <>
-                      {view === 'dashboard' && (
-                        <DashboardView
-                          kpis={kpis}
-                          onOpenDeal={handleOpenDeal}
-                          filter={feedFilter}
-                          setFilter={setFeedFilter}
-                        />
-                      )}
-                      {view === 'map'      && <MapView onOpenDeal={handleOpenDeal}/>}
-                      {view === 'boxes'    && (
-                        <BuyBoxesView
-                          onCreate={() => navigate('/buy-boxes/new')}
-                          onEdit={(box) => navigate('/buy-boxes/' + box.id + '/edit')}
-                          onEditGeo={(box) => navigate('/buy-boxes/' + box.id + '/edit')}
-                          onPause={setPausingBuyBox}
-                        />
-                      )}
-                      {view === 'calendar' && (
-                        <DashboardView
-                          kpis={kpis}
-                          onOpenDeal={handleOpenDeal}
-                          filter={feedFilter}
-                          setFilter={setFeedFilter}
-                        />
-                      )}
-                      {view === 'settings' && <SettingsView onConfirmDanger={setConfirmDanger}/>}
-                      {view === 'accounts' && <AccountsView/>}
-                      {view === 'invites'  && <InviteView/>}
-                      {view === 'admin'    && <AdminView/>}
-                    </>
-                  )}
+          <div className="app-body">
+            <LeftPanel
+              view={view}
+              setView={handleSetView}
+              kpis={kpis}
+              onCreateBuyBox={() => navigate('/buy-boxes/new')}
+              unreadCount={kpis?.unread_count || 0}
+              feedFilter={feedFilter}
+              setFeedFilter={setFeedFilter}
+            />
 
-                  {isModal && <DealDetailModal dealId={dealMatch.params.dealId}/>}
-                </>
-              }/>
-            </Routes>
-          </main>
+            <main className={`app-content${noScroll ? ' no-scroll' : ''}`} data-screen-label={view}>
+              <Routes>
+                <Route path="/buy-boxes/new" element={<BuyBoxPage mode="new" />} />
+                <Route path="/buy-boxes/:id/edit" element={<BuyBoxPage mode="edit" />} />
+                <Route path="/*" element={
+                  <>
+                    {view === 'dashboard' && (
+                      <DashboardView
+                        kpis={kpis}
+                        onOpenDeal={handleOpenDeal}
+                        filter={feedFilter}
+                        setFilter={setFeedFilter}
+                      />
+                    )}
+                    {view === 'map'      && <MapView onOpenDeal={handleOpenDeal}/>}
+                    {view === 'boxes'    && (
+                      <BuyBoxesView
+                        onCreate={() => navigate('/buy-boxes/new')}
+                        onEdit={(box) => navigate('/buy-boxes/' + box.id + '/edit')}
+                        onEditGeo={(box) => navigate('/buy-boxes/' + box.id + '/edit')}
+                        onPause={setPausingBuyBox}
+                      />
+                    )}
+                    {view === 'calendar' && (
+                      <DashboardView
+                        kpis={kpis}
+                        onOpenDeal={handleOpenDeal}
+                        filter={feedFilter}
+                        setFilter={setFeedFilter}
+                      />
+                    )}
+                    {view === 'settings' && <SettingsView onConfirmDanger={setConfirmDanger}/>}
+                    {view === 'accounts' && <AccountsView/>}
+                    {view === 'invites'  && <InviteView/>}
+                    {view === 'admin'    && <AdminView/>}
+
+                    {isModal && <DealDetailModal dealId={dealMatch.params.dealId}/>}
+                  </>
+                }/>
+              </Routes>
+            </main>
+          </div>
         </div>
+      )}
 
-        {confirmDanger && <ConfirmModal kind={confirmDanger} onClose={() => setConfirmDanger(null)}/>}
-        {pausingBuyBox && <PauseBoxConfirm buyBox={pausingBuyBox} onClose={() => setPausingBuyBox(null)}/> }
-      </div>
+      {confirmDanger && <ConfirmModal kind={confirmDanger} onClose={() => setConfirmDanger(null)}/>}
+      {pausingBuyBox && <PauseBoxConfirm buyBox={pausingBuyBox} onClose={() => setPausingBuyBox(null)}/> }
     </DealsProvider>
     </DealStateProvider>
     </ReadStateProvider>
