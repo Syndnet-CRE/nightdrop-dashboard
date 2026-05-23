@@ -5,9 +5,11 @@ import { Rows, SecHead, ConfBadge } from './DealDetail.helpers.jsx';
 import { OwnerPortfolio } from './OwnerPortfolio.jsx';
 import { SectionNav } from './DealDetail/SectionNav.jsx';
 import { ScoreScale } from './DealDetail/ScoreScale.jsx';
-import { BriefBlock } from './DealDetail/BriefBlock.jsx';
 import { StageIndicator } from './DealDetail/StageIndicator.jsx';
 import { BreadcrumbStrip } from './DealDetail/BreadcrumbStrip.jsx';
+import { IdentityColumn } from './DealDetail/IdentityColumn.jsx';
+import { WhyFlaggedCard } from './DealDetail/WhyFlaggedCard.jsx';
+import { PipelineStatusCard } from './DealDetail/PipelineStatusCard.jsx';
 import { fmt, fmtMoney, hasVal } from '../lib/format.js';
 import { useDeals } from '../contexts/DealsContext.jsx';
 import { useReadState } from '../contexts/ReadStateContext';
@@ -431,7 +433,11 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
 
       </div>
 
-      <BriefBlock deal={deal} signals={signals} />
+      <div className="dd-upper-grid">
+        <IdentityColumn deal={deal} />
+        <WhyFlaggedCard deal={deal} signals={signals} />
+        <PipelineStatusCard deal={deal} />
+      </div>
 
       <div className="dd-body" style={{ flex: 1 }}>
         <div className="dd-cols">

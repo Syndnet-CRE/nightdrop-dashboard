@@ -2042,3 +2042,354 @@
   .dd-breadcrumb-action { padding: 6px 8px; }
   .dd-breadcrumb-back span { display: none; }
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Phase 2 — Upper 3-column grid: Identity / Why Flagged / Pipeline
+   ───────────────────────────────────────────────────────────── */
+
+.dd-upper-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(0, 2fr) minmax(280px, 1fr);
+  gap: var(--s-5);
+  max-width: 1400px;
+  width: min(calc(100% - 40px), 1400px);
+  margin: var(--s-5) auto;
+  align-items: stretch;
+}
+
+/* ── Identity column (left) ───────────────────────────────── */
+.dd-identity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  padding: var(--s-5);
+  background: var(--card);
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-md);
+  transition: background var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-fast) var(--ease-out);
+}
+.dd-identity:hover { background: var(--bg-card-hover); border-color: var(--border-strong); }
+
+.dd-identity-address {
+  font-family: var(--font-sans);
+  font-size: 26px;
+  font-weight: var(--w-bold);
+  letter-spacing: -0.01em;
+  line-height: 1.18;
+  color: var(--fg-1);
+  margin: 0;
+  word-break: break-word;
+}
+.dd-identity-citystate {
+  font-size: 13px;
+  color: var(--fg-3);
+  margin-top: -2px;
+}
+
+.dd-identity-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.dd-identity-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 9px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-pill);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.dd-identity-chip-label {
+  color: var(--fg-3);
+  font-weight: var(--w-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 9px;
+}
+.dd-identity-chip-value {
+  color: var(--fg-1);
+  font-weight: var(--w-semibold);
+  font-family: 'Inter', var(--font-sans);
+  font-feature-settings: 'tnum', 'zero';
+}
+
+.dd-identity-thumbs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-3);
+}
+.dd-identity-thumb {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  border: 1px solid var(--border-1);
+  background: var(--bg-subtle);
+}
+.dd-identity-thumb > * { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dd-identity-thumb-label {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  padding: 2px 7px;
+  background: rgba(0,0,0,0.62);
+  color: #fff;
+  font-size: 9px;
+  font-weight: var(--w-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: var(--r-sm);
+}
+
+.dd-identity-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--border-1);
+}
+.dd-identity-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.dd-identity-stat-label {
+  font-size: 9px;
+  font-weight: var(--w-bold);
+  letter-spacing: var(--track-eyebrow);
+  text-transform: uppercase;
+  color: var(--fg-4);
+}
+.dd-identity-stat-value {
+  font-family: 'Inter', var(--font-sans);
+  font-feature-settings: 'tnum', 'zero';
+  font-size: 16px;
+  font-weight: var(--w-semibold);
+  color: var(--fg-1);
+  line-height: 1.2;
+}
+.dd-identity-stat.primary .dd-identity-stat-value {
+  font-size: 24px;
+  font-weight: var(--w-bold);
+  letter-spacing: -0.01em;
+}
+
+/* ── Why Flagged card (center, dominant) ──────────────────── */
+.dd-why-flagged {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-5);
+  background: var(--card);
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-md);
+  transition: background var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-fast) var(--ease-out);
+}
+.dd-why-flagged:hover { background: var(--bg-card-hover); border-color: var(--border-strong); }
+
+.dd-why-flagged-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+.dd-why-flagged-title {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: var(--w-bold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-1);
+  margin: 0;
+  line-height: 1.3;
+}
+.dd-why-flagged-thesis {
+  font-size: 18px;
+  font-weight: var(--w-semibold);
+  line-height: 1.4;
+  color: var(--fg-1);
+  margin: var(--s-1) 0 var(--s-2);
+  letter-spacing: -0.01em;
+}
+
+.dd-why-flagged-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.dd-why-flagged-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  gap: var(--s-3);
+  align-items: baseline;
+  padding: 10px var(--s-3) 10px calc(var(--s-3) + 6px);
+  background: var(--bg-subtle);
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.dd-why-flagged-row:hover { background: var(--bg-card-hover); }
+.dd-why-flagged-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: var(--r-sm) 0 0 var(--r-sm);
+  background: var(--tier-color, var(--border-1));
+}
+.dd-why-flagged-row.tier-urgent   { --tier-color: var(--destructive); }
+.dd-why-flagged-row.tier-pressure { --tier-color: var(--warning); }
+.dd-why-flagged-row.tier-flag     { --tier-color: #5BA8E5; }
+
+.dd-why-flagged-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tier-color);
+  align-self: center;
+}
+.dd-why-flagged-name {
+  font-weight: var(--w-semibold);
+  color: var(--fg-1);
+  line-height: 1.3;
+}
+.dd-why-flagged-value {
+  font-family: 'Inter', var(--font-sans);
+  font-feature-settings: 'tnum', 'zero';
+  font-size: 12px;
+  font-weight: var(--w-semibold);
+  color: var(--fg-2);
+  white-space: nowrap;
+}
+
+.dd-why-flagged-empty {
+  margin: 0;
+  font-size: 13px;
+  color: var(--fg-3);
+  font-style: italic;
+}
+
+.dd-why-flagged-link {
+  align-self: flex-start;
+  margin-top: var(--s-2);
+  font-size: 12px;
+  font-weight: var(--w-semibold);
+  color: var(--primary);
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.dd-why-flagged-link:hover { text-decoration: underline; }
+[data-theme="light"] .dd-why-flagged-link { color: var(--chart-2); }
+
+/* ── Pipeline Status card (right) ─────────────────────────── */
+.dd-pipeline-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-5);
+  background: var(--card);
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-md);
+  transition: background var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-fast) var(--ease-out);
+}
+.dd-pipeline-card:hover { background: var(--bg-card-hover); border-color: var(--border-strong); }
+.dd-pipeline-card-head { display: flex; align-items: center; justify-content: space-between; }
+.dd-pipeline-card-title {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: var(--w-bold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-1);
+  margin: 0;
+}
+
+.dd-pipeline-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding-top: var(--s-2);
+  border-top: 1px solid var(--border-1);
+}
+.dd-pipeline-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  font-size: 13px;
+}
+.dd-pipeline-row-label {
+  color: var(--fg-3);
+  font-weight: var(--w-medium);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.dd-pipeline-row-value {
+  color: var(--fg-1);
+  font-weight: var(--w-semibold);
+  font-family: 'Inter', var(--font-sans);
+  font-feature-settings: 'tnum', 'zero';
+}
+.dd-pipeline-notes-count {
+  color: var(--fg-2);
+  font-weight: var(--w-medium);
+}
+
+.dd-pipeline-stage-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  font-size: 11px;
+  font-weight: var(--w-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--bg-subtle);
+  color: var(--fg-2);
+  border: 1px solid var(--border-1);
+}
+.dd-pipeline-stage-pill.stage-new           { background: color-mix(in srgb, var(--info)        14%, var(--card)); color: var(--info);        border-color: color-mix(in srgb, var(--info)        30%, transparent); }
+.dd-pipeline-stage-pill.stage-due_diligence { background: color-mix(in srgb, var(--warning)     14%, var(--card)); color: var(--warning);     border-color: color-mix(in srgb, var(--warning)     30%, transparent); }
+.dd-pipeline-stage-pill.stage-contacted     { background: color-mix(in srgb, var(--primary)     14%, var(--card)); color: var(--primary);     border-color: color-mix(in srgb, var(--primary)     30%, transparent); }
+.dd-pipeline-stage-pill.stage-negotiating   { background: color-mix(in srgb, var(--primary)     18%, var(--card)); color: var(--primary);     border-color: color-mix(in srgb, var(--primary)     40%, transparent); }
+.dd-pipeline-stage-pill.stage-offer_made    { background: color-mix(in srgb, var(--chart-2)     14%, var(--card)); color: var(--chart-2);     border-color: color-mix(in srgb, var(--chart-2)     30%, transparent); }
+.dd-pipeline-stage-pill.stage-dead          { background: color-mix(in srgb, var(--destructive) 12%, var(--card)); color: var(--destructive); border-color: color-mix(in srgb, var(--destructive) 30%, transparent); }
+
+/* Card lift in light mode — same treatment as the existing .dd-card family */
+[data-theme="light"] .dd-identity,
+[data-theme="light"] .dd-why-flagged,
+[data-theme="light"] .dd-pipeline-card {
+  box-shadow: 0 1px 2px rgba(13,13,13,0.05),
+              0 1px 1px rgba(13,13,13,0.03);
+}
+[data-theme="light"] .dd-identity:hover,
+[data-theme="light"] .dd-why-flagged:hover,
+[data-theme="light"] .dd-pipeline-card:hover {
+  box-shadow: 0 4px 12px rgba(13,13,13,0.08),
+              0 2px 4px rgba(13,13,13,0.04);
+}
+
+/* Responsive: collapse to 1-column under 1100px, address card spans full */
+@media (max-width: 1100px) {
+  .dd-upper-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  .dd-identity-thumbs { grid-template-columns: 1fr; }
+}
