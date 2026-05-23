@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Phone, Share2, Star } from 'lucide-react';
 import { ContactLogModal } from './ContactLogModal.jsx';
 import { Rows, SecHead, ConfBadge } from './DealDetail.helpers.jsx';
@@ -6,6 +6,7 @@ import { OwnerPortfolio } from './OwnerPortfolio.jsx';
 import { SectionNav } from './DealDetail/SectionNav.jsx';
 import { ScoreScale } from './DealDetail/ScoreScale.jsx';
 import { BriefBlock } from './DealDetail/BriefBlock.jsx';
+import { StageIndicator } from './DealDetail/StageIndicator.jsx';
 import { fmt, fmtMoney, hasVal } from '../lib/format.js';
 import { useDeals } from '../contexts/DealsContext.jsx';
 import { useReadState } from '../contexts/ReadStateContext';
@@ -17,9 +18,6 @@ function hasRows(rows) {
   return rows.some(([, v]) => v != null && v !== '' && v !== '—' && v !== 'null' && v !== 'undefined');
 }
 
-const STATUS_OPTIONS = ['new', 'due_diligence', 'contacted', 'negotiating', 'offer_made', 'dead'];
-const STATUS_LABELS = { new: 'New', due_diligence: 'Due Diligence', contacted: 'Contacted', negotiating: 'Negotiating', offer_made: 'Offer Made', dead: 'Dead' };
-const STATUS_COLORS = { new: 'gray', due_diligence: 'blue', contacted: 'amber', negotiating: 'amber', offer_made: 'green', dead: 'red' };
 
 function pct(v) {
   if (!hasVal(v)) return null;
@@ -51,25 +49,14 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
   const addToast = useToast();
   const collapsed = useStickyCollapse(120);
   const [hotLoading, setHotLoading] = useState(false);
-  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [contactModalOpen, setContactModalOpen] = useState(false);
   const [contactSubmitting, setContactSubmitting] = useState(false);
   const [noteInput, setNoteInput] = useState('');
   const [noteSaving, setNoteSaving] = useState(false);
-  const statusRef = useRef(null);
 
   useEffect(() => { markRead(deal.id); }, [deal.id, markRead]);
   useEffect(() => { fetchContacts(deal.id); }, [deal.id, fetchContacts]);
   useEffect(() => { fetchDealNotes(deal.id); }, [deal.id, fetchDealNotes]);
-
-  useEffect(() => {
-    if (!showStatusDropdown) return;
-    function onOutside(e) {
-      if (statusRef.current && !statusRef.current.contains(e.target)) setShowStatusDropdown(false);
-    }
-    document.addEventListener('mousedown', onOutside);
-    return () => document.removeEventListener('mousedown', onOutside);
-  }, [showStatusDropdown]);
 
   const bj = deal.briefJson || deal.brief_json || {};
   const cr = bj.climate || {};
@@ -81,8 +68,6 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
   const cityMsa = [city, deal.msa].filter(Boolean).join(' · ');
   const line2Parts = [cityMsa, deal.asset_class || deal.use_type].filter(Boolean);
   const currentStatus = deal.status || 'new';
-  const statusColor = STATUS_COLORS[currentStatus] || 'gray';
-  const statusLabel = STATUS_LABELS[currentStatus] || currentStatus;
   const dealContactList = contacts[deal.id] || [];
   const dealNotesList = dealNotes[deal.id] || [];
   const signals = bj.signal_tags || bj.distress_signals || deal.signals || [];
@@ -104,8 +89,8 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
   }
 
   async function handleStatusChange(newStatus) {
-    setShowStatusDropdown(false);
     await updateStatus(deal.id, newStatus);
+    addToast(`Stage updated`, 'success');
   }
 
   async function handleShare() {
@@ -333,6 +318,7 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
   return (
     <div className="dd-root">
       <SectionNav sections={sectionDefs} />
+      <StageIndicator status={currentStatus} onStageChange={handleStatusChange} />
       <div className="dd-nav-band" />
 
       <div className={`dd-sticky-header${collapsed ? ' collapsed' : ''}`}>
@@ -410,34 +396,6 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
           </div>
         </div>
 
-        {!collapsed && (
-          <div className="dd-substrip">
-            <div className="dd-status-chip-wrap" ref={statusRef}>
-              <button
-                className={`dd-status-chip ${statusColor}`}
-                onClick={() => setShowStatusDropdown(p => !p)}
-              >
-                <span className="dd-status-dot" />
-                {statusLabel}
-                <span className="dd-status-caret">▾</span>
-              </button>
-              {showStatusDropdown && (
-                <div className="dd-status-dropdown dd-status-dropdown--right">
-                  {STATUS_OPTIONS.map(s => (
-                    <button
-                      key={s}
-                      className={`dd-status-option ${STATUS_COLORS[s] || 'gray'}${s === currentStatus ? ' active' : ''}`}
-                      onClick={() => handleStatusChange(s)}
-                    >
-                      <span className="dd-status-dot" />
-                      {STATUS_LABELS[s]}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
 
       <BriefBlock deal={deal} signals={signals} />

@@ -2115,3 +2115,152 @@
   border-radius: 50%;
   background: var(--chip-color, var(--smoke));
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Phase 5 — Deal stage indicator (above sticky header)
+   ───────────────────────────────────────────────────────────── */
+
+.dd-stage-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-4);
+  padding: var(--s-3) var(--s-6);
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-1);
+}
+[data-theme="dark"] .dd-stage-bar {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.dd-stage-list {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.dd-stage-item {
+  display: inline-flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+.dd-stage-item:last-child { flex: 0 0 auto; }
+
+.dd-stage-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: var(--r-pill);
+  font-family: var(--font-sans);
+  font-size: var(--t-cap);
+  color: var(--fg-3);
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.dd-stage-btn:hover { background: var(--bg-subtle); color: var(--fg-1); }
+.dd-stage-btn:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+.dd-stage-btn:disabled { cursor: default; opacity: 0.6; }
+
+.dd-stage-pip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-1);
+  font-family: 'Inter', var(--font-sans);
+  font-feature-settings: 'tnum', 'zero';
+  font-size: 11px;
+  font-weight: var(--w-bold);
+  color: var(--fg-3);
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+}
+.dd-stage-label {
+  font-weight: var(--w-medium);
+  white-space: nowrap;
+}
+
+.dd-stage-connector {
+  flex: 1;
+  height: 1px;
+  background: var(--border-1);
+  margin: 0 6px;
+  min-width: 14px;
+  transition: background var(--dur-base) var(--ease-out);
+}
+.dd-stage-connector.filled { background: var(--green); }
+
+.dd-stage-item.completed .dd-stage-pip {
+  background: var(--green);
+  border-color: var(--green);
+  color: #06200B;
+}
+.dd-stage-item.completed .dd-stage-label { color: var(--fg-2); }
+
+.dd-stage-item.current .dd-stage-pip {
+  background: var(--green);
+  border-color: var(--green);
+  color: #06200B;
+  box-shadow: 0 0 0 4px rgba(91, 204, 72, 0.18);
+}
+.dd-stage-item.current .dd-stage-label {
+  color: var(--fg-1);
+  font-weight: var(--w-semibold);
+}
+
+.dd-stage-item.pending .dd-stage-pip {
+  color: var(--fg-4);
+}
+
+.dd-stage-bar.dead .dd-stage-pip {
+  opacity: 0.4;
+}
+.dd-stage-dead-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 10px;
+  background: rgba(229, 72, 77, 0.12);
+  color: var(--danger);
+  border-radius: var(--r-pill);
+  font-size: 11px;
+  font-weight: var(--w-bold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.dd-stage-dead-reset {
+  background: none;
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  font-weight: var(--w-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.dd-stage-dead-reset:hover { background: rgba(229, 72, 77, 0.16); }
+
+@media (max-width: 900px) {
+  .dd-stage-bar { padding: var(--s-2) var(--s-3); }
+  .dd-stage-label { display: none; }
+  .dd-stage-item.current .dd-stage-label {
+    display: inline;
+    margin-left: 2px;
+  }
+}
