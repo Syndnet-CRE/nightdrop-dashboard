@@ -111,86 +111,45 @@ value (assessed_value). Selection persists via sessionStorage
 Empty / loading / not-found states owned by `DashboardView`. Mobile collapse
 (`<=640px`): card stacks image-on-top (180px tall full-width) via CSS only.
 
-### Deal detail (rebuilt 2026-05-23)
+### Deal detail (rebuilt 2026-05-22)
 
-Full-viewport takeover. When `/deal/:id` is hit standalone (not as the
-map-modal overlay), AppShell skips `<TopHeader>` and `<LeftPanel>`
-entirely and renders just `<DealDetailPage>` at the root. The page owns
-edge-to-edge of the viewport. Only way out is the breadcrumb's "Back to
-Deals" link or Escape. Modal-from-map case (location.state.fromMap from
-MapView) keeps the existing in-place modal overlay behavior.
-
-Document scrolls naturally (no internal overflow) so the sticky
-breadcrumb tracks `window.scrollY` for its on-scroll address injection.
+Single scrolling document. No tab strip. Right-edge SectionNav handles
+in-page navigation via IntersectionObserver scroll-spy. Sticky header
+collapses past 120px scroll.
 
 ```
-DealDetail.jsx (~105 lines — orchestrator only)
-  ├─ DealDetail/BreadcrumbStrip      (top-of-page sticky: Back | Deal X of Y +
-  │    │                              prev/next | Share | Add to List | Mark
-  │    │                              as Hot | More menu)
-  │    └─ DealDetail/MoreMenu        (3-dot dropdown: Not Relevant + Copy link)
-  ├─ DealDetail/StageIndicator       (5-stage pipeline tracker)
-  ├─ DealDetail/IdentityColumn       (left column — address, asset/year/SF/lot
-  │                                   chips, satellite + parcel thumbs,
-  │                                   Assessed Value / Last Sale Price / Date)
-  ├─ DealDetail/WhyFlaggedCard       (center — title + ScoreScale top-right,
-  │    │                              one-line thesis, signal bullets with
-  │    │                              tier icons, "View AI Analysis →" anchor)
-  │    └─ DealDetail/ScoreScale      (score number + 0-100 horizontal bar)
-  ├─ DealDetail/PipelineStatusCard   (right — Current Stage / Date Added /
-  │                                   Notes count; probability + next step +
-  │                                   tags hidden until backend supplies them)
-  ├─ DealDetail/NarrativeSection     (full AI prose with regex-bold
-  │                                   $ / SF / year / geo tokens; paragraph-split
-  │                                   on blank lines)
-  ├─ DealDetail/RecommendedAction    (distinct callout w/ Lightbulb icon —
-  │                                   primary-tinted bg + 4px left stripe)
-  ├─ DealDetail/PropertyIntelligenceCard  ┐
-  ├─ DealDetail/DistressSignalsCard       │  3-panel grid (left 2/3)
-  ├─ DealDetail/OwnershipHistoryCard      ┘
-  └─ DealDetail/OwnerPortfolioCard   (right 1/3 — wraps OwnerPortfolio +
-       └─ OwnerPortfolio + OwnerPortfolioTable
-          (D3 force graph + clickable address table — see below)
-
-Shared:
-  DealDetail/Expandable.jsx           (ExpandToggle button — "View Full X →"
-                                       inline expander used by every data panel)
-  hooks/useStickyCollapse.js          (rAF-throttled window.scrollY → bool;
-                                       threshold 280 here, injects address +
-                                       compact ScoreScale into breadcrumb)
-  lib/boldNarrative.js                (regex-bold engine — extracted so it's
-                                       reusable; produces React node tree)
+DealDetail.jsx (~680 lines — orchestrator)
+  ├─ DealDetail/SectionNav.jsx       (right-edge dots, hover→labels, arrow-key nav)
+  ├─ DealDetail/ScoreScale.jsx       (score number + 0-100 horizontal track)
+  ├─ DealDetail/StageIndicator.jsx   (New → Researching → Contacted → Negotiating → Closed)
+  ├─ DealDetail/BriefBlock.jsx       (3-col grid; FactCard | Narrative | ImagesStack)
+  │    ├─ BriefFactCard              (asset chip + key numbers + owner)
+  │    ├─ BriefNarrative             (regex-bold $/SF/year/geo tokens)
+  │    └─ BriefImagesStack           (Mapbox satellite + Google Street View Static)
+  ├─ DealDetail/SignalSeverityTable  (3px left tier stripe: urgent/pressure/flag)
+  ├─ ContactLogModal.jsx
+  ├─ OwnerPortfolio.jsx              (D3 force graph — see below)
+  └─ DealDetail/OwnerPortfolioTable  (clickable rows → /map?focus=:dealId)
+hooks/useStickyCollapse.js — rAF-throttled scroll listener for header collapse
 ```
 
-Header actions live in the breadcrumb only:
-- Share → clipboard + toast
-- Add to List → toggles `deal.saved` via DealsContext.toggleSaved
-  (PATCH /api/dealfeed/deals/:id/save), label flips Saved/Add
-- Mark as Hot → dominant primary CTA, toggles `deal.feedback === 'hot'`
-- More menu → Not Relevant (PATCH feedback) + Copy link
+Header actions (full → compact):
+- ScoreScale (compact in collapsed mode)
+- Mark as Hot (`dd-action-primary`, dominant green)
+- Not Relevant (`dd-action-secondary`, outline)
+- Contact (icon button → ContactLogModal)
+- Share (icon button → clipboard + toast)
 
-On scroll past 280px, breadcrumb gains a center cluster showing address +
-compact score so the user always knows what they're looking at.
+Pipeline stages map to backend status enum: Researching=due_diligence,
+Closed=offer_made (label aliasing, zero backend changes).
 
-Pipeline stages map to backend status enum: Researching = due_diligence,
-Closed = offer_made (label aliasing, zero backend changes).
-
-Signal severity (frontend keyword match on tag + category):
+Signal severity (frontend keyword match on tag+category):
 - urgent: foreclos / tax / delinq / lien / auction / maturity / default
 - pressure: absentee / investor / long_term / hold / arm / high_ltv / free_clear / deed
 - flag: everything else
 
-Every data panel hides entirely when it has no rows. Each card has a
-hover state (background + border + light-theme shadow lift). Section
-headers are neutral fg-1, not green. Timestamps render in Inter tnum
-at fg-4 (neutral gray).
-
-Notes section / contact-history / ContactLogModal / quick-actions / the
-former 14-section property data grid are all DELETED — not hidden — per
-Brady's 2026-05-23 spec. Financial-strip section explicitly skipped
-because backend has no proforma data (ARV / profit / cash needed / all-in
-cost / margin / break-even rent). Identity column surfaces only real
-backend values: Assessed Value, Last Sale Price, Last Sale Date.
+Street view requires `VITE_GOOGLE_MAPS_API_KEY`. Metadata pre-check
+prevents charging on ZERO_RESULTS coverage; graceful placeholder otherwise.
 
 ### Owner portfolio
 ```
