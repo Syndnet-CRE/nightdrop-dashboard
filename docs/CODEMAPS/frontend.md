@@ -111,16 +111,58 @@ value (assessed_value). Selection persists via sessionStorage
 Empty / loading / not-found states owned by `DashboardView`. Mobile collapse
 (`<=640px`): card stacks image-on-top (180px tall full-width) via CSS only.
 
-### Deal detail
+### Deal detail (rebuilt 2026-05-22)
+
+Single scrolling document. No tab strip. Right-edge SectionNav handles
+in-page navigation via IntersectionObserver scroll-spy. Sticky header
+collapses past 120px scroll.
+
 ```
-DealDetail.jsx (12 tabs, ~1100 lines)
-  ├─ OwnerPortfolio.jsx (D3 force graph)
-  ├─ PipelineTimeline.jsx
+DealDetail.jsx (~680 lines — orchestrator)
+  ├─ DealDetail/SectionNav.jsx       (right-edge dots, hover→labels, arrow-key nav)
+  ├─ DealDetail/ScoreScale.jsx       (score number + 0-100 horizontal track)
+  ├─ DealDetail/StageIndicator.jsx   (New → Researching → Contacted → Negotiating → Closed)
+  ├─ DealDetail/BriefBlock.jsx       (3-col grid; FactCard | Narrative | ImagesStack)
+  │    ├─ BriefFactCard              (asset chip + key numbers + owner)
+  │    ├─ BriefNarrative             (regex-bold $/SF/year/geo tokens)
+  │    └─ BriefImagesStack           (Mapbox satellite + Google Street View Static)
+  ├─ DealDetail/SignalSeverityTable  (3px left tier stripe: urgent/pressure/flag)
   ├─ ContactLogModal.jsx
-  └─ ScoreBadge, AerialThumb, DealComponents shared atoms
+  ├─ OwnerPortfolio.jsx              (D3 force graph — see below)
+  └─ DealDetail/OwnerPortfolioTable  (clickable rows → /map?focus=:dealId)
+hooks/useStickyCollapse.js — rAF-throttled scroll listener for header collapse
 ```
-Signal pill renderers in Discovery section + Distress table read `.tag` first
-with same fallback chain as FeedDealCard. Empty-label signals are skipped.
+
+Header actions (full → compact):
+- ScoreScale (compact in collapsed mode)
+- Mark as Hot (`dd-action-primary`, dominant green)
+- Not Relevant (`dd-action-secondary`, outline)
+- Contact (icon button → ContactLogModal)
+- Share (icon button → clipboard + toast)
+
+Pipeline stages map to backend status enum: Researching=due_diligence,
+Closed=offer_made (label aliasing, zero backend changes).
+
+Signal severity (frontend keyword match on tag+category):
+- urgent: foreclos / tax / delinq / lien / auction / maturity / default
+- pressure: absentee / investor / long_term / hold / arm / high_ltv / free_clear / deed
+- flag: everything else
+
+Street view requires `VITE_GOOGLE_MAPS_API_KEY`. Metadata pre-check
+prevents charging on ZERO_RESULTS coverage; graceful placeholder otherwise.
+
+### Owner portfolio
+```
+OwnerPortfolio.jsx
+  ├─ d3-force simulation (scaleSqrt → node radius 10-32 by assessed_value)
+  ├─ getAssetClassColor (buyBoxTaxonomy.js, 10-class palette)
+  ├─ Floating React tooltip (mouse-coord positioned)
+  └─ OwnerPortfolioTable (Address | Class | Assessed | Bldg SF | Lot | Match)
+```
+Caps at 50 visible nodes; surplus surfaces a note + still appears in table.
+Graph clicks + table-row clicks both route to `/map?focus=:dealId`; MapView
+reads the search param on mount, flies to the parcel, and clears the param.
+Rows without `deal_id` (not in user's feed) render disabled with a tooltip.
 
 ### Buy boxes kanban
 ```
