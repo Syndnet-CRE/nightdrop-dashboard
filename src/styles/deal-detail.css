@@ -1406,3 +1406,180 @@
 @media (max-width: 768px) {
   .dd-card { padding: var(--s-4); }
 }
+
+/* ─────────────────────────────────────────────────────────────
+   Phase 2 — Sticky collapse, ScoreScale, action hierarchy
+   ───────────────────────────────────────────────────────────── */
+
+.dd-sticky-header {
+  transition: padding var(--dur-base) var(--ease-out);
+}
+.dd-sticky-header.collapsed .dd-addr-bar {
+  min-height: 44px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.dd-sticky-header.collapsed .dd-addr-line1 {
+  font-size: var(--t-cap);
+  font-weight: var(--w-semibold);
+}
+
+/* Score scale (number + mini horizontal bar showing position 0-100) */
+.dd-score-scale {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 88px;
+  padding: 4px 10px;
+  border-radius: var(--r-sm);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-1);
+}
+.dd-score-scale.compact {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 2px 8px;
+}
+.dd-score-scale-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.dd-score-scale-num {
+  font-family: 'Inter', var(--font-sans);
+  font-feature-settings: 'tnum', 'zero';
+  font-weight: var(--w-bold);
+  font-size: 18px;
+  line-height: 1;
+  color: var(--fg-1);
+  letter-spacing: -0.01em;
+}
+.dd-score-scale.compact .dd-score-scale-num {
+  font-size: 14px;
+}
+.dd-score-scale-label {
+  font-size: 9px;
+  font-weight: var(--w-bold);
+  letter-spacing: var(--track-eyebrow);
+  text-transform: uppercase;
+  color: var(--fg-4);
+}
+.dd-score-scale-track {
+  height: 4px;
+  width: 60px;
+  background: var(--smoke);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.dd-score-scale.compact .dd-score-scale-track {
+  width: 44px;
+  height: 3px;
+}
+.dd-score-scale-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width var(--dur-base) var(--ease-out),
+              background var(--dur-fast) var(--ease-out);
+}
+.dd-score-scale.hi .dd-score-scale-fill   { background: var(--danger); }
+.dd-score-scale.md .dd-score-scale-fill   { background: var(--warning); }
+.dd-score-scale.lo .dd-score-scale-fill   { background: var(--success); }
+.dd-score-scale.none .dd-score-scale-fill { background: var(--steel); }
+.dd-score-scale-ends {
+  display: flex;
+  justify-content: space-between;
+  font-family: 'Inter', var(--font-sans);
+  font-feature-settings: 'tnum', 'zero';
+  font-size: 9px;
+  color: var(--fg-4);
+  margin-top: 1px;
+  width: 60px;
+}
+
+/* Action button hierarchy
+   primary (Mark as Hot) — dominant, green-filled
+   secondary (Not Relevant) — outline, muted
+   icon (Contact, Share) — ghost with icon + label */
+.dd-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: var(--r-sm);
+  font-size: var(--t-cap);
+  font-weight: var(--w-semibold);
+  font-family: var(--font-sans);
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--fg-1);
+  white-space: nowrap;
+  transition: background var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out),
+              color var(--dur-fast) var(--ease-out),
+              transform var(--dur-fast) var(--ease-out);
+}
+.dd-action:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+.dd-action:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.dd-action-primary {
+  background: var(--green);
+  border-color: var(--green);
+  color: #06200B;
+  font-weight: var(--w-bold);
+  box-shadow: 0 1px 0 rgba(13, 13, 13, 0.04);
+}
+.dd-action-primary:hover:not(:disabled) {
+  background: var(--green-bright);
+  border-color: var(--green-bright);
+}
+.dd-action-primary.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+
+.dd-action-secondary {
+  background: transparent;
+  border-color: var(--border-1);
+  color: var(--fg-2);
+  font-weight: var(--w-medium);
+}
+.dd-action-secondary:hover:not(:disabled) {
+  border-color: var(--fg-3);
+  color: var(--fg-1);
+  background: var(--bg-subtle);
+}
+.dd-action-secondary.active {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: rgba(229, 72, 77, 0.08);
+}
+
+.dd-action-icon {
+  background: transparent;
+  border-color: transparent;
+  color: var(--fg-2);
+  padding: 7px 10px;
+}
+.dd-action-icon:hover {
+  background: var(--bg-subtle);
+  color: var(--fg-1);
+}
+
+/* Collapse compresses action labels — icons only on icon buttons */
+.dd-sticky-header.collapsed .dd-action {
+  padding: 5px 10px;
+  font-size: var(--t-micro);
+}
+.dd-sticky-header.collapsed .dd-action-icon {
+  padding: 6px;
+}
+.dd-sticky-header.collapsed .dd-action-icon .dd-action-label {
+  display: none;
+}

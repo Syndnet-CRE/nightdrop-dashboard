@@ -1,14 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
-import { Phone } from 'lucide-react';
+import { Phone, Share2, Star } from 'lucide-react';
 import { AerialThumb } from './AerialThumb.jsx';
 import { ContactLogModal } from './ContactLogModal.jsx';
 import { Rows, SecHead, Chip, ConfBadge } from './DealDetail.helpers.jsx';
 import { OwnerPortfolio } from './OwnerPortfolio.jsx';
 import { SectionNav } from './DealDetail/SectionNav.jsx';
+import { ScoreScale } from './DealDetail/ScoreScale.jsx';
 import { fmt, fmtMoney, hasVal } from '../lib/format.js';
 import { useDeals } from '../contexts/DealsContext.jsx';
 import { useReadState } from '../contexts/ReadStateContext';
 import { useToast } from '../contexts/ToastContext';
+import { useStickyCollapse } from '../hooks/useStickyCollapse.js';
 import '../styles/deal-detail.css';
 
 function hasRows(rows) {
@@ -33,14 +35,6 @@ function sfVal(v) {
   const n = parseFloat(v);
   return isNaN(n) ? null : n.toLocaleString() + ' sf';
 }
-function scoreVariant(score) {
-  if (!hasVal(score)) return 'none';
-  const n = parseFloat(score);
-  if (isNaN(n)) return 'none';
-  if (n >= 70) return 'hi';
-  if (n >= 40) return 'md';
-  return 'lo';
-}
 function climateScore(v) {
   if (!hasVal(v)) return null;
   const n = parseFloat(v);
@@ -55,6 +49,7 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
   const { postFeedback, updateStatus, logContact, fetchContacts, contacts, dealNotes, fetchDealNotes, createDealNote } = useDeals();
   const { markRead } = useReadState();
   const addToast = useToast();
+  const collapsed = useStickyCollapse(120);
   const [hotLoading, setHotLoading] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [contactModalOpen, setContactModalOpen] = useState(false);
@@ -82,8 +77,6 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
   const attomId = deal.attomId || deal.attom_id;
   const enriched = bj.enriched_at || deal.updated_at;
   const score = deal.distress_score ?? deal.score;
-  const variant = scoreVariant(score);
-  const scoreLabel = hasVal(score) ? `Score ${Math.round(parseFloat(score))}` : 'No Score';
   const city = [deal.city, deal.state].filter(Boolean).join(', ');
   const cityMsa = [city, deal.msa].filter(Boolean).join(' · ');
   const line2Parts = [cityMsa, deal.asset_class || deal.use_type].filter(Boolean);
@@ -121,6 +114,16 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
   async function handleStatusChange(newStatus) {
     setShowStatusDropdown(false);
     await updateStatus(deal.id, newStatus);
+  }
+
+  async function handleShare() {
+    const url = `${window.location.origin}/deal/${deal.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      addToast('Link copied — recipient must be a Nightdrop subscriber.', 'success');
+    } catch {
+      addToast('Could not copy link', 'error');
+    }
   }
 
   async function handleLogContact(formData) {
@@ -342,34 +345,44 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
       <SectionNav sections={sectionDefs} />
       <div className="dd-nav-band" />
 
-      <div className="dd-sticky-header">
+      <div className={`dd-sticky-header${collapsed ? ' collapsed' : ''}`}>
         <div className="dd-addr-bar">
           <div className="dd-addr-identity">
             <span className="dd-addr-line1">{deal.address || 'Unknown Address'}</span>
-            {line2Parts.length > 0 && (
+            {!collapsed && line2Parts.length > 0 && (
               <span className="dd-addr-line2">{line2Parts.join(' · ')}</span>
             )}
-            {onClose && (
+            {!collapsed && onClose && (
               <button className="dd-addr-back" onClick={onClose}>← Back to deals</button>
             )}
           </div>
-          <div className="dd-addr-divider" />
-          <div className="dd-addr-metrics">
-            {metrics.map(m => (
-              <div key={m.label} className="dd-addr-metric-cell">
-                <span className="dd-addr-metric-label">{m.label}</span>
-                <span className="dd-addr-metric-value">{m.value || '—'}</span>
+          {!collapsed && (
+            <>
+              <div className="dd-addr-divider" />
+              <div className="dd-addr-metrics">
+                {metrics.map(m => (
+                  <div key={m.label} className="dd-addr-metric-cell">
+                    <span className="dd-addr-metric-label">{m.label}</span>
+                    <span className="dd-addr-metric-value">{m.value || '—'}</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          )}
           <div className="dd-addr-divider" />
           <div className="dd-addr-actions">
-            <span className={`dd-score-badge ${variant}`}>{scoreLabel}</span>
-            <button className="dd-btn primary" onClick={handleMarkHot} disabled={hotLoading}>
-              {deal.feedback === 'hot' ? '★ Hot' : '☆ Mark as Hot'}
+            <ScoreScale score={score} compact={collapsed} />
+            <button
+              className={`dd-action dd-action-primary${deal.feedback === 'hot' ? ' active' : ''}`}
+              onClick={handleMarkHot}
+              disabled={hotLoading}
+              title={deal.feedback === 'hot' ? 'Unmark as Hot' : 'Mark as Hot'}
+            >
+              <Star size={14} strokeWidth={2.4} fill={deal.feedback === 'hot' ? 'currentColor' : 'none'} />
+              <span className="dd-action-label">{deal.feedback === 'hot' ? 'Hot' : 'Mark as Hot'}</span>
             </button>
             <button
-              className={`dd-btn outline${deal.feedback === 'not_relevant' ? ' active' : ''}`}
+              className={`dd-action dd-action-secondary${deal.feedback === 'not_relevant' ? ' active' : ''}`}
               onClick={async () => {
                 const isUndo = deal.feedback === 'not_relevant';
                 await postFeedback(deal.id, isUndo ? null : 'not_relevant');
@@ -379,8 +392,27 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
                 );
                 if (!isUndo && onClose) onClose();
               }}
+              title={deal.feedback === 'not_relevant' ? 'Undo not relevant' : 'Not relevant'}
             >
-              {deal.feedback === 'not_relevant' ? '✓ Not Relevant' : 'Not Relevant'}
+              <span className="dd-action-label">{deal.feedback === 'not_relevant' ? '✓ Not Relevant' : 'Not Relevant'}</span>
+            </button>
+            <button
+              className="dd-action dd-action-icon"
+              onClick={() => setContactModalOpen(true)}
+              title="Log contact"
+              aria-label="Log contact"
+            >
+              <Phone size={14} strokeWidth={2.2} />
+              <span className="dd-action-label">Contact</span>
+            </button>
+            <button
+              className="dd-action dd-action-icon"
+              onClick={handleShare}
+              title="Copy shareable link"
+              aria-label="Share deal"
+            >
+              <Share2 size={14} strokeWidth={2.2} />
+              <span className="dd-action-label">Share</span>
             </button>
             {onClose && (
               <button className="dd-btn close-btn" onClick={onClose} aria-label="Close">&times;</button>
@@ -388,36 +420,34 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
           </div>
         </div>
 
-        <div className="dd-substrip">
-          <div className="dd-status-chip-wrap" ref={statusRef}>
-            <button
-              className={`dd-status-chip ${statusColor}`}
-              onClick={() => setShowStatusDropdown(p => !p)}
-            >
-              <span className="dd-status-dot" />
-              {statusLabel}
-              <span className="dd-status-caret">▾</span>
-            </button>
-            {showStatusDropdown && (
-              <div className="dd-status-dropdown dd-status-dropdown--right">
-                {STATUS_OPTIONS.map(s => (
-                  <button
-                    key={s}
-                    className={`dd-status-option ${STATUS_COLORS[s] || 'gray'}${s === currentStatus ? ' active' : ''}`}
-                    onClick={() => handleStatusChange(s)}
-                  >
-                    <span className="dd-status-dot" />
-                    {STATUS_LABELS[s]}
-                  </button>
-                ))}
-              </div>
-            )}
+        {!collapsed && (
+          <div className="dd-substrip">
+            <div className="dd-status-chip-wrap" ref={statusRef}>
+              <button
+                className={`dd-status-chip ${statusColor}`}
+                onClick={() => setShowStatusDropdown(p => !p)}
+              >
+                <span className="dd-status-dot" />
+                {statusLabel}
+                <span className="dd-status-caret">▾</span>
+              </button>
+              {showStatusDropdown && (
+                <div className="dd-status-dropdown dd-status-dropdown--right">
+                  {STATUS_OPTIONS.map(s => (
+                    <button
+                      key={s}
+                      className={`dd-status-option ${STATUS_COLORS[s] || 'gray'}${s === currentStatus ? ' active' : ''}`}
+                      onClick={() => handleStatusChange(s)}
+                    >
+                      <span className="dd-status-dot" />
+                      {STATUS_LABELS[s]}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-          <button className="dd-contact-btn" onClick={() => setContactModalOpen(true)}>
-            <Phone size={13} strokeWidth={2.2} />
-            Log Contact
-          </button>
-        </div>
+        )}
       </div>
 
       <div id="dd-brief" className="dd-discovery-panel">
