@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { Phone, Share2, Star } from 'lucide-react';
-import { AerialThumb } from './AerialThumb.jsx';
 import { ContactLogModal } from './ContactLogModal.jsx';
-import { Rows, SecHead, Chip, ConfBadge } from './DealDetail.helpers.jsx';
+import { Rows, SecHead, ConfBadge } from './DealDetail.helpers.jsx';
 import { OwnerPortfolio } from './OwnerPortfolio.jsx';
 import { SectionNav } from './DealDetail/SectionNav.jsx';
 import { ScoreScale } from './DealDetail/ScoreScale.jsx';
+import { BriefBlock } from './DealDetail/BriefBlock.jsx';
 import { fmt, fmtMoney, hasVal } from '../lib/format.js';
 import { useDeals } from '../contexts/DealsContext.jsx';
 import { useReadState } from '../contexts/ReadStateContext';
@@ -86,14 +86,6 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
   const dealContactList = contacts[deal.id] || [];
   const dealNotesList = dealNotes[deal.id] || [];
   const signals = bj.signal_tags || bj.distress_signals || deal.signals || [];
-
-  function signalColor(sig) {
-    const raw = typeof sig === 'string' ? sig : (sig.type || sig.category || sig.label || '');
-    const t = raw.toLowerCase();
-    if (t.includes('tax') || t.includes('lien') || t.includes('delinq') || t.includes('forecl')) return 'red';
-    if (t.includes('vacan') || t.includes('code') || t.includes('rising') || t.includes('absentee')) return 'amber';
-    return 'green';
-  }
 
   function ownerDistanceCell() {
     const mailing = deal.owner_mailing || bj.owner_mailing;
@@ -317,7 +309,6 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
   const showForeclosure = hasRows(foreclosureRows);
   const showClimate     = hasRows(climateRows);
   const showRisk        = hasRows(riskRows);
-  const showDistress    = signals.length > 0;
   const showDealIntel   = hasRows(dealIntelRows);
   const showPortfolio   = !!attomId;
 
@@ -334,7 +325,6 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
     { id: 'dd-foreclosure', label: 'Foreclosure',     show: showForeclosure },
     { id: 'dd-climate',     label: 'Climate',         show: showClimate },
     { id: 'dd-risk',        label: 'Risk',            show: showRisk },
-    { id: 'dd-distress',    label: 'Distress Signals',show: showDistress },
     { id: 'dd-dealintel',   label: 'Deal Intel',      show: showDealIntel },
     { id: 'dd-portfolio',   label: 'Owner Portfolio', show: showPortfolio },
     { id: 'dd-notes',       label: 'Notes',           show: true },
@@ -450,43 +440,7 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
         )}
       </div>
 
-      <div id="dd-brief" className="dd-discovery-panel">
-        <div className="dd-discovery-left">
-          <span className="dd-discovery-eyebrow">AI Property Brief</span>
-          {bj.headline && <p className="dd-headline">{bj.headline}</p>}
-          <p className={`dd-discovery-narrative${bj.narrative ? '' : ' dd-discovery-narrative--empty'}`}>
-            {bj.narrative || 'No summary narrative available for this property.'}
-          </p>
-          {(signals.length > 0 || deal.absentee_owner) && (
-            <div className="dd-discovery-signals">
-              {deal.absentee_owner && (
-                <span className="dd-signal-pill amber">Absentee Owner</span>
-              )}
-              {signals.map((sig, i) => {
-                const raw = typeof sig === 'string' ? sig : (sig?.tag || sig?.label || sig?.description || sig?.type);
-                const label = (typeof raw === 'string' && raw.trim()) ? raw : null;
-                if (!label) return null;
-                return (
-                  <span key={i} className={`dd-signal-pill ${signalColor(sig)}`}>
-                    {label}
-                  </span>
-                );
-              })}
-            </div>
-          )}
-          {bj.next_action && (
-            <div className="dd-next-action">
-              <span className="dd-next-action-label">Recommended Action</span>
-              <span className="dd-next-action-text">{bj.next_action}</span>
-            </div>
-          )}
-        </div>
-        <div className="dd-discovery-right">
-          <div className="dd-discovery-image">
-            <AerialThumb id={deal.id} lat={deal.lat} lng={deal.lng} large={true} showParcel={false} />
-          </div>
-        </div>
-      </div>
+      <BriefBlock deal={deal} signals={signals} />
 
       <div className="dd-body" style={{ flex: 1 }}>
         <div className="dd-cols">
@@ -672,43 +626,6 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
             </div>
             )}
 
-            {showDistress && (
-            <div id="dd-distress" className="dd-sec dd-card">
-              <SecHead title="Distress Signals" date={enriched} />
-              <div className="dd-sec-body">
-                {signals.length > 0 ? (
-                  <table className="dd-table">
-                    <thead><tr><th>Signal</th><th>Type</th><th>Severity</th></tr></thead>
-                    <tbody>
-                      {signals.map((sig, i) => {
-                        const color = signalColor(sig);
-                        const dotColor = color === 'red' ? 'red' : color === 'amber' ? 'orange' : 'green';
-                        const raw = typeof sig === 'string' ? sig : (sig?.tag || sig?.label || sig?.description || sig?.type);
-                        const label = (typeof raw === 'string' && raw.trim()) ? raw : null;
-                        if (!label) return null;
-                        const type = (sig.type || sig.category || '').replace(/_/g, ' ') || 'General';
-                        return (
-                          <tr key={i}>
-                            <td><span className={`dd-signal-dot ${dotColor}`} />{label}</td>
-                            <td className="muted" style={{ textTransform: 'capitalize' }}>{type}</td>
-                            <td>
-                              <Chip color={color === 'red' ? 'red' : color === 'amber' ? 'amber' : 'green'}>
-                                {color === 'red' ? 'High' : color === 'amber' ? 'Medium' : 'Low'}
-                              </Chip>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                ) : (
-                  <span style={{ color: 'var(--fg-4)', fontSize: 'var(--t-cap)' }}>No distress signals recorded</span>
-                )}
-                <p className="dd-sec-source">Source: Nightdrop AI · County Lien Records · Tax Assessor</p>
-              </div>
-            </div>
-            )}
-
             {showDealIntel && (
             <div id="dd-dealintel" className="dd-sec dd-card">
               <SecHead title="Deal Intel" date={enriched} />
@@ -721,18 +638,6 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
 
           </div>
 
-          {(deal.lat && deal.lng) && (
-            <div className="dd-img-sidebar">
-              <div className="dd-img-thumb">
-                <AerialThumb id={deal.id} lat={deal.lat} lng={deal.lng} large={true} />
-                <span className="dd-img-thumb-label">Satellite</span>
-              </div>
-              <div className="dd-img-thumb">
-                <AerialThumb id={deal.id} lat={deal.lat} lng={deal.lng} showParcel={true} />
-                <span className="dd-img-thumb-label">Parcel</span>
-              </div>
-            </div>
-          )}
         </div>
 
         {attomId && (
