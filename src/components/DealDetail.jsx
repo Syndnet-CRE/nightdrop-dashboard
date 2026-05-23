@@ -4,28 +4,16 @@ import { AerialThumb } from './AerialThumb.jsx';
 import { ContactLogModal } from './ContactLogModal.jsx';
 import { Rows, SecHead, Chip, ConfBadge } from './DealDetail.helpers.jsx';
 import { OwnerPortfolio } from './OwnerPortfolio.jsx';
+import { SectionNav } from './DealDetail/SectionNav.jsx';
 import { fmt, fmtMoney, hasVal } from '../lib/format.js';
 import { useDeals } from '../contexts/DealsContext.jsx';
 import { useReadState } from '../contexts/ReadStateContext';
 import { useToast } from '../contexts/ToastContext';
 import '../styles/deal-detail.css';
 
-const TABS = [
-  { id: 'summary',      label: 'Summary' },
-  { id: 'property',     label: 'Property Record' },
-  { id: 'ownership',    label: 'Ownership' },
-  { id: 'financials',   label: 'Financials' },
-  { id: 'capital',      label: 'Loans & Equity' },
-  { id: 'transactions', label: 'Sales History' },
-  { id: 'site',         label: 'Site & Lot' },
-  { id: 'zoning',       label: 'Zoning' },
-  { id: 'context',      label: 'Location' },
-  { id: 'foreclosure',  label: 'Foreclosure' },
-  { id: 'climate',      label: 'Climate' },
-  { id: 'risk',         label: 'Risk' },
-  { id: 'distress',     label: 'Distress' },
-  { id: 'dealintel',    label: 'Deal Intel' },
-];
+function hasRows(rows) {
+  return rows.some(([, v]) => v != null && v !== '' && v !== '—' && v !== 'null' && v !== 'undefined');
+}
 
 const STATUS_OPTIONS = ['new', 'due_diligence', 'contacted', 'negotiating', 'offer_made', 'dead'];
 const STATUS_LABELS = { new: 'New', due_diligence: 'Due Diligence', contacted: 'Contacted', negotiating: 'Negotiating', offer_made: 'Offer Made', dead: 'Dead' };
@@ -67,7 +55,6 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
   const { postFeedback, updateStatus, logContact, fetchContacts, contacts, dealNotes, fetchDealNotes, createDealNote } = useDeals();
   const { markRead } = useReadState();
   const addToast = useToast();
-  const [activeTab, setActiveTab] = useState('summary');
   const [hotLoading, setHotLoading] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [contactModalOpen, setContactModalOpen] = useState(false);
@@ -123,12 +110,6 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
     const ownerState = match[1];
     if (!deal.state) return ownerState;
     return ownerState === deal.state ? 'Local' : `Out of State (${ownerState})`;
-  }
-
-  function scrollToSection(id) {
-    setActiveTab(id);
-    const el = document.getElementById('dd-' + id);
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
   }
 
   async function handleMarkHot() {
@@ -322,8 +303,43 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
     { label: 'Owner Distance', value: ownerDistanceCell() },
   ];
 
+  const showProperty    = hasRows(propertyRows);
+  const showOwnership   = hasRows(ownershipRows);
+  const showFinancials  = hasRows(financialsRows);
+  const showCapital     = hasLoan || hasRows(loanRows);
+  const showTransactions = salesHistory.length > 0 || hasVal(deal.last_sale_date) || hasVal(deal.last_sale_price);
+  const showSite        = hasRows(siteRows);
+  const showZoning      = hasRows(zoningRows);
+  const showContext     = hasRows(contextRows);
+  const showForeclosure = hasRows(foreclosureRows);
+  const showClimate     = hasRows(climateRows);
+  const showRisk        = hasRows(riskRows);
+  const showDistress    = signals.length > 0;
+  const showDealIntel   = hasRows(dealIntelRows);
+  const showPortfolio   = !!attomId;
+
+  const sectionDefs = [
+    { id: 'dd-brief',       label: 'Brief',           show: true },
+    { id: 'dd-property',    label: 'Property',        show: showProperty },
+    { id: 'dd-ownership',   label: 'Ownership',       show: showOwnership },
+    { id: 'dd-financials',  label: 'Financials',      show: showFinancials },
+    { id: 'dd-capital',     label: 'Loans & Equity',  show: showCapital },
+    { id: 'dd-transactions',label: 'Sales History',   show: showTransactions },
+    { id: 'dd-site',        label: 'Site & Lot',      show: showSite },
+    { id: 'dd-zoning',      label: 'Zoning',          show: showZoning },
+    { id: 'dd-context',     label: 'Location',        show: showContext },
+    { id: 'dd-foreclosure', label: 'Foreclosure',     show: showForeclosure },
+    { id: 'dd-climate',     label: 'Climate',         show: showClimate },
+    { id: 'dd-risk',        label: 'Risk',            show: showRisk },
+    { id: 'dd-distress',    label: 'Distress Signals',show: showDistress },
+    { id: 'dd-dealintel',   label: 'Deal Intel',      show: showDealIntel },
+    { id: 'dd-portfolio',   label: 'Owner Portfolio', show: showPortfolio },
+    { id: 'dd-notes',       label: 'Notes',           show: true },
+  ].filter((s) => s.show);
+
   return (
     <div className="dd-root">
+      <SectionNav sections={sectionDefs} />
       <div className="dd-nav-band" />
 
       <div className="dd-sticky-header">
@@ -372,52 +388,39 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
           </div>
         </div>
 
-        <div className="dd-subtabs-outer">
-          <div className="dd-subtabs">
-            {TABS.map((t) => (
-              <button
-                key={t.id}
-                className={`dd-subtab${activeTab === t.id ? ' active' : ''}`}
-                onClick={() => scrollToSection(t.id)}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-          <div className="dd-tab-actions">
-            <div className="dd-status-chip-wrap" ref={statusRef}>
-              <button
-                className={`dd-status-chip ${statusColor}`}
-                onClick={() => setShowStatusDropdown(p => !p)}
-              >
-                <span className="dd-status-dot" />
-                {statusLabel}
-                <span className="dd-status-caret">▾</span>
-              </button>
-              {showStatusDropdown && (
-                <div className="dd-status-dropdown dd-status-dropdown--right">
-                  {STATUS_OPTIONS.map(s => (
-                    <button
-                      key={s}
-                      className={`dd-status-option ${STATUS_COLORS[s] || 'gray'}${s === currentStatus ? ' active' : ''}`}
-                      onClick={() => handleStatusChange(s)}
-                    >
-                      <span className="dd-status-dot" />
-                      {STATUS_LABELS[s]}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            <button className="dd-contact-btn" onClick={() => setContactModalOpen(true)}>
-              <Phone size={13} strokeWidth={2.2} />
-              Log Contact
+        <div className="dd-substrip">
+          <div className="dd-status-chip-wrap" ref={statusRef}>
+            <button
+              className={`dd-status-chip ${statusColor}`}
+              onClick={() => setShowStatusDropdown(p => !p)}
+            >
+              <span className="dd-status-dot" />
+              {statusLabel}
+              <span className="dd-status-caret">▾</span>
             </button>
+            {showStatusDropdown && (
+              <div className="dd-status-dropdown dd-status-dropdown--right">
+                {STATUS_OPTIONS.map(s => (
+                  <button
+                    key={s}
+                    className={`dd-status-option ${STATUS_COLORS[s] || 'gray'}${s === currentStatus ? ' active' : ''}`}
+                    onClick={() => handleStatusChange(s)}
+                  >
+                    <span className="dd-status-dot" />
+                    {STATUS_LABELS[s]}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
+          <button className="dd-contact-btn" onClick={() => setContactModalOpen(true)}>
+            <Phone size={13} strokeWidth={2.2} />
+            Log Contact
+          </button>
         </div>
       </div>
 
-      <div className="dd-discovery-panel">
+      <div id="dd-brief" className="dd-discovery-panel">
         <div className="dd-discovery-left">
           <span className="dd-discovery-eyebrow">AI Property Brief</span>
           {bj.headline && <p className="dd-headline">{bj.headline}</p>}
@@ -460,15 +463,18 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
 
           <div className="dd-col">
 
-            <div id="dd-property" className="dd-sec">
+            {showProperty && (
+            <div id="dd-property" className="dd-sec dd-card">
               <SecHead title="Property Record" date={enriched} />
               <div className="dd-sec-body">
                 <Rows data={propertyRows} />
                 <p className="dd-sec-source">Source: Nightdrop Data · County Assessor Records</p>
               </div>
             </div>
+            )}
 
-            <div id="dd-ownership" className="dd-sec">
+            {showOwnership && (
+            <div id="dd-ownership" className="dd-sec dd-card">
               <SecHead title="Ownership &amp; Skip Trace" date={enriched} />
               <div className="dd-sec-body">
                 <Rows data={ownershipRows} />
@@ -500,16 +506,20 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
                 <p className="dd-sec-source">Source: Nightdrop Skip Trace</p>
               </div>
             </div>
+            )}
 
-            <div id="dd-financials" className="dd-sec">
+            {showFinancials && (
+            <div id="dd-financials" className="dd-sec dd-card">
               <SecHead title="Financial Picture" date={enriched} />
               <div className="dd-sec-body">
                 <Rows data={financialsRows} />
                 <p className="dd-sec-source">Source: Nightdrop AVM · County Assessor · Tax Records</p>
               </div>
             </div>
+            )}
 
-            <div id="dd-capital" className="dd-sec">
+            {showCapital && (
+            <div id="dd-capital" className="dd-sec dd-card">
               <SecHead title="Loans &amp; Equity" date={enriched} />
               <div className="dd-sec-body">
                 {hasLoan ? (
@@ -530,8 +540,10 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
                 <p className="dd-sec-source">Source: Nightdrop Mortgage Data · FFIEC HMDA</p>
               </div>
             </div>
+            )}
 
-            <div id="dd-transactions" className="dd-sec">
+            {showTransactions && (
+            <div id="dd-transactions" className="dd-sec dd-card">
               <SecHead title="Sales History" date={enriched} />
               <div className="dd-sec-body">
                 {salesHistory.length > 0 ? (
@@ -564,60 +576,74 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
                 <p className="dd-sec-source">Source: Nightdrop Data · County Deed Records</p>
               </div>
             </div>
+            )}
 
           </div>
 
           <div className="dd-col">
 
-            <div id="dd-site" className="dd-sec">
+            {showSite && (
+            <div id="dd-site" className="dd-sec dd-card">
               <SecHead title="Site, Lot &amp; Physical" date={enriched} />
               <div className="dd-sec-body">
                 <Rows data={siteRows} />
                 <p className="dd-sec-source">Source: Nightdrop Data · County GIS · ATTOM</p>
               </div>
             </div>
+            )}
 
-            <div id="dd-zoning" className="dd-sec">
+            {showZoning && (
+            <div id="dd-zoning" className="dd-sec dd-card">
               <SecHead title="Zoning &amp; Development" date={enriched} />
               <div className="dd-sec-body">
                 <Rows data={zoningRows} />
                 <p className="dd-sec-source">Source: City/County Zoning · GIS Profile · Building Permits</p>
               </div>
             </div>
+            )}
 
-            <div id="dd-context" className="dd-sec">
+            {showContext && (
+            <div id="dd-context" className="dd-sec dd-card">
               <SecHead title="Location Context" date={enriched} />
               <div className="dd-sec-body">
                 <Rows data={contextRows} />
                 <p className="dd-sec-source">Source: US Census · HUD · CoStar Submarket</p>
               </div>
             </div>
+            )}
 
-            <div id="dd-foreclosure" className="dd-sec">
+            {showForeclosure && (
+            <div id="dd-foreclosure" className="dd-sec dd-card">
               <SecHead title="Foreclosure" date={enriched} />
               <div className="dd-sec-body">
                 <Rows data={foreclosureRows} />
                 <p className="dd-sec-source">Source: County Deed Records · Foreclosure Records</p>
               </div>
             </div>
+            )}
 
-            <div id="dd-climate" className="dd-sec">
+            {showClimate && (
+            <div id="dd-climate" className="dd-sec dd-card">
               <SecHead title="Climate Risk" date={enriched} />
               <div className="dd-sec-body">
                 <Rows data={climateRows} />
                 <p className="dd-sec-source">Source: First Street Foundation · FEMA · ATTOM</p>
               </div>
             </div>
+            )}
 
-            <div id="dd-risk" className="dd-sec">
+            {showRisk && (
+            <div id="dd-risk" className="dd-sec dd-card">
               <SecHead title="Risk" date={enriched} />
               <div className="dd-sec-body">
                 <Rows data={riskRows} />
                 <p className="dd-sec-source">Source: Nightdrop Distress Model · County Records</p>
               </div>
             </div>
+            )}
 
-            <div id="dd-distress" className="dd-sec">
+            {showDistress && (
+            <div id="dd-distress" className="dd-sec dd-card">
               <SecHead title="Distress Signals" date={enriched} />
               <div className="dd-sec-body">
                 {signals.length > 0 ? (
@@ -651,14 +677,17 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
                 <p className="dd-sec-source">Source: Nightdrop AI · County Lien Records · Tax Assessor</p>
               </div>
             </div>
+            )}
 
-            <div id="dd-dealintel" className="dd-sec">
+            {showDealIntel && (
+            <div id="dd-dealintel" className="dd-sec dd-card">
               <SecHead title="Deal Intel" date={enriched} />
               <div className="dd-sec-body">
                 <Rows data={dealIntelRows} />
                 <p className="dd-sec-source">Source: Nightdrop Deal Engine</p>
               </div>
             </div>
+            )}
 
           </div>
 
@@ -677,7 +706,7 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
         </div>
 
         {attomId && (
-          <div id="dd-portfolio" className="dd-sec dd-portfolio-sec">
+          <div id="dd-portfolio" className="dd-sec dd-card dd-portfolio-sec">
             <SecHead title="Owner Portfolio" />
             <div className="dd-sec-body">
               <OwnerPortfolio deal={deal} />
@@ -695,7 +724,7 @@ export function DealDetail({ deal, onClose, deals, dealIndex, onNavigateDeal }) 
           </span>
         </div>
 
-        <div className="dd-sec dd-notes-log">
+        <div id="dd-notes" className="dd-sec dd-card dd-notes-log">
           <SecHead title="Notes" />
           <div className="dd-sec-body">
             <div className="dd-note-compose">

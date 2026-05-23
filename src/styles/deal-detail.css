@@ -322,16 +322,19 @@
 .dd-sec-title {
   font-size: 13px;
   font-weight: var(--w-bold);
-  letter-spacing: 0;
-  text-transform: none;
-  color: var(--nightdrop-green-700, #1a7f7a);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-1);
 }
 
 .dd-sec-updated {
   font-size: 11px;
-  color: var(--fg-3);
+  color: var(--fg-4);
   white-space: nowrap;
   flex-shrink: 0;
+  font-family: 'Inter', var(--font-sans);
+  font-feature-settings: 'tnum', 'zero';
+  font-weight: var(--w-medium);
 }
 
 .dd-sec-body {
@@ -402,7 +405,7 @@
   font-weight: var(--w-bold);
   letter-spacing: var(--track-eyebrow);
   text-transform: uppercase;
-  color: var(--nightdrop-green-700, #1a7f7a);
+  color: var(--fg-3);
   text-align: left;
   padding: var(--s-1) var(--s-2) var(--s-2) 0;
   border-bottom: 1px solid var(--border-1);
@@ -606,7 +609,8 @@
 
 /* Light-mode glass — applies to both standalone page and modal-over-map */
 .dd-addr-bar,
-.dd-subtabs-outer {
+.dd-subtabs-outer,
+.dd-substrip {
   background: rgba(255, 255, 255, 0.90);
   backdrop-filter: blur(18px) saturate(1.5);
   -webkit-backdrop-filter: blur(18px) saturate(1.5);
@@ -624,7 +628,8 @@
 
 /* Dark-mode glass — applies to both standalone page and modal-over-map */
 [data-theme="dark"] .dd-addr-bar,
-[data-theme="dark"] .dd-subtabs-outer {
+[data-theme="dark"] .dd-subtabs-outer,
+[data-theme="dark"] .dd-substrip {
   background: rgba(10, 10, 14, 0.88);
   backdrop-filter: blur(18px) saturate(1.5);
   -webkit-backdrop-filter: blur(18px) saturate(1.5);
@@ -1263,4 +1268,141 @@
   padding: var(--s-4) 0;
   font-style: italic;
   margin: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Phase 1 — Scroll architecture, card sections, section nav
+   ───────────────────────────────────────────────────────────── */
+
+.dd-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-md);
+  padding: var(--s-5) var(--s-5);
+  transition: background var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-fast) var(--ease-out);
+}
+.dd-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-strong);
+}
+[data-theme="dark"] .dd-card {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: var(--border-1);
+}
+[data-theme="dark"] .dd-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.dd-card .dd-sec-head {
+  margin-bottom: var(--s-4);
+}
+
+/* Action substrip — replaces 14-tab strip; carries status chip + log contact */
+.dd-substrip {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-5);
+  border-bottom: 1px solid var(--border-1);
+  min-height: 44px;
+}
+
+/* ── Right-edge section navigator ─────────────────────────────
+   Vertical dot column at right viewport edge; expands to labeled
+   pills on hover; scroll-spy via IntersectionObserver in JS. */
+.dd-section-nav {
+  position: fixed;
+  top: 50%;
+  right: 16px;
+  transform: translateY(-50%);
+  z-index: 25;
+  padding: var(--s-2) var(--s-1);
+  background: transparent;
+  pointer-events: auto;
+}
+.dd-section-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.dd-section-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 4px 6px;
+  background: transparent;
+  border: none;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  color: var(--fg-3);
+  transition: color var(--dur-fast) var(--ease-out),
+              background var(--dur-fast) var(--ease-out);
+}
+.dd-section-nav-btn:hover {
+  color: var(--fg-1);
+}
+.dd-section-nav-btn:focus-visible {
+  outline: 2px solid var(--green);
+  outline-offset: 2px;
+}
+.dd-section-nav-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--smoke);
+  flex-shrink: 0;
+  transition: background var(--dur-fast) var(--ease-out),
+              transform var(--dur-fast) var(--ease-out);
+}
+.dd-section-nav-item.active .dd-section-nav-dot {
+  background: var(--green);
+  transform: scale(1.4);
+  box-shadow: 0 0 0 3px rgba(91, 204, 72, 0.18);
+}
+.dd-section-nav-item.active .dd-section-nav-btn {
+  color: var(--fg-1);
+  font-weight: var(--w-semibold);
+}
+.dd-section-nav-label {
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  transition: max-width 200ms var(--ease-out), opacity 160ms var(--ease-out);
+}
+.dd-section-nav.expanded {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(14px) saturate(1.5);
+  -webkit-backdrop-filter: blur(14px) saturate(1.5);
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-md);
+  padding: var(--s-3) var(--s-3);
+}
+[data-theme="dark"] .dd-section-nav.expanded {
+  background: rgba(10, 10, 14, 0.88);
+  border-color: rgba(255, 255, 255, 0.10);
+}
+.dd-section-nav.expanded .dd-section-nav-label {
+  max-width: 180px;
+  opacity: 1;
+}
+
+/* Mobile: hide right-edge nav; could collapse to top dropdown in Phase 6 */
+@media (max-width: 960px) {
+  .dd-section-nav { display: none; }
+  .dd-cols { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  .dd-card { padding: var(--s-4); }
 }
