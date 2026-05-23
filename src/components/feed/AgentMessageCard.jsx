@@ -1,9 +1,9 @@
 function typeLabel(type) {
   switch (type) {
-    case 'run':    return { text: 'RUN',    color: '#1DAF29' };
+    case 'run':    return { text: 'RUN',    color: 'var(--primary)' };
     case 'signal': return { text: 'SIGNAL', color: '#D97706' };
     case 'market': return { text: 'MARKET', color: '#3E7BFA' };
-    default:       return { text: 'AGENT',  color: '#9DA2B3' };
+    default:       return { text: 'AGENT',  color: 'var(--muted-foreground)' };
   }
 }
 

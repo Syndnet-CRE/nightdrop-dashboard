@@ -2,10 +2,10 @@ import { useState, useRef, useEffect } from 'react';
 
 function scoreColor(score) {
   const n = Number(score);
-  if (!isFinite(n)) return { bg: '#374151', fg: '#9DA2B3' };
-  if (n >= 8) return { bg: '#1DAF29', fg: '#fff' };
+  if (!isFinite(n)) return { bg: '#374151', fg: 'var(--muted-foreground)' };
+  if (n >= 8) return { bg: 'var(--primary)', fg: '#fff' };
   if (n >= 5) return { bg: '#D97706', fg: '#fff' };
-  return { bg: '#E53E3E', fg: '#fff' };
+  return { bg: 'var(--destructive)', fg: '#fff' };
 }
 
 export default function ScoreBadge({ score, className = '' }) {

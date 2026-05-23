@@ -147,7 +147,7 @@ export function DealMap({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#FFF', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{popup.addr}</div>
-                <div style={{ fontSize: 11, color: '#9DA2B3' }}>{popup.city}</div>
+                <div style={{ fontSize: 11, color: 'var(--muted-foreground)' }}>{popup.city}</div>
               </div>
               <ScoreBubble score={popup.score} size="sm"/>
             </div>

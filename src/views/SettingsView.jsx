@@ -77,7 +77,7 @@ export function SettingsView({ onConfirmDanger }) {
           <div className="field"><label>Firm</label><input className="input" value={profileCompany} onChange={e => setCompany(e.target.value)}/></div>
           <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
             <button className="btn primary" type="submit" disabled={saving}><I.Check size={13}/> {saving ? 'Saving…' : 'Save Changes'}</button>
-            {toast && <span style={{ fontSize: 12, color: toast.ok ? '#4CAF50' : '#FF7378' }}>{toast.msg}</span>}
+            {toast && <span style={{ fontSize: 12, color: toast.ok ? '#4CAF50' : 'var(--destructive)' }}>{toast.msg}</span>}
           </div>
           </form>
         </div>
@@ -92,7 +92,7 @@ export function SettingsView({ onConfirmDanger }) {
           </div>
           <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 12 }}>
             <button className="btn" type="submit" disabled={pwSaving}>{pwSaving ? 'Updating…' : 'Update Password'}</button>
-            {pwToast && <span style={{ fontSize: 12, color: pwToast.ok ? '#4CAF50' : '#FF7378' }}>{pwToast.msg}</span>}
+            {pwToast && <span style={{ fontSize: 12, color: pwToast.ok ? '#4CAF50' : 'var(--destructive)' }}>{pwToast.msg}</span>}
           </div>
           </form>
         </div>
@@ -101,19 +101,19 @@ export function SettingsView({ onConfirmDanger }) {
           <h3>Subscription</h3>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14, marginBottom: 14 }}>
             <div style={{ background: "var(--panel)", border: "1px solid var(--hairline)", borderRadius: 8, padding: 14 }}>
-              <div style={{ fontSize: 10.5, color: "#9DA2B3", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>Plan</div>
+              <div style={{ fontSize: 10.5, color: "var(--muted-foreground)", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>Plan</div>
               <div style={{ fontSize: 16, fontWeight: 700, marginTop: 6, color: "#FFF" }}>Operator · Annual</div>
-              <div style={{ fontSize: 11.5, color: "#9DA2B3", marginTop: 4 }}>$2,400/yr · 4 buy boxes incl.</div>
+              <div style={{ fontSize: 11.5, color: "var(--muted-foreground)", marginTop: 4 }}>$2,400/yr · 4 buy boxes incl.</div>
             </div>
             <div style={{ background: "var(--panel)", border: "1px solid var(--hairline)", borderRadius: 8, padding: 14 }}>
-              <div style={{ fontSize: 10.5, color: "#9DA2B3", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>Next Billing</div>
+              <div style={{ fontSize: 10.5, color: "var(--muted-foreground)", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>Next Billing</div>
               <div style={{ fontSize: 16, fontWeight: 700, marginTop: 6, color: "#FFF" }}>Mar 12, 2027</div>
-              <div style={{ fontSize: 11.5, color: "#9DA2B3", marginTop: 4 }}>$2,400 + add-ons</div>
+              <div style={{ fontSize: 11.5, color: "var(--muted-foreground)", marginTop: 4 }}>$2,400 + add-ons</div>
             </div>
             <div style={{ background: "var(--panel)", border: "1px solid var(--hairline)", borderRadius: 8, padding: 14 }}>
-              <div style={{ fontSize: 10.5, color: "#9DA2B3", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>Status</div>
+              <div style={{ fontSize: 10.5, color: "var(--muted-foreground)", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>Status</div>
               <div style={{ marginTop: 6 }}><span className="pill green"><span className="pip"/>Active</span></div>
-              <div style={{ fontSize: 11.5, color: "#9DA2B3", marginTop: 6 }}>Auto-renew on</div>
+              <div style={{ fontSize: 11.5, color: "var(--muted-foreground)", marginTop: 6 }}>Auto-renew on</div>
             </div>
           </div>
           <button className="btn"><I.External size={13}/> Manage Billing in Stripe</button>
@@ -124,7 +124,7 @@ export function SettingsView({ onConfirmDanger }) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 14px", background: "var(--panel)", border: "1px solid var(--hairline)", borderRadius: 8 }}>
             <div>
               <div style={{ fontSize: 13, fontWeight: 700, color: "#FFF" }}>5 of 6 buy box slots used</div>
-              <div style={{ fontSize: 11.5, color: "#9DA2B3", marginTop: 4 }}>1 slot remaining · additional slots are $50/mo each</div>
+              <div style={{ fontSize: 11.5, color: "var(--muted-foreground)", marginTop: 4 }}>1 slot remaining · additional slots are $50/mo each</div>
             </div>
             <button className="btn outline-green"><I.Plus size={13}/> Add Slot — $50/mo</button>
           </div>

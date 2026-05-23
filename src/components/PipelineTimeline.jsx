@@ -152,7 +152,7 @@ export function PipelineTimeline({ mode = 'full', size = 'xl', showLabels = fals
       fontVariantNumeric: 'tabular-nums', lineHeight: 0.95,
     },
     cdFoot: {
-      fontSize: 10, color: isLight ? '#40424D' : '#9DA2B3', fontWeight: 600,
+      fontSize: 10, color: isLight ? '#40424D' : 'var(--muted-foreground)', fontWeight: 600,
       textTransform: 'uppercase', letterSpacing: '0.07em',
       fontFamily: 'Manrope, system-ui, sans-serif',
     },
@@ -203,7 +203,7 @@ export function PipelineTimeline({ mode = 'full', size = 'xl', showLabels = fals
             <span style={s.cdLabel}>NEXT</span>
             <span style={s.cdLabel}>RUN</span>
           </div>
-          <Timer size={13} color="#1DAF29" />
+          <Timer size={13} color="var(--primary)" />
         </div>
         <div style={{ width: 1, alignSelf: 'stretch', background: 'rgba(91,204,72,0.18)', flexShrink: 0 }} />
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
@@ -212,7 +212,7 @@ export function PipelineTimeline({ mode = 'full', size = 'xl', showLabels = fals
             <span style={{ fontSize: sepSz, color: sepColor, margin: '0 1px', position: 'relative', top: -2 }}>:</span>
             <span className="pipeline-cd-num" style={{ fontSize: numSz, lineHeight: 0.95 }} ref={cdMRef}>00</span>
             <span style={{ fontSize: sepSz, color: sepColor, margin: '0 1px', position: 'relative', top: -2 }}>:</span>
-            <span className="pipeline-cd-num" style={{ fontSize: numSz, lineHeight: 0.95, color: '#1DAF29' }} ref={cdSRef}>00</span>
+            <span className="pipeline-cd-num" style={{ fontSize: numSz, lineHeight: 0.95, color: 'var(--primary)' }} ref={cdSRef}>00</span>
           </div>
           <div style={s.cdFoot} ref={cdFootRef}>{nextHLabel(getStage(getCTSeconds()).nextH)}</div>
         </div>

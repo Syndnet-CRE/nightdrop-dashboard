@@ -42,7 +42,7 @@ function DealDetailPage({ dealId }) {
   if (loading) return null;
   const deal = deals.find(d => String(d.id) === dealId);
   if (!deal) return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12, color: '#9DA2B3', fontSize: 14 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12, color: 'var(--muted-foreground)', fontSize: 14 }}>
       <span>Deal not found.</span>
       <button className="btn sm" onClick={() => navigate(-1)}>Go back</button>
     </div>
@@ -190,7 +190,7 @@ function AppShell() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--bg-page)', color: '#9DA2B3', fontSize: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--bg-page)', color: 'var(--muted-foreground)', fontSize: 14 }}>
         Loading…
       </div>
     );

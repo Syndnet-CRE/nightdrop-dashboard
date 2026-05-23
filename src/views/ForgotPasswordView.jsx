@@ -27,9 +27,9 @@ export function ForgotPasswordView() {
       <div style={{ width: "100%", maxWidth: 380 }}>
         <div style={{ marginBottom: 32, textAlign: "center" }}>
           <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.03em", color: "#FFF", marginBottom: 6 }}>
-            <span style={{ color: "#1DAF29" }}>D</span> Dispatch
+            <span style={{ color: "var(--primary)" }}>D</span> Dispatch
           </div>
-          <div style={{ fontSize: 13, color: "#9DA2B3" }}>Reset your password</div>
+          <div style={{ fontSize: 13, color: "var(--muted-foreground)" }}>Reset your password</div>
         </div>
 
         {submitted ? (
@@ -38,7 +38,7 @@ export function ForgotPasswordView() {
             <p style={{ color: "#c0c0c0", lineHeight: 1.6, marginBottom: 24 }}>
               If that email is in our system, you'll receive a reset link within a minute.
             </p>
-            <Link to="/login" style={{ color: "#5BCC48", fontSize: 13, fontWeight: 600 }}>
+            <Link to="/login" style={{ color: "var(--primary)", fontSize: 13, fontWeight: 600 }}>
               Back to sign in
             </Link>
           </div>
@@ -66,8 +66,8 @@ export function ForgotPasswordView() {
                 {loading ? "Sending…" : "Send Reset Link"}
               </button>
             </form>
-            <div style={{ marginTop: 20, textAlign: "center", fontSize: 12, color: "#9DA2B3" }}>
-              <Link to="/login" style={{ color: "#5BCC48", fontWeight: 600 }}>Back to sign in</Link>
+            <div style={{ marginTop: 20, textAlign: "center", fontSize: 12, color: "var(--muted-foreground)" }}>
+              <Link to="/login" style={{ color: "var(--primary)", fontWeight: 600 }}>Back to sign in</Link>
             </div>
           </>
         )}

@@ -244,7 +244,7 @@ export function BuyBoxPage2({ form, setForm }) {
               ))}
             </div>
             {fin.equity_preset && !fin.price_min && (
-              <div style={{ marginTop: 6, fontSize: 10, color: '#9DA2B3', fontFamily: 'var(--font-secondary)' }}>
+              <div style={{ marginTop: 6, fontSize: 10, color: 'var(--muted-foreground)', fontFamily: 'var(--font-secondary)' }}>
                 Set an assessed value floor above to apply this equity filter.
               </div>
             )}

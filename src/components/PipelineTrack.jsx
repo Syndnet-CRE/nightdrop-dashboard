@@ -25,9 +25,9 @@
  *     ]}
  *     // Optional — Nightdrop greens are the default. Override for theming.
  *     palette={{
- *       primary:   '#5BCC48',
- *       light:     '#89EA60',
- *       lightest:  '#C2FF9C',
+ *       primary:   'var(--primary)',
+ *       light:     'var(--chart-1)',
+ *       lightest:  'var(--chart-1)',
  *     }}
  *   />
  *
@@ -46,9 +46,9 @@ const DEFAULT_NODES = [
 ];
 
 const DEFAULT_PALETTE = {
-  primary:  '#5BCC48',
-  light:    '#89EA60',
-  lightest: '#C2FF9C',
+  primary:  'var(--primary)',
+  light:    'var(--chart-1)',
+  lightest: 'var(--chart-1)',
 };
 
 function activeIndex(progress, nodes) {

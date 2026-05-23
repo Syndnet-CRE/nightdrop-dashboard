@@ -38,7 +38,7 @@ export function ResetPasswordView() {
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)", padding: 24 }}>
         <div style={{ width: "100%", maxWidth: 380, textAlign: "center" }}>
           <p style={{ color: "#FF7378", marginBottom: 16 }}>Invalid reset link.</p>
-          <Link to="/forgot-password" style={{ color: "#5BCC48", fontSize: 13, fontWeight: 600 }}>Request a new one</Link>
+          <Link to="/forgot-password" style={{ color: "var(--primary)", fontSize: 13, fontWeight: 600 }}>Request a new one</Link>
         </div>
       </div>
     );
@@ -49,9 +49,9 @@ export function ResetPasswordView() {
       <div style={{ width: "100%", maxWidth: 380 }}>
         <div style={{ marginBottom: 32, textAlign: "center" }}>
           <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.03em", color: "#FFF", marginBottom: 6 }}>
-            <span style={{ color: "#1DAF29" }}>D</span> Dispatch
+            <span style={{ color: "var(--primary)" }}>D</span> Dispatch
           </div>
-          <div style={{ fontSize: 13, color: "#9DA2B3" }}>Set a new password</div>
+          <div style={{ fontSize: 13, color: "var(--muted-foreground)" }}>Set a new password</div>
         </div>
 
         {success ? (
@@ -92,8 +92,8 @@ export function ResetPasswordView() {
             <button type="submit" className="btn primary" disabled={loading} style={{ marginTop: 4, padding: "11px 0", fontSize: 14, fontWeight: 700 }}>
               {loading ? "Saving…" : "Set New Password"}
             </button>
-            <div style={{ textAlign: "center", fontSize: 12, color: "#9DA2B3" }}>
-              <Link to="/forgot-password" style={{ color: "#5BCC48", fontWeight: 600 }}>Request a new link</Link>
+            <div style={{ textAlign: "center", fontSize: 12, color: "var(--muted-foreground)" }}>
+              <Link to="/forgot-password" style={{ color: "var(--primary)", fontWeight: 600 }}>Request a new link</Link>
             </div>
           </form>
         )}

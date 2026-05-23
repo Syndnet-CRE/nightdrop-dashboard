@@ -31,9 +31,9 @@ export function LoginView() {
       <div style={{ width: "100%", maxWidth: 380 }}>
         <div style={{ marginBottom: 32, textAlign: "center" }}>
           <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.03em", color: "#FFF", marginBottom: 6 }}>
-            <span style={{ color: "#1DAF29" }}>N</span> Nightdrop
+            <span style={{ color: "var(--primary)" }}>N</span> Nightdrop
           </div>
-          <div style={{ fontSize: 13, color: "#9DA2B3" }}>Sign in to your subscriber account</div>
+          <div style={{ fontSize: 13, color: "var(--muted-foreground)" }}>Sign in to your subscriber account</div>
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -70,11 +70,11 @@ export function LoginView() {
           </button>
         </form>
 
-        <div style={{ marginTop: 16, textAlign: "center", fontSize: 12, color: "#9DA2B3" }}>
-          <Link to="/forgot-password" style={{ color: "#9DA2B3", fontWeight: 500 }}>Forgot password?</Link>
+        <div style={{ marginTop: 16, textAlign: "center", fontSize: 12, color: "var(--muted-foreground)" }}>
+          <Link to="/forgot-password" style={{ color: "var(--muted-foreground)", fontWeight: 500 }}>Forgot password?</Link>
         </div>
-        <div style={{ marginTop: 10, textAlign: "center", fontSize: 12, color: "#9DA2B3" }}>
-          Need access? <a href="mailto:hello@nightdrop.io" style={{ color: "#5BCC48", fontWeight: 600 }}>Contact Nightdrop</a>
+        <div style={{ marginTop: 10, textAlign: "center", fontSize: 12, color: "var(--muted-foreground)" }}>
+          Need access? <a href="mailto:hello@nightdrop.io" style={{ color: "var(--primary)", fontWeight: 600 }}>Contact Nightdrop</a>
         </div>
       </div>
     </div>
