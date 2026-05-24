@@ -165,8 +165,9 @@ export function DealCard({ deal, onClick, selected }) {
   );
 }
 
-export function MapPinSVG({ num, selected }) {
-  const fill = selected ? '#F4B73E' : '#5BCC48';
+export function MapPinSVG({ num, selected, tint }) {
+  // tint (asset-class color) overrides the default green; selected always wins.
+  const fill = selected ? '#F4B73E' : (tint || '#5BCC48');
   const stroke = "#06270A";
   return (
     <svg width="26" height="32" viewBox="0 0 26 32" style={{ filter: `drop-shadow(0 ${selected ? 4 : 2}px ${selected ? 8 : 4}px rgba(0,0,0,0.55))` }}>

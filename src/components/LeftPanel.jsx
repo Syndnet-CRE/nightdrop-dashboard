@@ -3,6 +3,7 @@ import {
   UserCircle, Plus, Users, Bookmark, Sparkles, Database,
   TrendingUp, Flame, Target, Clock,
 } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { useDeals } from '../contexts/DealsContext';
 
 function MetricTile({ Icon, label, value, accent, active, disabled, onClick, title }) {
@@ -80,6 +81,11 @@ export default function LeftPanel({ view, setView, kpis, onCreateBuyBox, unreadC
     { id: 'data',      label: 'Data',           Icon: Database },
   ];
 
+  // Demo-only override: surface a populated "New This Week" value on ?demo=true.
+  const [searchParams] = useSearchParams();
+  const demoMode = searchParams.get('demo') === 'true';
+  const newThisWeekValue = demoMode ? 86 : (kpis?.new_this_week ?? '—');
+
   const responseRateValue = kpis?.response_rate != null && kpis.response_rate > 0
     ? `${kpis.response_rate}%`
     : '—';
@@ -112,7 +118,7 @@ export default function LeftPanel({ view, setView, kpis, onCreateBuyBox, unreadC
           <MetricTile
             Icon={TrendingUp}
             label="New This Week"
-            value={kpis?.new_this_week ?? '—'}
+            value={newThisWeekValue}
             accent="green"
             active={feedFilter === 'new_this_week'}
             onClick={setFeedFilter ? () => setFeedFilter(feedFilter === 'new_this_week' ? 'all' : 'new_this_week') : undefined}

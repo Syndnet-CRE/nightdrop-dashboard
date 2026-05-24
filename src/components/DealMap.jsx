@@ -1,9 +1,10 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { Map, Marker, Popup } from 'react-map-gl/mapbox';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { Map, Marker, Popup, Source, Layer } from 'react-map-gl/mapbox';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { MapPinSVG, ScoreBubble } from './DealComponents';
 import { fmtMoney, fmt, hasVal } from '../lib/format';
 import { I } from './Icons';
+import { CATEGORY_PAINT_EXPRESSION, categorize, colorFor } from '../lib/assetColors';
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -35,6 +36,53 @@ function fitDeals(mapRef, deals, padding = 80) {
   mapRef.current.fitBounds(result.bounds, { padding, duration: 0 });
 }
 
+// Mapbox-native cluster source + 3 layers. Used when `enableClustering=true`
+// on real `deals` data. Tiers recalibrated for production scale:
+//   <10 green · 10-49 amber · 50+ red
+// Cluster radius=50px (Mapbox default), maxZoom=14 (clusters dissolve past
+// city zoom).
+const CLUSTER_SOURCE_ID = 'auto-clusters';
+const AUTO_CLUSTER_RADIUS = 50;
+const AUTO_CLUSTER_MAX_ZOOM = 14;
+const CLUSTER_LAYER     = { id: 'auto-clusters-layer',  type: 'circle', source: CLUSTER_SOURCE_ID, filter: ['has', 'point_count'],
+  paint: {
+    'circle-color': ['step', ['get', 'point_count'], '#5BCC48', 10, '#F4B73E', 50, '#E5484D'],
+    'circle-radius': ['step', ['get', 'point_count'], 18, 10, 24, 50, 32],
+    'circle-stroke-width': 2,
+    'circle-stroke-color': '#0D0D0D',
+    'circle-opacity': 0.95,
+  },
+};
+const CLUSTER_COUNT_LAYER = { id: 'auto-cluster-count', type: 'symbol', source: CLUSTER_SOURCE_ID, filter: ['has', 'point_count'],
+  layout: {
+    'text-field': ['get', 'point_count_abbreviated'],
+    'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+    'text-size': 13,
+  },
+  paint: { 'text-color': '#FFFFFF' },
+};
+const UNCLUSTERED_LAYER = { id: 'auto-unclustered',     type: 'circle', source: CLUSTER_SOURCE_ID, filter: ['!', ['has', 'point_count']],
+  paint: {
+    'circle-color': CATEGORY_PAINT_EXPRESSION,
+    'circle-radius': 6,
+    'circle-stroke-width': 1.5,
+    'circle-stroke-color': '#0D0D0D',
+  },
+};
+
+function toGeoJson(properties) {
+  return {
+    type: 'FeatureCollection',
+    features: (properties || [])
+      .filter(p => p.lat != null && p.lng != null)
+      .map(p => ({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [p.lng, p.lat] },
+        properties: { id: p.id, category: categorize(p) },
+      })),
+  };
+}
+
 export function DealMap({
   deals = [],
   selectedId = null,
@@ -46,6 +94,9 @@ export function DealMap({
   initialViewState = null,
   onViewStateChange = null,
   focusDealId = null,
+  clusterData = null,
+  demoMode = false,
+  enableClustering = false,
 }) {
   const mapRef = useRef(null);
   const [viewState, setViewState] = useState(initialViewState || DEFAULT_VIEW);
@@ -53,15 +104,31 @@ export function DealMap({
   const [mapLoaded, setMapLoaded] = useState(false);
   const [hoverDealId, setHoverDealId] = useState(null);
 
+  // Demo cluster bubbles (hardcoded CLUSTER_CITIES) take priority. When demo
+  // is not active and enableClustering is on, the real `deals` get auto-clustered
+  // via native Mapbox source. Otherwise, render per-deal Markers (RightRail mini).
+  const inDemoClusterMode = Array.isArray(clusterData) && clusterData.length > 0;
+  const inAutoClusterMode = !inDemoClusterMode && enableClustering && Array.isArray(deals) && deals.length > 0;
+  const autoClusterGeojson = useMemo(
+    () => (inAutoClusterMode ? toGeoJson(deals) : null),
+    [inAutoClusterMode, deals]
+  );
+
+  // Fit to whichever dataset covers the larger area. Scatter `deals` wins
+  // when both are present (clusterData is tight metro points; deals can span
+  // the whole region).
+  const fitTarget = (deals && deals.length > 0) ? deals : clusterData;
+
   const handleMapLoad = useCallback(() => {
     setMapLoaded(true);
-    if (!initialViewState) fitDeals(mapRef, deals, padding);
-  }, [deals, padding, initialViewState]);
+    if (initialViewState) return;
+    if (fitTarget) fitDeals(mapRef, fitTarget, padding);
+  }, [fitTarget, padding, initialViewState]);
 
   useEffect(() => {
     if (!mapLoaded || initialViewState) return;
-    fitDeals(mapRef, deals, padding);
-  }, [deals, padding, mapLoaded, initialViewState]);
+    if (fitTarget) fitDeals(mapRef, fitTarget, padding);
+  }, [fitTarget, padding, mapLoaded, initialViewState]);
 
   useEffect(() => {
     if (!mapLoaded || !focusDealId) return;
@@ -111,7 +178,39 @@ export function DealMap({
         </button>
       </div>
 
-      {deals.map((d, i) => {
+      {/* Demo cluster bubbles — DOM Markers so they layer ABOVE scatter pins
+          via z-index. clusterData is a list of {city, lat, lng, count}. */}
+      {inDemoClusterMode && clusterData.map((c) => {
+        const tone = c.count >= 100 ? 'red' : c.count >= 25 ? 'amber' : 'green';
+        const size = c.count >= 100 ? 50 : c.count >= 25 ? 40 : 32;
+        return (
+          <Marker key={`cluster-${c.city}`} latitude={c.lat} longitude={c.lng} anchor="center">
+            <div className={`map-cluster-bubble tone-${tone}`} style={{ width: size, height: size }}>
+              {c.count}
+            </div>
+          </Marker>
+        );
+      })}
+
+      {/* Auto-cluster real deals via native Mapbox cluster source.
+          Suppresses per-deal Markers when active (deals render via
+          the unclustered layer below cluster-max-zoom). */}
+      {inAutoClusterMode && (
+        <Source
+          id={CLUSTER_SOURCE_ID}
+          type="geojson"
+          data={autoClusterGeojson}
+          cluster
+          clusterMaxZoom={AUTO_CLUSTER_MAX_ZOOM}
+          clusterRadius={AUTO_CLUSTER_RADIUS}
+        >
+          <Layer {...CLUSTER_LAYER} />
+          <Layer {...CLUSTER_COUNT_LAYER} />
+          <Layer {...UNCLUSTERED_LAYER} />
+        </Source>
+      )}
+
+      {!inAutoClusterMode && deals.map((d, i) => {
         if (!d.lat || !d.lng) return null;
         const active = selectedId === d.id || hoverId === d.id || hoverDealId === d.id;
         return (
@@ -123,11 +222,22 @@ export function DealMap({
             onClick={(e) => handleMarkerClick(e, d)}
           >
             <div
-              style={{ cursor: 'pointer', transform: active ? 'scale(1.25)' : 'scale(1)', transition: 'transform 0.15s', zIndex: active ? 10 : 1, position: 'relative' }}
+              style={{
+                cursor: 'pointer',
+                transform: active ? 'scale(1.25)' : 'scale(1)',
+                transition: 'transform 0.15s',
+                zIndex: active ? 10 : 1,
+                position: 'relative',
+              }}
               onMouseEnter={() => setHoverDealId(d.id)}
               onMouseLeave={() => setHoverDealId(null)}
             >
-              <MapPinSVG score={d.score} num={i + 1} selected={active}/>
+              <MapPinSVG
+                score={d.score}
+                num={null}
+                selected={active}
+                tint={colorFor(d)}
+              />
             </div>
           </Marker>
         );

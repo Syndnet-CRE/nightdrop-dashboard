@@ -2,8 +2,10 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useDeals } from '../contexts/DealsContext';
 import { DEALS as MOCK_DEALS, BUY_BOXES as MOCK_BUY_BOXES } from '../data/mockData';
+import { DEMO_PROPERTIES, CLUSTER_CITIES } from '../data/demoProperties';
 import { DealMap } from '../components/DealMap';
 import { DealPanel } from '../components/DealPanel';
+import MapLegend from '../components/MapLegend';
 import { I } from '../components/Icons';
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -96,6 +98,7 @@ export function MapView({ onOpenDeal }) {
   // URL-driven side effect — the linter dislikes setState inside effects, but
   // this is the canonical pattern for syncing query params into local state.
   const [searchParams, setSearchParams] = useSearchParams();
+  const demoMode = searchParams.get('demo') === 'true';
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const focusParam = searchParams.get('focus');
@@ -151,17 +154,22 @@ export function MapView({ onOpenDeal }) {
   return (
     <div className="map-view-wrap">
       <DealMap
-        deals={filtered}
+        deals={demoMode ? DEMO_PROPERTIES : filtered}
         onClickDeal={handlePinClick}
         withPopup={false}
         mapStyle={mapStyle}
         padding={80}
-        initialViewState={viewport}
+        initialViewState={demoMode ? null : viewport}
         onViewStateChange={handleViewportChange}
         selectedId={expandedCardId}
         hoverId={panelHoverId}
         focusDealId={focusDealId}
+        demoMode={demoMode}
+        clusterData={demoMode ? CLUSTER_CITIES : null}
+        enableClustering={!demoMode}
       />
+
+      <MapLegend />
 
       <div className="map-toolbar" ref={toolbarRef}>
         <div className="mt-slot">

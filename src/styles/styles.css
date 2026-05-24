@@ -2728,6 +2728,95 @@ button { font-family: inherit; }
   overflow: hidden;
 }
 
+/* ── Map Legend (demo overlay, bottom-left) ─────────────── */
+.map-legend {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  z-index: 5;
+  background: rgba(13, 13, 13, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 10px 12px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+  font-family: var(--font-ui, system-ui, sans-serif);
+}
+
+.map-legend-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  margin-bottom: 8px;
+}
+
+.map-legend-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.map-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.92);
+  line-height: 1.2;
+}
+
+.map-legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid #0D0D0D;
+  flex-shrink: 0;
+}
+
+.map-legend-label {
+  white-space: nowrap;
+}
+
+/* ── Demo cluster bubble (DOM Marker, sits above scatter pins) ── */
+.map-cluster-bubble {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 2px solid #0D0D0D;
+  color: #FFFFFF;
+  font-family: var(--font-ui, system-ui, sans-serif);
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
+  cursor: default;
+  user-select: none;
+  pointer-events: none;
+  /* react-map-gl Marker wraps in a div; this z-index lives inside that
+     wrapper. mapboxgl-marker gets a default zIndex; we override on the
+     bubble itself and let the wrapper inherit. */
+}
+
+/* react-map-gl Marker wrapper — bump z-index for cluster bubbles. */
+.mapboxgl-marker:has(.map-cluster-bubble) {
+  z-index: 100 !important;
+}
+
+.map-cluster-bubble.tone-green {
+  background: #5BCC48;
+}
+.map-cluster-bubble.tone-amber {
+  background: #F4B73E;
+}
+.map-cluster-bubble.tone-red {
+  background: #E5484D;
+}
+
 /* ── Deal Panel ──────────────────────────────────────────── */
 .deal-panel {
   position: absolute;
