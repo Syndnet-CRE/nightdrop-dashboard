@@ -64,8 +64,13 @@ function humanizeOwnerType(raw) {
 }
 
 function signalColor(sig) {
-  const raw = typeof sig === 'string' ? sig : (sig.type || sig.category || sig.label || '');
-  const t = raw.toLowerCase();
+  // Search the full signal text (tag/label/description/type) first so the
+  // keyword chain matches real LLM output like "Tax Delinquency" / "Absentee
+  // Owner". Category bucket ("distress" / "ownership") is the last fallback.
+  const raw = typeof sig === 'string'
+    ? sig
+    : (sig?.tag || sig?.label || sig?.description || sig?.type || sig?.category || '');
+  const t = String(raw).toLowerCase();
   if (t.includes('tax') || t.includes('lien') || t.includes('delinq') || t.includes('forecl')) return 'red';
   if (t.includes('vacan') || t.includes('code') || t.includes('rising') || t.includes('absentee')) return 'amber';
   return 'green';

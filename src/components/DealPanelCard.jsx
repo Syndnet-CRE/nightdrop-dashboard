@@ -72,9 +72,15 @@ export const DealPanelCard = forwardRef(function DealPanelCard(
         <div className="dpc-expanded">
           {signals.length > 0 && (
             <div className="dpc-signals">
-              {signals.map(s => (
-                <span key={s} className={`signal-pill ${SIGNAL_SEVERITY[s] || 'lo'}`}>{s}</span>
-              ))}
+              {signals.map((s, i) => {
+                const label = typeof s === 'string'
+                  ? s
+                  : (s?.tag || s?.label || s?.description || s?.type);
+                if (!label || typeof label !== 'string') return null;
+                return (
+                  <span key={i} className={`signal-pill ${SIGNAL_SEVERITY[label] || 'lo'}`}>{label}</span>
+                );
+              })}
             </div>
           )}
 
