@@ -43,7 +43,12 @@ export function AuthProvider({ children }) {
               setToken(data.token);
               setSubscriber(data.subscriber);
               if (location.pathname === '/' || location.pathname === '/login') {
-                navigate('/map', { replace: true });
+                let returnTo;
+                try {
+                  returnTo = sessionStorage.getItem('nd_return_url');
+                  sessionStorage.removeItem('nd_return_url');
+                } catch { /* ignore */ }
+                navigate(returnTo && returnTo !== '/login' ? returnTo : '/map', { replace: true });
               }
               return;
             }

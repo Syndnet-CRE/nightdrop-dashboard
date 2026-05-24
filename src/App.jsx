@@ -159,15 +159,26 @@ function AppShell() {
   }, [navigate, view]);
 
   useEffect(() => {
-    if (!loading && !subscriber) navigate('/login');
-  }, [subscriber, loading, navigate]);
+    if (!loading && !subscriber) {
+      try {
+        const search = location.search || '';
+        sessionStorage.setItem('nd_return_url', location.pathname + search);
+      } catch { /* storage disabled */ }
+      navigate('/login');
+    }
+  }, [subscriber, loading, navigate, location.pathname, location.search]);
 
   // Normalize URL: if subscriber is loaded and we're at the bare "/" or "/login",
   // push to "/map" so the URL bar reflects the default post-onboarding view.
   useEffect(() => {
     if (loading || !subscriber) return;
     if (location.pathname === '/' || location.pathname === '/login') {
-      navigate('/map', { replace: true });
+      let returnTo;
+      try {
+        returnTo = sessionStorage.getItem('nd_return_url');
+        sessionStorage.removeItem('nd_return_url');
+      } catch { /* ignore */ }
+      navigate(returnTo && returnTo !== '/login' ? returnTo : '/map', { replace: true });
     }
   }, [loading, subscriber, location.pathname, navigate]);
 
