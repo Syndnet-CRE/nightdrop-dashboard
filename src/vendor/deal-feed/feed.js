@@ -483,11 +483,14 @@
               b.addEventListener('click', e => {
                 e.stopPropagation();
                 const act = e.currentTarget.dataset.act;
-                if (act === 'up')  d.up    = !d.up;
-                if (act === 'dn') { d.up = false; d.stage = 'Passed'; }
-                if (act === 'sv')  d.saved = !d.saved;
-                if (act === 'hot') d.hot   = !d.hot;
-                rr();
+                const cur = d.hot ? 'hot' : null;
+                if (act === 'up')  ND.actions?.toggleHot?.(d.id, cur);
+                if (act === 'dn') {
+                  ND.actions?.setStage?.(d.id, 'Passed');
+                  if (d.hot) ND.actions?.toggleHot?.(d.id, 'hot');
+                }
+                if (act === 'sv')  ND.actions?.toggleSave?.(d.id, d.saved);
+                if (act === 'hot') ND.actions?.toggleHot?.(d.id, cur);
               });
             });
             xtr.querySelector('.disc-open').addEventListener('click', e => { e.stopPropagation(); openChat(d); });
@@ -624,12 +627,12 @@
     });
     document.querySelectorAll('.stsel').forEach(s => s.addEventListener('change', e => {
       const d = ds.find(x => x.id == e.target.dataset.id);
-      if (d) d.stage = e.target.value;
+      if (d) ND.actions?.setStage?.(d.id, e.target.value);
     }));
     document.querySelectorAll('.ni').forEach(i => {
       i.addEventListener('change', e => {
         const d = ds.find(x => x.id == e.target.dataset.id);
-        if (d) d.notes = e.target.value;
+        if (d) ND.actions?.saveNote?.(d.id, e.target.value);
       });
       i.addEventListener('focus', e => e.target.closest('td')?.classList.add('editing'));
       i.addEventListener('blur',  e => e.target.closest('td')?.classList.remove('editing'));
@@ -639,9 +642,13 @@
       const d = ds.find(x => x.id == e.currentTarget.dataset.id);
       if (!d) return;
       const act = e.currentTarget.dataset.act;
-      if (act === 'up')  d.up = !d.up;
-      if (act === 'dn') { d.up = false; d.stage = 'Passed'; d.unread = false; }
-      rr();
+      const cur = d.hot ? 'hot' : null;
+      if (act === 'up') ND.actions?.toggleHot?.(d.id, cur);
+      if (act === 'dn') {
+        ND.actions?.setStage?.(d.id, 'Passed');
+        if (d.hot) ND.actions?.toggleHot?.(d.id, 'hot');
+        ND.actions?.markRead?.(d.id);
+      }
     }));
     // editable spans on real rows
     document.querySelectorAll('tr.dr [data-edit]').forEach(span => {
@@ -710,10 +717,12 @@
   // ----- bulk + chips + toolbar -----
   document.getElementById('bss').addEventListener('change', e => {
     const v = e.target.value; if (!v) return;
-    sel.forEach(id => { const d = currentDataset().find(x => x.id === id); if (d) d.stage = v; });
+    sel.forEach(id => {
+      const d = currentDataset().find(x => x.id === id);
+      if (d) ND.actions?.setStage?.(d.id, v);
+    });
     sel.clear();
     e.target.value = '';
-    rr();
   });
   document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => {
     document.querySelectorAll('.chip').forEach(x => x.classList.remove('active'));
@@ -767,26 +776,24 @@
     } else if (e.key === 'ArrowLeft' && e.altKey) { ND.stepDay(-1); e.preventDefault(); }
       else if (e.key === 'ArrowRight' && e.altKey) { ND.stepDay(1); e.preventDefault(); }
     else if (e.key === 'y' || e.key === 'Y') {
-      if (d) { d.up = !d.up; rr(); e.preventDefault(); }
+      if (d) {
+        ND.actions?.toggleHot?.(d.id, d.hot ? 'hot' : null);
+        e.preventDefault();
+      }
     } else if (e.key === 'n' || e.key === 'N') {
-      if (d) { d.up = false; d.stage = 'Passed'; d.unread = false; rr(); e.preventDefault(); }
+      if (d) {
+        ND.actions?.setStage?.(d.id, 'Passed');
+        if (d.hot) ND.actions?.toggleHot?.(d.id, 'hot');
+        ND.actions?.markRead?.(d.id);
+        e.preventDefault();
+      }
     } else if (e.key === 's' || e.key === 'S') {
-      if (d) { d.saved = !d.saved; rr(); e.preventDefault(); }
+      if (d) {
+        ND.actions?.toggleSave?.(d.id, d.saved);
+        e.preventDefault();
+      }
     }
   });
-
-  // ----- countdown -----
-  let total = (0*3600 + 48*60 + 51);
-  function tick() {
-    total = total > 0 ? total - 1 : (6*3600);
-    const h = Math.floor(total / 3600);
-    const m = Math.floor((total % 3600) / 60);
-    const s = total % 60;
-    document.getElementById('rcHr').textContent = String(h).padStart(2,'0');
-    document.getElementById('rcMn').textContent = String(m).padStart(2,'0');
-    document.getElementById('rcSc').textContent = String(s).padStart(2,'0');
-  }
-  setInterval(tick, 1000);
 
   // ----- viewport resize → re-fill empty rows -----
   let rzTimer = null;
