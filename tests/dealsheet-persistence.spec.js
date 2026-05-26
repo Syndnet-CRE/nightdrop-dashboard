@@ -369,4 +369,82 @@ test.describe('Dealsheet route + persistence', () => {
 
     await ctx.close();
   });
+
+  // Sheets/Excel parity for caret placement when clicking into an empty filler
+  // cell of a numeric column. The column-level right-align rules at
+  // styles.css:1847-1855 cascade onto the `.cell-edit` span inside empty filler
+  // rows, so the caret renders at the right edge — visually wrong (Sheets puts
+  // the caret on the left for empty cells regardless of the column's text-align).
+  //
+  // The fix is one CSS rule scoped to `tr.empty-row .cell-edit` that forces
+  // left-align. This test locks two invariants:
+  //   1. Empty filler row `.cell-edit` in psf/sf/hold columns renders LEFT.
+  //   2. dr-row `.cell-edit` in psf/sf/hold columns still renders RIGHT
+  //      (scope boundary guard — the fix must not bleed into populated rows).
+  //
+  // The dr-row guard injects a synthetic dr row into the DOM. This intentionally
+  // tests the CSS cascade against the selector itself rather than the data
+  // pipeline — no deal fixture needed, and the assertion is deterministic.
+  test('empty filler row caret: psf/sf/hold .cell-edit left-aligns; dr-row .cell-edit still right-aligns', async ({ page }) => {
+    await authAndOpenApp(page);
+    await page.getByRole('button', { name: /Deal Sheet/i }).click();
+    await page.waitForTimeout(3000);
+
+    const result = await page.evaluate(() => {
+      const numericCols = ['psf', 'sf', 'hold'];
+
+      // (1) Empty filler row assertions on the real DOM.
+      const emptyRow = document.querySelector('.nd-excel-shell table#grid tbody tr.empty-row');
+      const emptyAligns = {};
+      if (emptyRow) {
+        for (const key of numericCols) {
+          const td = emptyRow.querySelector(`td[data-col="${key}"]`);
+          const span = td?.querySelector('.cell-edit');
+          emptyAligns[key] = span ? getComputedStyle(span).textAlign : 'NO-SPAN';
+        }
+      }
+
+      // (2) Synthetic dr row guard — inject a row that mirrors what feed.js
+      // would render for a populated deal in the editable numeric columns. If
+      // the empty-row left-align rule were too broad (e.g. matched `.cell-edit`
+      // unconditionally), this row would also report 'left'.
+      const tbody = document.querySelector('.nd-excel-shell table#grid tbody');
+      const drTr = document.createElement('tr');
+      drTr.className = 'dr';
+      drTr.dataset.probeDr = '1';
+      drTr.innerHTML = `
+        <td class="gutter"></td>
+        <td data-col="psf"><span class="cell-edit" contenteditable="true">$10</span></td>
+        <td data-col="sf"><span class="cell-edit" contenteditable="true">10000</span></td>
+        <td data-col="hold"><span class="cell-edit" contenteditable="true">5y</span></td>
+      `;
+      tbody.appendChild(drTr);
+
+      const drAligns = {};
+      for (const key of numericCols) {
+        const span = drTr.querySelector(`td[data-col="${key}"] .cell-edit`);
+        drAligns[key] = span ? getComputedStyle(span).textAlign : 'NO-SPAN';
+      }
+
+      tbody.removeChild(drTr);
+
+      return {
+        emptyRowFound: !!emptyRow,
+        emptyAligns,
+        drAligns,
+      };
+    });
+
+    expect(result.emptyRowFound, 'an empty filler row must exist for the test to be meaningful').toBe(true);
+
+    // (1) Empty filler row: psf, sf, hold all left-aligned.
+    expect(result.emptyAligns.psf, 'empty-row psf .cell-edit must be left-aligned').toBe('left');
+    expect(result.emptyAligns.sf, 'empty-row sf .cell-edit must be left-aligned').toBe('left');
+    expect(result.emptyAligns.hold, 'empty-row hold .cell-edit must be left-aligned').toBe('left');
+
+    // (2) Scope boundary guard: dr-row right-align unchanged.
+    expect(result.drAligns.psf, 'dr-row psf .cell-edit must STILL be right-aligned').toBe('right');
+    expect(result.drAligns.sf, 'dr-row sf .cell-edit must STILL be right-aligned').toBe('right');
+    expect(result.drAligns.hold, 'dr-row hold .cell-edit must STILL be right-aligned').toBe('right');
+  });
 });

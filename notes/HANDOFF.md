@@ -80,9 +80,11 @@ If Phase 4 finishes fast, two quick cleanups could ride the same session: the de
 
 ---
 
-## Followups (not tickets — addressed in a dedicated PR)
+## Known Vendor Latent Bugs
 
 - **Top stats strip stub data.** The bundle's header strip showing `47 SUBMITTED`, `BOXES 48`, `QUEUE 00`, `BRIEFS 00`, `DELIVERED` is rendered from hardcoded values inside the vendor bundle. Same class of problem as the calendar window (bug #3/#4) — vendor demo data baked into source. To be addressed after PR B or in a dedicated stub-data cleanup PR. Surfaced during Brady's PR A local walkthrough on 2026-05-26.
+
+- **Cursor position on cell edit-mode entry (deferred — needs post-merge verification).** During the `fix/cell-selection-vs-edit-indicators` work on 2026-05-26 we made `selection.js` use `range.selectNodeContents(span)` + `range.collapse(false)` to land the caret at the END of existing content on dblclick — matching Sheets/Excel. The G-lock regression test in `tests/dealsheet-persistence.spec.js:365` asserts this. Open question: in real authored use (typing into a populated cell across multiple keystrokes, then re-entering edit mode), does the caret still land where the user expects? If the G=end behavior fully resolves the deferred concern that lived here, this bullet can be deleted in a future doc commit. If a residual issue surfaces post-merge in real usage, file it as a separate PR with a reproducer.
 
 ---
 
