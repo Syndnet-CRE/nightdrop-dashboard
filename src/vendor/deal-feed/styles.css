@@ -39,7 +39,7 @@
   --gutter-w: 44px;
   --colhdr-h: 22px;
   --font-sans: 'DM Sans', system-ui, sans-serif;
-  --font-mono: 'DM Mono', 'JetBrains Mono', ui-monospace, monospace;
+  --font-mono: 'DM Mono', ui-monospace, monospace;
   --ease: cubic-bezier(0.2, 0, 0, 1);
 }
 
@@ -62,12 +62,8 @@
   transition: grid-template-columns 0.22s var(--ease);
 }
 .nd-excel-shell .app.sidebar-collapsed { grid-template-columns: var(--nav-w-collapsed, 64px) 1fr; }
-  grid-template-rows: 100vh;
-  height: 100vh;
-  width: 100vw;
-}
 
-.nd-excel-shell .sidebar, .nd-excel-shell .main { min-height: 0; height: 100vh; overflow: hidden; }
+.nd-excel-shell .sidebar, .nd-excel-shell .main { min-height: 0; height: 100%; overflow: hidden; }
 
 /* ============================================
    SIDEBAR
@@ -1128,8 +1124,8 @@
   pointer-events: none;
 }
 @keyframes pulse {
-  .nd-excel-shell 0% { transform: translate(-50%, -150%) scale(.3); opacity: .7; }
-  .nd-excel-shell 100% { transform: translate(-50%, -150%) scale(1.4); opacity: 0; }
+  0% { transform: translate(-50%, -150%) scale(.3); opacity: .7; }
+  100% { transform: translate(-50%, -150%) scale(1.4); opacity: 0; }
 }
 .nd-excel-shell .sat-foot {
   position: absolute;
@@ -1277,8 +1273,8 @@
   visibility: hidden;
 }
 @keyframes narrMoreBob {
-  .nd-excel-shell 0%, .nd-excel-shell 100% { transform: translateY(0); }
-  .nd-excel-shell 50% { transform: translateY(3px); }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(3px); }
 }
 
 /* Action strip */

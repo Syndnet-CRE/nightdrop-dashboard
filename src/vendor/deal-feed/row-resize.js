@@ -57,9 +57,9 @@
   function ensureHandle(tr) {
     const g = tr.querySelector('td.gutter');
     if (!g) return;
-    if (g.querySelector('.row-resize')) return;
+    if (g.querySelector('.nd-row-resize')) return;
     const h = document.createElement('div');
-    h.className = 'row-resize';
+    h.className = 'nd-row-resize';
     g.style.position = g.style.position || 'sticky'; // keep sticky if already set
     g.appendChild(h);
   }
@@ -70,7 +70,7 @@
   let drag = null;
 
   document.addEventListener('mousedown', e => {
-    const h = e.target.closest?.('.row-resize');
+    const h = e.target.closest?.('.nd-row-resize');
     if (!h) return;
     const tr = h.closest('tr');
     const td = h.closest('td');

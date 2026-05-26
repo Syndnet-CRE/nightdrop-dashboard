@@ -60,7 +60,7 @@
   function ensureEl() {
     if (popEl) return popEl;
     popEl = document.createElement('div');
-    popEl.className = 'filter-pop';
+    popEl.className = 'nd-filter-pop';
     popEl.style.display = 'none';
     document.body.appendChild(popEl);
 
