@@ -2,7 +2,7 @@
 //
 // Verifies:
 //  - Legacy /dashboard and /calendar URLs redirect to /dealsheet.
-//  - Deal Feed nav navigates to /dealsheet and mounts the vendor shell.
+//  - Deal Sheet nav navigates to /dealsheet and mounts the vendor shell.
 //  - After two navigate-away-and-back cycles, the same #tw DOM node persists
 //    with its `selWired='1'` flag — proving the bundle's element-level
 //    listeners (contextmenu, mousedown, dblclick, mousemove) were never
@@ -81,9 +81,9 @@ test.describe('Dealsheet route + persistence', () => {
     expect(page.url()).toContain('/dealsheet');
   });
 
-  test('Deal Feed nav navigates to /dealsheet and mounts the shell', async ({ page }) => {
+  test('Deal Sheet nav navigates to /dealsheet and mounts the shell', async ({ page }) => {
     await authAndOpenApp(page);
-    await page.getByRole('button', { name: /Deal Feed/i }).click();
+    await page.getByRole('button', { name: /Deal Sheet/i }).click();
     await page.waitForTimeout(3000); // lazy chunk + bundle IIFEs
     expect(page.url()).toContain('/dealsheet');
     await expect(page.locator('.nd-excel-shell')).toBeVisible();
@@ -93,7 +93,7 @@ test.describe('Dealsheet route + persistence', () => {
     await authAndOpenApp(page);
 
     // First visit — bundle IIFEs run, listeners attach to #tw.
-    await page.getByRole('button', { name: /Deal Feed/i }).click();
+    await page.getByRole('button', { name: /Deal Sheet/i }).click();
     await page.waitForTimeout(3000);
 
     // Tag the initial #tw node so we can detect a remount.
@@ -115,7 +115,7 @@ test.describe('Dealsheet route + persistence', () => {
       );
       expect(hostHidden, `cycle ${i}: dealsheet host is hidden on Map`).toBe(true);
 
-      await page.getByRole('button', { name: /Deal Feed/i }).click();
+      await page.getByRole('button', { name: /Deal Sheet/i }).click();
       await page.waitForTimeout(500);
 
       const persist = await page.evaluate(() => {
@@ -131,32 +131,78 @@ test.describe('Dealsheet route + persistence', () => {
     }
   });
 
-  test('right-click shows context menu after two cycles', async ({ page }) => {
+  test('right-click shows context menu at click coords with fixed positioning', async ({ page }) => {
     await authAndOpenApp(page);
-    await page.getByRole('button', { name: /Deal Feed/i }).click();
+    await page.getByRole('button', { name: /Deal Sheet/i }).click();
     await page.waitForTimeout(3000);
 
     for (let i = 0; i < 2; i++) {
       await page.getByRole('button', { name: /^Map$/i }).click();
       await page.waitForTimeout(300);
-      await page.getByRole('button', { name: /Deal Feed/i }).click();
+      await page.getByRole('button', { name: /Deal Sheet/i }).click();
       await page.waitForTimeout(400);
     }
 
-    const firstRow = page.locator('.nd-excel-shell table#grid tbody tr').first();
-    await firstRow.click({ button: 'right' });
-    await expect(page.locator('.ctx-menu')).toBeVisible({ timeout: 2000 });
+    // Pick a stable cell that's safely inside the viewport (avoid the empty-
+    // state row whose single colspan'd td can be anywhere). Use cell (2, 3).
+    const cell = page.locator(
+      '.nd-excel-shell table#grid tbody tr[data-r="2"] td[data-c="3"]'
+    );
+    const cellBox = await cell.boundingBox();
+    expect(cellBox).not.toBeNull();
+    const clickX = cellBox.x + cellBox.width / 2;
+    const clickY = cellBox.y + cellBox.height / 2;
+
+    await page.mouse.move(clickX, clickY);
+    await page.mouse.down({ button: 'right' });
+    await page.mouse.up({ button: 'right' });
+
+    const menu = page.locator('.ctx-menu');
+    await expect(menu).toBeVisible({ timeout: 2000 });
+
+    // The toBeVisible() check alone is not sufficient — a portaled element
+    // missing its scoped CSS rules would still pass it (non-zero size, not
+    // display:none) while rendering as a static block at the bottom of the
+    // page. Verify the menu actually adopted its position:fixed style AND
+    // is rendered at the click coordinates.
+    const menuInfo = await menu.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      const r = el.getBoundingClientRect();
+      return {
+        position: cs.position,
+        zIndex: cs.zIndex,
+        x: r.x,
+        y: r.y,
+        w: r.width,
+        h: r.height,
+      };
+    });
+    expect(menuInfo.position, '.ctx-menu must be position: fixed').toBe('fixed');
+    expect(Number(menuInfo.zIndex), '.ctx-menu must have stacking context').toBeGreaterThan(0);
+    expect(menuInfo.w, '.ctx-menu must have non-trivial width').toBeGreaterThan(150);
+    expect(menuInfo.h, '.ctx-menu must have non-trivial height').toBeGreaterThan(50);
+    // Menu should be positioned within ~40px of the click coords. Clamping
+    // inside the viewport may shift the box slightly but should still land
+    // inside the cell's row neighbourhood.
+    expect(
+      Math.abs(menuInfo.x - clickX),
+      '.ctx-menu x must be near click coord'
+    ).toBeLessThan(40);
+    expect(
+      Math.abs(menuInfo.y - clickY),
+      '.ctx-menu y must be near click coord'
+    ).toBeLessThan(40);
   });
 
   test('column-header filter triangle opens popover after two cycles', async ({ page }) => {
     await authAndOpenApp(page);
-    await page.getByRole('button', { name: /Deal Feed/i }).click();
+    await page.getByRole('button', { name: /Deal Sheet/i }).click();
     await page.waitForTimeout(3000);
 
     for (let i = 0; i < 2; i++) {
       await page.getByRole('button', { name: /^Map$/i }).click();
       await page.waitForTimeout(300);
-      await page.getByRole('button', { name: /Deal Feed/i }).click();
+      await page.getByRole('button', { name: /Deal Sheet/i }).click();
       await page.waitForTimeout(400);
     }
 
@@ -168,8 +214,8 @@ test.describe('Dealsheet route + persistence', () => {
   test('Calendar nav item is removed from the LeftPanel', async ({ page }) => {
     await authAndOpenApp(page);
     // The nav button that used to navigate to the calendar view should be gone.
-    // Deal Feed remains.
+    // Deal Sheet remains.
     await expect(page.getByRole('button', { name: /^Calendar$/i })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: /Deal Feed/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Deal Sheet/i })).toBeVisible();
   });
 });
