@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>nightdrop.ai — Deal Feed</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500;600&family=JetBrains+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="light-theme.css">
+<script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+
+<div class="app" id="app">
+
+  <!-- LEFT SIDEBAR (do not touch — replicates the screenshot) -->
+  <aside class="sidebar" data-screen-label="sidebar">
+    <div class="brand">
+      <div class="brand-mark"><i class="ti ti-download"></i></div>
+      <div class="brand-name">nightdrop<span class="brand-tld">.ai</span></div>
+    </div>
+    <button id="sb-toggle" class="sb-toggle" title="Collapse sidebar" aria-label="Collapse sidebar"><i class="ti ti-chevron-left"></i></button>
+
+    <nav class="nav">
+      <a class="nav-item active" href="#" title="Deal Feed — 99+ unread"><i class="ti ti-layout-grid"></i><span>Deal Feed</span><span class="badge">99+</span></a>
+      <a class="nav-item" href="#" title="Map"><i class="ti ti-map-2"></i><span>Map</span></a>
+      <a class="nav-item" href="#" title="Buy Boxes"><i class="ti ti-box"></i><span>Buy Boxes</span></a>
+      <a class="nav-item" href="#" title="Calendar"><i class="ti ti-calendar"></i><span>Calendar</span></a>
+      <a class="nav-item" href="#" title="My Contacts"><i class="ti ti-users"></i><span>My Contacts</span></a>
+      <a class="nav-item" href="#" title="My Saved Deals"><i class="ti ti-bookmark"></i><span>My Saved Deals</span></a>
+      <a class="nav-item" href="#" title="What’s Trending"><i class="ti ti-trending-up"></i><span>What's Trending</span></a>
+      <a class="nav-item" href="#" title="Data"><i class="ti ti-database"></i><span>Data</span></a>
+    </nav>
+
+    <div class="sb-stats">
+      <div class="sb-stat" title="0 — New This Week">
+        <div class="sb-stat-head"><span class="sb-stat-num">0</span><i class="ti ti-chart-line sb-stat-ico g"></i></div>
+        <div class="sb-stat-lbl">New This Week</div>
+      </div>
+      <div class="sb-stat" title="7 — Hot Deals">
+        <div class="sb-stat-head"><span class="sb-stat-num">7</span><i class="ti ti-flame sb-stat-ico h"></i></div>
+        <div class="sb-stat-lbl">Hot Deals</div>
+      </div>
+      <div class="sb-stat" title="45% — Response Rate">
+        <div class="sb-stat-head"><span class="sb-stat-num">45<span class="sb-stat-suf">%</span></span><i class="ti ti-activity sb-stat-ico b"></i></div>
+        <div class="sb-stat-lbl">Response Rate</div>
+      </div>
+      <div class="sb-stat" title="128 — Awaiting">
+        <div class="sb-stat-head"><span class="sb-stat-num">128</span><i class="ti ti-clock sb-stat-ico p"></i></div>
+        <div class="sb-stat-lbl">Awaiting</div>
+      </div>
+    </div>
+
+    <div class="sb-buyboxes">
+      <div class="sb-section-head">
+        <span class="sb-section-lbl">Buy Boxes</span>
+        <button class="sb-add" title="New Buy Box"><i class="ti ti-plus"></i></button>
+      </div>
+      <a class="sb-bb" href="#" title="self storage"><span class="sb-bb-dot" style="background:#2da200"></span><span>self storage</span></a>
+      <a class="sb-bb" href="#" title="WPG Rural Land Search"><span class="sb-bb-dot" style="background:#3b82f6"></span><span>WPG Rural Land Search</span></a>
+      <a class="sb-bb" href="#" title="Land Search: 100–200 acres"><span class="sb-bb-dot" style="background:#a855f7"></span><span>Land Search: 100-200 acres</span></a>
+    </div>
+
+    <div class="sb-foot">
+      <a class="nav-item" href="#" title="Account"><i class="ti ti-user-circle"></i><span>Account</span></a>
+      <a class="nav-item" href="#" title="Settings"><i class="ti ti-settings"></i><span>Settings</span></a>
+    </div>
+  </aside>
+
+  <!-- MAIN AREA -->
+  <main class="main">
+
+    <!-- DEAL FEED -->
+    <section class="feed sheet-light" data-screen-label="deal-feed">
+
+      <div class="toolbar">
+        <div class="chips">
+          <button class="chip active" data-f="all">All <span class="chip-n">100</span></button>
+          <button class="chip" data-f="unread">Unread <span class="chip-n">50</span></button>
+          <button class="chip" data-f="saved">Saved <span class="chip-n">1</span></button>
+          <button class="chip" data-f="hot">Hot <span class="chip-n">6</span></button>
+        </div>
+        <div class="spacer"></div>
+
+        <button class="tbtn warn" id="exportBtn" style="display:none"><i class="ti ti-download"></i> Export (<span id="selCount">0</span>)</button>
+        <div class="tbtn warn" id="bulkBtn" style="display:none">
+          <i class="ti ti-tag"></i>
+          <select id="bss" class="tbtn-sel">
+            <option value="">Set Stage</option>
+            <option>New</option><option>Researching</option><option>Contacted</option><option>Negotiating</option><option>Passed</option><option>Closed</option>
+          </select>
+        </div>
+        <button class="tbtn" id="fcBtn" style="display:none"><i class="ti ti-filter"></i> <span id="fca">0</span> filters</button>
+        <button class="tbtn"><i class="ti ti-columns"></i> Columns</button>
+
+        <div class="density-toggle" role="tablist" aria-label="Density">
+          <button class="dbtn" data-d="compact" title="Compact"><i class="ti ti-baseline-density-large"></i></button>
+          <button class="dbtn active" data-d="normal" title="Normal"><i class="ti ti-baseline-density-medium"></i></button>
+          <button class="dbtn" data-d="comfortable" title="Comfortable"><i class="ti ti-baseline-density-small"></i></button>
+        </div>
+
+        <div class="sort">
+          <span class="sort-l">Sort:</span>
+          <select class="sort-sel">
+            <option>Score</option><option>Recency</option><option>Distress</option><option>Value</option>
+          </select>
+        </div>
+
+        <div class="view-toggle">
+          <button class="vbtn"><i class="ti ti-list"></i> List</button>
+          <button class="vbtn"><i class="ti ti-layout-grid"></i> Grid</button>
+          <button class="vbtn active"><i class="ti ti-table"></i> Table</button>
+        </div>
+      </div>
+
+      <div class="statsbar">
+        <div class="stat"><span class="sl">Tonight</span><span class="sv g" id="stTotal">8</span></div>
+        <div class="sdiv"></div>
+        <div class="stat"><span class="sl">Avg Score</span><span class="sv" id="stAvg">76</span></div>
+        <div class="sdiv"></div>
+        <div class="stat"><span class="sl">Unread</span><span class="sv a">5</span></div>
+        <div class="sdiv"></div>
+        <div class="stat"><span class="sl">Hot</span><span class="sv r">2</span></div>
+        <div class="sdiv"></div>
+        <div class="stat"><span class="sl">Saved</span><span class="sv">1</span></div>
+        <div class="sdiv"></div>
+        <div class="sv-views">
+          <span class="sl">Views:</span>
+          <button class="sv-chip">Hot + High Score</button>
+          <button class="sv-chip">Self Storage</button>
+          <button class="sv-chip add">+ Save view</button>
+        </div>
+        <span class="rc" id="rc">Showing 8 of 100</span>
+      </div>
+
+      <div class="fbar" id="fbar" style="display:none"></div>
+
+      <div class="feed-main">
+        <div class="tw" id="tw">
+          <table id="grid">
+            <colgroup id="cg"></colgroup>
+            <thead>
+              <tr class="colhdr">
+                <th class="gutter-corner gutter"><span id="cellAddr" class="cell-addr-box"></span></th>
+                <th data-letter="A">A</th>
+                <th data-letter="B">B</th>
+                <th data-letter="C">C</th>
+                <th data-letter="D">D</th>
+                <th data-letter="E">E</th>
+                <th data-letter="F">F</th>
+                <th data-letter="G">G</th>
+                <th data-letter="H">H</th>
+                <th data-letter="I">I</th>
+                <th data-letter="J">J</th>
+                <th data-letter="K">K</th>
+                <th data-letter="L">L</th>
+              </tr>
+              <tr>
+                <th class="gutter gutter-corner" title="Row"></th>
+                <th data-col="score"><div class="thi">Score<div class="tri on" data-key="score"></div></div><div class="col-resize" data-col="score"></div></th>
+                <th data-col="address"><div class="thi">Address<div class="tri" data-key="addr"></div></div><div class="col-resize" data-col="address"></div></th>
+                <th data-col="date"><div class="thi">Date<div class="tri" data-key="date"></div></div><div class="col-resize" data-col="date"></div></th>
+                <th data-col="asset"><div class="thi">Asset<div class="tri" data-key="asset"></div></div><div class="col-resize" data-col="asset"></div></th>
+                <th data-col="psf"><div class="thi">$/SF<div class="tri" data-key="psf"></div></div><div class="col-resize" data-col="psf"></div></th>
+                <th data-col="sf"><div class="thi">SF<div class="tri" data-key="sf"></div></div><div class="col-resize" data-col="sf"></div></th>
+                <th data-col="owner"><div class="thi">Owner<div class="tri" data-key="owner"></div></div><div class="col-resize" data-col="owner"></div></th>
+                <th data-col="hold"><div class="thi">Hold<div class="tri" data-key="hold"></div></div><div class="col-resize" data-col="hold"></div></th>
+                <th data-col="signal"><div class="thi">Top Signal<div class="tri" data-key="signal"></div></div><div class="col-resize" data-col="signal"></div></th>
+                <th data-col="stage"><div class="thi">Stage<div class="tri" data-key="stage"></div></div><div class="col-resize" data-col="stage"></div></th>
+                <th data-col="notes"><div class="thi">Notes</div><div class="col-resize" data-col="notes"></div></th>
+                <th data-col="quick"><div class="thi">Quick</div></th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+          <div id="fpop" class="fpop" style="display:none"></div>
+        </div>
+
+        <aside class="chat-drawer" id="drawer">
+          <div class="dh2">
+            <div class="dh2-info">
+              <div class="dtitle">Ask Nightdrop</div>
+              <div class="ddeal" id="ddeal">—</div>
+            </div>
+            <button class="dclose" id="dclose" title="Close chat"><i class="ti ti-x"></i></button>
+          </div>
+          <div class="dctx"><i class="ti ti-shield-lock"></i> Deal context preloaded</div>
+          <div class="dmsgs" id="dmsgs"></div>
+          <div class="dinp">
+            <input type="text" id="ci" placeholder="Ask about this deal, market, or buy box…"/>
+            <button class="dsend" id="cs"><i class="ti ti-send"></i></button>
+          </div>
+        </aside>
+      </div>
+
+      <!-- Multi-level bottom tab nav: months → weeks → days -->
+      <div class="tabbar" id="tabbar"></div>
+
+    </section>
+  </main>
+</div>
+
+<script src="data.js"></script>
+<script src="tabs.js"></script>
+<script src="selection.js"></script>
+<script src="context-menu.js"></script>
+<script src="row-resize.js"></script>
+<script src="filter-popover.js"></script>
+<script src="sidebar.js"></script>
+<script src="sidebar-tweaks.js"></script>
+<script src="feed.js"></script>
+
+</body>
+</html>

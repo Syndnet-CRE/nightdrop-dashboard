@@ -21,6 +21,7 @@ import { LoginView } from './views/LoginView';
 import { ForgotPasswordView } from './views/ForgotPasswordView';
 import { ResetPasswordView } from './views/ResetPasswordView';
 import { InviteClaimView } from './views/InviteClaimView';
+import ExcelSpike from './views/__excel-spike';
 import { api } from './lib/api';
 import { useToast } from './contexts/ToastContext';
 
@@ -232,6 +233,7 @@ function AppShell() {
             <Routes>
               <Route path="/buy-boxes/new" element={<BuyBoxPage mode="new" />} />
               <Route path="/buy-boxes/:id/edit" element={<BuyBoxPage mode="edit" />} />
+              <Route path="/__excel-spike" element={<ExcelSpike/>} />
               <Route path="/*" element={
                 <>
                   {isOnDeal && !isModal && (
