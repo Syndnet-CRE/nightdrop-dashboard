@@ -53,6 +53,7 @@ export default function DealFeedExcelView() {
     saveNote,
     updateStatus,
     patchStage,
+    deleteDeal,
   } = useDeals();
   const { isRead, markRead } = useReadState();
   const navigate = useNavigate();
@@ -76,6 +77,7 @@ export default function DealFeedExcelView() {
         saveNote,
         updateStatus,
         patchStage,
+        deleteDeal,
         markRead,
         navigate,
       });

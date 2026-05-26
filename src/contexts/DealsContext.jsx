@@ -104,6 +104,20 @@ export function DealsProvider({ children }) {
     }
   }, []);
 
+  // Soft-delete: optimistically drop the row from the feed, then PATCH
+  // status='archived' on the backend. No hard-delete endpoint exists today;
+  // archived deals are intended to be filtered from GET /deals server-side.
+  // Per architecture.md open-question resolution: Delete from context menu
+  // is implemented as updateStatus(id, 'archived').
+  const deleteDeal = useCallback(async (dealId) => {
+    setDeals(prev => prev.filter(d => d.id !== dealId));
+    try {
+      await api.patch(`/api/dealfeed/deals/${dealId}/status`, { status: 'archived' });
+    } catch {
+      // optimistic removal stays; next refetch will reconcile
+    }
+  }, []);
+
   const fetchContacts = useCallback(async (dealId) => {
     try {
       const res = await api.get(`/api/dealfeed/deals/${dealId}/contacts`);
@@ -162,7 +176,7 @@ export function DealsProvider({ children }) {
   }, []);
 
   return (
-    <DealsCtx.Provider value={{ deals, buyBoxes, contacts, dealNotes, portfolios, loading, error, refetch: fetchAll, postFeedback, saveNote, updateStatus, patchStage, fetchContacts, logContact, patchBuyBox, deleteBuyBox, fetchDealNotes, createDealNote, fetchOwnerPortfolio }}>
+    <DealsCtx.Provider value={{ deals, buyBoxes, contacts, dealNotes, portfolios, loading, error, refetch: fetchAll, postFeedback, saveNote, updateStatus, patchStage, deleteDeal, fetchContacts, logContact, patchBuyBox, deleteBuyBox, fetchDealNotes, createDealNote, fetchOwnerPortfolio }}>
       {children}
     </DealsCtx.Provider>
   );
