@@ -218,4 +218,155 @@ test.describe('Dealsheet route + persistence', () => {
     await expect(page.getByRole('button', { name: /^Calendar$/i })).toHaveCount(0);
     await expect(page.getByRole('button', { name: /Deal Sheet/i })).toBeVisible();
   });
+
+  // Sheets-parity regression lock. After PR `fix/cell-selection-vs-edit-indicators`:
+  //   - left-click on a cell shows exactly one rectangle (the outer .sel-rect),
+  //     no inner rectangle, no green wash on the single-cell anchor.
+  //   - right-click opens the context menu without focusing the contenteditable
+  //     span and without adding `td.editing`.
+  //   - dblclick enters edit mode (state-tracking `td.editing` still set), but
+  //     the cell renders no extra visual indicator. Caret lands at the END of
+  //     existing content (Sheets-exact).
+  test('Sheets parity: cell selection and edit-mode visuals', async ({ browser }) => {
+    const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const targetCellSel = '.nd-excel-shell table#grid tbody tr[data-r="2"] td[data-c="3"]';
+    const TINT = 'rgba(45, 162, 0, 0.1)';
+
+    async function open(page) {
+      await page.route('**/api/dealfeed/auth/me', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ subscriber: { id: 'u', email: 't@t.com', full_name: 'T' } }) }));
+      await page.route('**/api/dealfeed/buy-boxes', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ buy_boxes: [{ id: 'b', name: 'b', asset_classes: ['self_storage'] }] }) }));
+      await page.route('**/api/dealfeed/deals', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ deals: [] }) }));
+      await page.route('**/api/dealfeed/deals/dashboard/kpis', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ unread_count: 0, new_this_week: 0, response_rate: 0 }) }));
+
+      await page.goto('http://localhost:5173/', { waitUntil: 'domcontentloaded' });
+      await page.evaluate(() => localStorage.setItem('nd_token', 'mock'));
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await page.waitForTimeout(800);
+      await page.getByRole('button', { name: /Deal Sheet/i }).click();
+      await page.waitForTimeout(3000);
+    }
+
+    // --- Phase A: left-click → exactly one rectangle, no inner indicator, no wash on anchor. ---
+    {
+      const page = await ctx.newPage();
+      await open(page);
+      await page.locator(targetCellSel).click();
+      await page.waitForTimeout(200);
+
+      const state = await page.evaluate(({ TINT }) => {
+        const rects = document.querySelectorAll('#sel-overlay > .sel-rect').length;
+        const editing = document.querySelectorAll('td.editing').length;
+        const anchor = document.querySelector('td.sel-anchor');
+        const cs = anchor ? getComputedStyle(anchor) : null;
+        return {
+          rects,
+          editingCount: editing,
+          tdBoxShadow: cs?.boxShadow,
+          tdBgIsTint: cs ? cs.backgroundColor === TINT : null,
+        };
+      }, { TINT });
+
+      expect(state.rects, 'exactly one selection rectangle after left-click').toBe(1);
+      expect(state.editingCount, 'left-click must not add td.editing anywhere').toBe(0);
+      expect(state.tdBoxShadow, 'anchor td must have no inset box-shadow').toBe('none');
+      expect(state.tdBgIsTint, 'single-cell anchor must NOT have the green wash tint').toBe(false);
+
+      await page.close();
+    }
+
+    // --- Phase B: right-click → menu opens, no editing class, span not focused. ---
+    {
+      const page = await ctx.newPage();
+      await open(page);
+      const box = await page.locator(targetCellSel).boundingBox();
+      await page.mouse.move(box.x + 30, box.y + 15);
+      await page.mouse.down({ button: 'right' });
+      await page.mouse.up({ button: 'right' });
+      await page.waitForTimeout(300);
+
+      const state = await page.evaluate(() => {
+        const td = document.querySelector('tr[data-r="2"] td[data-c="3"]');
+        const span = td?.querySelector('.cell-edit');
+        return {
+          ctxVisible: !!document.querySelector('.ctx-menu') &&
+                      getComputedStyle(document.querySelector('.ctx-menu')).display !== 'none',
+          editingCount: document.querySelectorAll('td.editing').length,
+          activeIsCellEdit: document.activeElement === span,
+          rects: document.querySelectorAll('#sel-overlay > .sel-rect').length,
+        };
+      });
+
+      expect(state.ctxVisible, 'right-click still opens the context menu').toBe(true);
+      expect(state.editingCount, 'right-click must NOT add td.editing').toBe(0);
+      expect(state.activeIsCellEdit, 'right-click must NOT focus the .cell-edit span').toBe(false);
+      expect(state.rects, 'exactly one selection rectangle after right-click').toBe(1);
+
+      await page.close();
+    }
+
+    // --- Phase C: dblclick → enters edit mode. ONE rectangle. No extra visual on td.
+    //              activeElement is the span. Caret at end of content (G regression lock). ---
+    {
+      const page = await ctx.newPage();
+      await open(page);
+      // Seed the cell with content so the caret-at-end assertion is meaningful.
+      // We use direct DOM manipulation because the cell is an empty filler row.
+      await page.evaluate(() => {
+        const td = document.querySelector('tr[data-r="2"] td[data-c="3"]');
+        const span = td?.querySelector('.cell-edit');
+        if (span) span.textContent = 'seeded';
+      });
+      await page.locator(targetCellSel).dblclick();
+      await page.waitForTimeout(300);
+
+      const state = await page.evaluate(() => {
+        const td = document.querySelector('tr[data-r="2"] td[data-c="3"]');
+        const span = td?.querySelector('.cell-edit');
+        const sel = window.getSelection();
+        const range = sel?.rangeCount ? sel.getRangeAt(0) : null;
+        const tdShadow = td ? getComputedStyle(td).boxShadow : null;
+        const spanShadow = span ? getComputedStyle(span).boxShadow : null;
+        // Determining "caret at end" depends on what node the range is anchored
+        // to. When the span has a text child, selectNodeContents(span) +
+        // collapse(false) leaves the range with endContainer === span and
+        // endOffset === span.childNodes.length (i.e. "after the last child").
+        // If a normalize ever folded the range into the text node, endOffset
+        // would equal the text length instead. Cover both.
+        let caretAtEnd = false;
+        if (range && range.collapsed && span) {
+          if (range.endContainer === span) {
+            caretAtEnd = range.endOffset === span.childNodes.length;
+          } else if (range.endContainer.nodeType === 3 /* TEXT_NODE */) {
+            caretAtEnd = range.endOffset === range.endContainer.textContent.length;
+          }
+        }
+        return {
+          rects: document.querySelectorAll('#sel-overlay > .sel-rect').length,
+          tdHasEditing: td?.classList.contains('editing') || false,
+          tdBoxShadow: tdShadow,
+          spanBoxShadow: spanShadow,
+          activeIsCellEdit: document.activeElement === span,
+          textContent: span?.textContent || '',
+          caretAtEnd,
+        };
+      });
+
+      expect(state.rects, 'exactly one selection rectangle after dblclick').toBe(1);
+      expect(state.tdHasEditing, 'td.editing state is still tracked').toBe(true);
+      expect(state.tdBoxShadow, 'td.editing must NOT render an inset box-shadow').toBe('none');
+      // The host has a universal :focus-visible { box-shadow: var(--ring-shadow) }
+      // rule (styles.css:1450). Without explicit suppression on .cell-edit, the
+      // span's focus ring paints a 3px green ring inside the cell on dblclick —
+      // visually a second concentric rectangle. This assertion locks that the
+      // bundle's .cell-edit suppression covers box-shadow as well as outline.
+      expect(state.spanBoxShadow, '.cell-edit span must have no focus box-shadow').toBe('none');
+      expect(state.activeIsCellEdit, 'dblclick focuses the .cell-edit span').toBe(true);
+      expect(state.textContent, 'seeded content survived dblclick').toBe('seeded');
+      expect(state.caretAtEnd, 'caret lands at END of existing content (Sheets-exact, G lock)').toBe(true);
+
+      await page.close();
+    }
+
+    await ctx.close();
+  });
 });

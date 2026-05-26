@@ -189,6 +189,18 @@
    cell stays 100% opaque (body rows can't bleed through on scroll). */
 .nd-excel-shell .sheet-light td.sel-in { background: rgba(45, 162, 0, 0.10) !important; }
 .nd-excel-shell .sheet-light td.sel-anchor { background: #ffffff !important; }
+/* E2: Sheets-exact. The single-cell anchor carries both .sel-anchor AND .sel-in
+   (since it is technically inside its own 1x1 selection range). Without this
+   override the wash tint from .sel-in wins the cascade and the active cell is
+   green instead of white. The hover variants are required because the
+   "wash persists on hover" rule (immediately below) deliberately keeps the
+   green tint on selected cells under hover — Sheets disagrees with that
+   choice for the single-cell anchor, where the anchor stays white. */
+.nd-excel-shell .sheet-light td.sel-anchor.sel-in,
+.nd-excel-shell .sheet-light tr.empty-row:hover td.sel-anchor.sel-in,
+.nd-excel-shell .sheet-light tr.dr:hover td.sel-anchor.sel-in {
+  background: #ffffff !important;
+}
 .nd-excel-shell .sheet-light td.gutter.gutter-on {
   background:
     linear-gradient(rgba(45, 162, 0, 0.20), rgba(45, 162, 0, 0.20)),
@@ -232,8 +244,8 @@
 /* Light theme: Name Box color */
 .nd-excel-shell .sheet-light .cell-addr-box { color: #3c4043; }
 
-/* Editing fill */
-.nd-excel-shell .sheet-light td.editing { background: rgba(45, 162, 0, 0.06); box-shadow: inset 0 0 0 2px var(--accent); }
+/* Sheets parity (A): the editing-state td has no distinct visual treatment.
+   Selection is the rectangle; the blinking caret is the only edit-mode signal. */
 
 /* Active filter dropdown popover lives outside .sheet-light if appended to body */
 /* Keep .cfp light too */
