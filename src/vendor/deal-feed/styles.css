@@ -815,9 +815,13 @@
    either theme. State tracking on `td.editing` (added/removed on
    focus/blur of `.cell-edit`) is preserved but paints nothing. */
 
-/* Suppress the universal focus-visible outline on the contenteditable span —
-   the blinking caret is the focus affordance. */
-.nd-excel-shell .cell-edit, .nd-excel-shell .cell-edit:focus, .nd-excel-shell .cell-edit:focus-visible { outline: none; }
+/* Suppress the universal focus ring on the contenteditable span — the
+   blinking caret is the focus affordance. Must suppress BOTH outline and
+   box-shadow: the host's universal :focus-visible rule
+   (src/styles/styles.css:1450) sets `outline: none; box-shadow: var(--ring-shadow)`,
+   so leaving box-shadow unsuppressed paints a 3px green ring inside the
+   cell on dblclick — looks like a second concentric rectangle. */
+.nd-excel-shell .cell-edit, .nd-excel-shell .cell-edit:focus, .nd-excel-shell .cell-edit:focus-visible { outline: none; box-shadow: none; }
 
 /* Cell text values in real data rows */
 .nd-excel-shell .cell-val { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11.5px; color: var(--fg-dim); }

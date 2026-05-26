@@ -325,6 +325,7 @@ test.describe('Dealsheet route + persistence', () => {
         const sel = window.getSelection();
         const range = sel?.rangeCount ? sel.getRangeAt(0) : null;
         const tdShadow = td ? getComputedStyle(td).boxShadow : null;
+        const spanShadow = span ? getComputedStyle(span).boxShadow : null;
         // Determining "caret at end" depends on what node the range is anchored
         // to. When the span has a text child, selectNodeContents(span) +
         // collapse(false) leaves the range with endContainer === span and
@@ -343,6 +344,7 @@ test.describe('Dealsheet route + persistence', () => {
           rects: document.querySelectorAll('#sel-overlay > .sel-rect').length,
           tdHasEditing: td?.classList.contains('editing') || false,
           tdBoxShadow: tdShadow,
+          spanBoxShadow: spanShadow,
           activeIsCellEdit: document.activeElement === span,
           textContent: span?.textContent || '',
           caretAtEnd,
@@ -352,6 +354,12 @@ test.describe('Dealsheet route + persistence', () => {
       expect(state.rects, 'exactly one selection rectangle after dblclick').toBe(1);
       expect(state.tdHasEditing, 'td.editing state is still tracked').toBe(true);
       expect(state.tdBoxShadow, 'td.editing must NOT render an inset box-shadow').toBe('none');
+      // The host has a universal :focus-visible { box-shadow: var(--ring-shadow) }
+      // rule (styles.css:1450). Without explicit suppression on .cell-edit, the
+      // span's focus ring paints a 3px green ring inside the cell on dblclick —
+      // visually a second concentric rectangle. This assertion locks that the
+      // bundle's .cell-edit suppression covers box-shadow as well as outline.
+      expect(state.spanBoxShadow, '.cell-edit span must have no focus box-shadow').toBe('none');
       expect(state.activeIsCellEdit, 'dblclick focuses the .cell-edit span').toBe(true);
       expect(state.textContent, 'seeded content survived dblclick').toBe('seeded');
       expect(state.caretAtEnd, 'caret lands at END of existing content (Sheets-exact, G lock)').toBe(true);
