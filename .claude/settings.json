@@ -1,0 +1,27 @@
+{
+  "disabledMcpServers": [
+    "pencil",
+    "cortex-mcp",
+    "parcyl-mcp",
+    "playwright",
+    "plugin:figma:figma"
+  ],
+  "enableAllProjectMcpServers": false,
+  "enabledMcpjsonServers": [],
+  "disabledMcpjsonServers": [
+    "pencil",
+    "cortex-mcp",
+    "parcyl-mcp",
+    "playwright",
+    "plugin:figma:figma"
+  ],
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official": false,
+    "figma@claude-plugins-official": false,
+    "firecrawl@claude-plugins-official": false
+  },
+  "remoteControlAtStartup": false,
+  "env": {
+    "ENABLE_TOOL_SEARCH": "auto"
+  }
+}
