@@ -95,6 +95,15 @@ export function DealsProvider({ children }) {
     }
   }, []);
 
+  const patchStage = useCallback(async (dealId, stage) => {
+    setDeals(prev => prev.map(d => d.id === dealId ? { ...d, stage } : d));
+    try {
+      await api.patch(`/api/dealfeed/deals/${dealId}/stage`, { stage });
+    } catch {
+      // optimistic update stays; stage will resync on next refetch
+    }
+  }, []);
+
   const fetchContacts = useCallback(async (dealId) => {
     try {
       const res = await api.get(`/api/dealfeed/deals/${dealId}/contacts`);
@@ -153,7 +162,7 @@ export function DealsProvider({ children }) {
   }, []);
 
   return (
-    <DealsCtx.Provider value={{ deals, buyBoxes, contacts, dealNotes, portfolios, loading, error, refetch: fetchAll, postFeedback, saveNote, updateStatus, fetchContacts, logContact, patchBuyBox, deleteBuyBox, fetchDealNotes, createDealNote, fetchOwnerPortfolio }}>
+    <DealsCtx.Provider value={{ deals, buyBoxes, contacts, dealNotes, portfolios, loading, error, refetch: fetchAll, postFeedback, saveNote, updateStatus, patchStage, fetchContacts, logContact, patchBuyBox, deleteBuyBox, fetchDealNotes, createDealNote, fetchOwnerPortfolio }}>
       {children}
     </DealsCtx.Provider>
   );
