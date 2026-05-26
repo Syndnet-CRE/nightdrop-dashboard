@@ -1,92 +1,137 @@
 HANDOFF
-Date: 2026-05-20
+Date: 2026-05-25
 Repo: nightdrop-dashboard
-Session objective: Rebuild Buy Box Configurator wizard to match backend MVP filter contract (10-class taxonomy + 35 new filter fields). Ship to main.
-Status: COMPLETE (commits pushed, Netlify auto-deploy triggered, awaiting Brady visual verification on live production + migration 049 apply)
+Session objective: Replace card-based Deal Feed at /dashboard with the vendor spreadsheet bundle (Deal Feed Excel). Phase 0 (audit + screenshot spike + BMAD scaffolds) and Phase 1 (backend `stage` column + pre-MVP wipe) complete. Phase 2 (frontend integration scaffold) is next.
+Status: COMPLETE for Phase 0 + Phase 1. Stopping for fresh session before Phase 2 (~5-6 sessions of work remaining).
 
 ---
 
 ## What was done
 
-### Commit 6b51fb5 — Buy Box Wizard MVP rebuild (47 files, +4494 / -4548)
+### Branches created
+- `feat/deal-detail-v1` — Phase 0a side-effect. The Deal Detail V1 rebuild from the prior session was uncommitted on main. Moved cleanly to its own branch (one commit, code-reviewer + security-reviewer pre-approved, ready for separate merge). HEAD: `fa4a4bf`.
+- `feat/deal-feed-excel-cutover` — active Phase 0-5 branch for this work. 3 commits ahead of main. NOT pushed yet.
 
-**Taxonomy & data layer**
-- `src/lib/buyBoxTaxonomy.js` rewritten for the 10-class MVP set (self_storage, multifamily, mobile_home_rv, residential_sfr, land, industrial, retail, gas_station_c_store, office, special_purpose) with exact ATTOM use codes mirroring `~/nightdrop-api/services/assetUseCodes.js`. Legacy aliases (`sfr`, `hospitality`, `gas_station`, `rv_park`, `mixed_use`, `medical_office`, `hotel`) normalized for back-compat via `normalizeAssetClassSlug()`.
-- NEW `src/lib/buyBoxFieldSchema.js` — per-class field visibility map. CONSTRUCTION_TYPES / FOUNDATION_TYPES / ROOF_TYPES / GARAGE_TYPES enums.
-- NEW `src/lib/wizardFormState.js` — extracted EMPTY_FORM, nativeToPayload, toNativeForm from BuyBoxWizard. Payload covers all 91 PATCHABLE_FIELDS. Empty-subtypes fallback: serializes to full class codes so backend `validateAssetUseCodes()` passes while UI shows nothing checked.
-- NEW `src/lib/numberFormat.js` — int / money / year / decimal formatters with thousand-separator + decimal point handling.
+### main (clean now — 2 commits ahead of origin/main)
+- `9ac1dee chore: gitignore noise, track project config, archive V1-era audits` — .gitignore for coverage/, .playwright-mcp/, screenshot dumps, audit-runtime*.{mjs,js}, /*.png; commit .env.development + .claude/settings.json + 2 wiring-contract notes/audit/ docs.
+- `c9d0490 chore: untrack coverage/` — removed auto-gen coverage files from git tracking.
 
-**Wizard pages**
-- `BuyBoxPage1.jsx` — 10 asset class cards in 5×2 grid, Land sub-asset slug chips (urban_infill / suburban_fringe / agricultural_rural / path_of_growth), 7 counters wrapped with `.count.active` className for green-when-active progress feedback. `toggleAsset` no longer auto-fills subtypes; user picks 0 to 3.
-- `BuyBoxPage23.jsx` — side-by-side A+B layout (Physical + Financial). Class-conditional fields (units, beds/baths min+max, lot width/depth, construction/foundation/roof/garage multi-chips, building class A/B/C with year_built defaults, price_per_unit, improvement_to_land, dev_potential). Page 3 adds tax-delinquent + active-foreclosure toggles writing into `form.signals[]` (single source of truth).
-- `BuyBoxPage4.jsx` — distress signals tier-coded (red urgent / amber pressure / blue flag) via 3px left stripe `::before` pseudo-element. Stripe hides on toggle-on. Cards reordered into 2-row bands: pressure (top) → flag → urgent (bottom). Distress score min surfaced out of Advanced. Description text-align fixed (was inheriting `<button>` center default).
-- `BuyBoxPage5.jsx` — 4 utility toggles, universal risk overlays (flood_exclude, wetlands_exclude, opportunity_zone tri-state, tif_district tri-state), class-specific section (road frontage, AADT heat-map slider 10K-150K with blue→yellow→red RGB lerp, corner lot, has_pool, has_elevator, pct_renter_occupied, LIHTC, REIT, foreclosure history, assemblage, in_etj, zoning_codes, future_land_use_codes).
-- `BuyBoxWizard.jsx` — switched create from `POST /api/dealfeed/onboarding` to `POST /api/dealfeed/buy-boxes` (the 35 new MVP fields persist now). Added `useScrollHint()` hook: green chevron with 4px bounce auto-appears on any page that overflows, hides at bottom via ResizeObserver + scroll listener.
+### feat/deal-feed-excel-cutover branch (3 commits)
+- `6341c53 docs(bmad): scaffold deal-feed-excel planning package` — 7 BMAD docs at `notes/bmad/deal-feed-excel/` (requirements.md, PRD.md, architecture.md, stories.md, qa-plan.md, data-gaps.md, deal-state-counts.md, orphan-routes.md). All locked decisions and audit findings captured.
+- `eef39b1 spike(deal-feed-excel): Phase 0.1 — bundle renders with real Neon data` — throwaway /__excel-spike route, vendor bundle moved to src/vendor/deal-feed/, scope-prefixed under .nd-excel-shell, lucide@1.14.0 pinned locally, screenshot captured at notes/bmad/deal-feed-excel/spike-2026-05-25-{theme,grid-crop}.png. Brady approved contrast 2026-05-25.
 
-**Shared themed inputs**
-- NEW `src/components/buyBoxInputs.jsx` — NumberField (focused-raw / blurred-formatted), RangeInputs, SingleInput. Used by Page 2, Page 5. Hidden native browser spinner arrows. Tabular figures via Inter.
+### Backend (~/nightdrop-api) — Phase 1 SHIPPED
+- Branch `feat/df-stage-and-wipe`, PR #1 at https://github.com/Syndnet-CRE/nightdrop-api/pull/1 — **MERGED 2026-05-25, Render deployed, verified by Brady.**
+- Migration 051 applied to prod DB (`DELETE 647, UPDATE 25, ALTER TABLE, CREATE INDEX, COMMIT`).
+- New `stage` column on df_deals_sent (TEXT NOT NULL DEFAULT 'New', CHECK over 6 values: New/Researching/Contacted/Negotiating/Passed/Closed).
+- `df_buy_boxes.deals_sent_total = 0` and `last_run_at = NULL` for all 25 rows.
+- Routes: normalizeDeal returns stage; GET /deals + GET /deals/:id SELECTs include ds.stage; new PATCH /api/dealfeed/deals/:id/stage live (subscriber-scoped, whitelist-validated); admin.js SELECT also returns stage.
+- Production `GET /api/dealfeed/deals` returns `stage` on every row + empty deals array (post-wipe).
 
-**Visual treatment**
-- DM Sans replaces Manrope as wizard primary (`--font-ui`). Inter introduced as `--font-secondary` for numeric/meta displays. `font-feature-settings: 'tnum','zero'` applied to all Inter-rendered numeric elements. Loaded via extended `@import` in `tokens.css`.
-- Cropped Nightdrop logo icon in wizard topbar (40px width, background-position left, scaled to height via PNG asset reuse). Replaces the green N-box + "Nightdrop" wordmark.
-- Wizard-wide focus pass: suppress global `:focus-visible` ring inside `.buy-box-wizard`, restore intentional halos (solid `var(--green)` on `.bb-input-shell:focus-within` and `.combo:focus-within`), 2px offset outline on chips/cards/buttons/segments.
-- Counter active state: `.count.active { color: var(--green) }` with 120ms transition. Applied to 8 counters: 1 subtype, 1 sub-asset, 4 geography categories (states/counties/metros/zips), 1 distress signals, 1 right rail geo concentration.
+---
 
-**Consumers updated**
-- `feed/FeedDealCard.jsx::normalizeAssetClass` covers all 10 classes.
-- `views/BuyBoxesView.jsx::formatAsset` uses `getAssetClass()` for humanized labels.
+## Locked decisions (from Brady's session message + AskUserQuestion answers)
 
-**Cleanup (-1900 lines)**
-- Deleted `src/components/BuyBoxConfigurator/` (10 files, prior prototype).
-- Deleted `src/components/BuyBoxEditModal.jsx` (orphaned, zero imports).
-- Deleted `src/lib/wizardHelpers.js` + `wizardHelpers.test.js` (orphaned, -77 tests).
-
-**Docs**
-- NEW `notes/audit/CROSS-REPO-AUDIT-BUY-BOX-MVP-2026-05-20.md` (26 KB) — load-bearing reference enumerating taxonomy drift, endpoint contract, validators, 3-state booleans, 12 open questions answered with locked defaults. Copy at `~/Downloads/`.
-- Banner 11 stale docs (BUY-BOX-AUDIT.md root + 7 notes/audit + 3 BMAD PRDs) pointing to the new audit.
-- `notes/REFERENCE.md` rewritten — fixed Page count (7 not 6), marked dead files, added missing endpoints (POST create, DELETE, pause/resume, geo, owner-portfolio).
-- `CLAUDE.md` updated — KEY FILES dead-code notes, KNOWN LANDMINES, BACKEND CONTRACT with 10-class taxonomy + 4-file lockstep, BMAD historical/active split.
-- 2 hookify rules fixed — scoutgpt-app → nightdrop-api in `uuid-and-backend-target`, 4-file taxonomy lockstep replaces old wizardHelpers/run_deal_feed pattern in `wizard-matcher-drift`.
-
-### Follow-up commits
-- Codemaps generated in `docs/CODEMAPS/` (5 files, ~3,450 tokens) + `.reports/codemap-diff.txt`.
-- This HANDOFF.md update.
+1. **Theme:** App stays dark; spreadsheet renders with light grid inside dark chrome, scoped under `.nd-excel-shell`. Brady eyeballed contrast on 2026-05-25 screenshot, approved.
+2. **Stage column:** Six values, backend column added. Existing `deal_state` (active/pipeline/archived) untouched — pipeline view + matcher continue to read it.
+3. **Read state:** Switch from in-view dwell to mark-on-row-select (single click). Idempotent via `useReadState().markRead`. Reasoning: row-select is intentional, dwell-on-visibility false-positives in dense spreadsheet.
+4. **Sidebar:** Hide bundle's `<aside class="sidebar">`. Host's `LeftPanel` stays as the only nav.
+5. **TopHeader:** Untouched. Pipeline timeline + countdown clock stay exactly where they are.
+6. **Right rail:** Gone from this view. `TonightsRunCard` + AI agent message card go away with it.
+7. **Fonts:** DM Sans + DM Mono inside `.nd-excel-shell` only. Manrope + Inter everywhere else. JetBrains Mono banned (removed from bundle's fallback chain).
+8. **Icons:** `npm install lucide@1.14.0` (matches lucide-react@1.14.0 release date). CDN script tag killed. Lucide v1.x `createIcons` API mismatch worked around with a wrapper-installed shim.
+9. **Vendor code loading:** Bundle JS+CSS moved into `src/vendor/deal-feed/`. Side-effect imports in the wrapper. No runtime `<script>` injection.
+10. **Rollback:** Single squashed commit. `git revert <sha>` if it breaks. No env flag, no in-app toggle.
+11. **A11y:** Ship at parity with current feed (which is near-zero). Improvements deferred to a separate sprint.
+12. **Cascade scope:** Just `df_deals_sent` + automatic FK cascades. No subscribers wiped. No buy-box pause. First nightly after deploy re-sends to active boxes — accepted.
+13. **Migration number:** 051 (verified, not assumed).
+14. **normalizeDeal location:** Confirmed single-file serializer in `routes/dealfeed/deals.js:7`. Stage added there.
 
 ---
 
 ## What was NOT done
 
-- **Migration 049 not applied to live DB.** Brady's task: `psql $DATABASE_WRITE_URL -f ~/nightdrop-api/migrations/049_df_buy_boxes_mvp_filters.sql`. Until applied, POST/PATCH with new MVP fields returns 500 "column does not exist."
-- **End-to-end buy box save + reload round-trip not verified against live backend.** Wizard UI walked visually in dev (port 5174); no real create + edit cycle exercised.
-- **No Playwright E2E for new wizard.** Existing `tests/smoke.spec.js` predates the rebuild.
-- **No browser screenshot pass at multiple viewports.** Brady walked at his preferred resolution only.
-- **UX inconsistency by design:** user picks 0 subtype chips → backend stores all class codes → reload displays all checked. Documented in audit; acceptable for MVP. Backend would need to accept empty array + interpret as "all codes" to fix properly.
-- **Legacy focus rules unaligned.** `.chip-input:focus-within` (Page 1 ZIP codes) and `.review-name-input:focus` (Page 7) keep old `box-shadow: var(--ring)` instead of the new solid-green halo. Slight inconsistency.
-- **Page 5 raw inputs** (zoning_codes, future_land_use_codes) get a 2px outline fallback instead of the `.bb-input-shell` halo treatment. Should be refactored.
-- **Three-state boolean serialization** (null/true/false for has_pool, has_elevator, opportunity_zone, tif_district, in_etj, ss_is_reit_owned, ss_has_foreclosure_history, mf_lihtc_flag) never tested with real PATCH.
+- **Phase 2 (frontend integration scaffold)** — full wrapper, adapter, sync, action interceptors. The spike is throwaway and does NOT obey the integration pattern (no bidirectional sync, no action adapters, in-place mutations still in bundle source).
+- **Phase 3** — old feed deletion (DashboardView, components/feed/*, RightRail).
+- **Phase 4** — Vitest adapter/sync/actions tests + Playwright tests/excel-feed.spec.js + existing Playwright suite selector updates.
+- **Phase 5** — local verify, code-review, security-review, /quality-gate, squashed merge, Netlify deploy.
+- **`feat/deal-detail-v1` branch merge** — still on its own branch, awaiting separate merge decision by Brady.
+- **Backend orphan endpoint cleanup** — `GET /api/dealfeed/agent/messages` becomes orphan after Phase 3. Flagged for separate ticket in notes/bmad/deal-feed-excel/orphan-routes.md.
 
 ---
 
 ## Next session
 
-Apply migration 049, walk wizard end-to-end on https://nightdropai.netlify.app, create a real buy box covering at least one class-specific field per class, save, reload, verify round-trip. If any field fails to persist or reload, debug in this order: (a) three-state boolean null serialization, (b) building_classes[] array shape, (c) sub_assets[] for non-Land classes, (d) verify migration 049 columns exist (`\d df_buy_boxes` in psql).
+### Phase 2 — Frontend Integration Scaffold
 
-Start command: `cd ~/nightdrop-dashboard && claude --dangerously-skip-permissions`
+**Branch to resume on:** `feat/deal-feed-excel-cutover` (already current).
+
+**Resume command:**
+```
+cd ~/nightdrop-dashboard && claude --dangerously-skip-permissions
+```
+
+**First actions on session start:**
+1. `/init` to load HANDOFF + verify CLAUDE.md + check BMAD state.
+2. Read `notes/bmad/deal-feed-excel/architecture.md` for the integration pattern spec.
+3. Read `notes/bmad/deal-feed-excel/stories.md` Stories 2.1 through 2.12 — each is sized under 2h.
+4. Delete the throwaway spike route `/__excel-spike` (and its component, screenshot scripts) FIRST before building the real wrapper. The spike taught us what works; the real wrapper rebuilds against the locked design.
+
+**Specific Phase 2 stories to execute in order (from stories.md):**
+- 2.1 — Vendor code into build graph (already partly done: src/vendor/deal-feed/ exists with bundle JS+CSS scope-prefixed).
+- 2.2 — Confirm CSS scope-prefixing (already applied in spike commit; verify still clean).
+- 2.3 — Rename `id="app"` → `id="nd-excel-app"` in all bundle JS files.
+- 2.4 — Lucide already pinned; wire `window.lucide.createIcons` shim into the real wrapper.
+- 2.5 — Write `src/vendor/deal-feed/adapter.js` + `adapter.test.js` (Vitest, 20+ cases).
+- 2.6 — Write `src/vendor/deal-feed/sync.js` + `sync.test.js`.
+- 2.7 — Write `src/vendor/deal-feed/actions.js` + `actions.test.js`.
+- 2.8 — Patch bundle's `feed.js` to call `ND.actions.*` at 9 surgical sites instead of mutating `ND.deals[i].*` directly.
+- 2.9 — Patch `context-menu.js` + `selection.js` for read-state hook + detail open.
+- 2.10 — Build `DealFeedExcelView.jsx` (real component, NOT the spike).
+- 2.11 — Mount in `App.jsx` (replace `<DashboardView>` references with `<DealFeedExcelView>`, lazy-load via `React.lazy`).
+- 2.12 — Decide on `deleteDeal` semantics (recommended: alias to `updateStatus(id, 'archived')`).
+
+**Backend already exposes:**
+- `stage` field on every deal row in `GET /api/dealfeed/deals` and `GET /api/dealfeed/deals/:id`.
+- `PATCH /api/dealfeed/deals/:id/stage` — body `{ stage }`, returns `{ id, stage }`. Adapter should expose as `ND.actions.setStage`.
+
+**Known Phase-2 fixes to apply (surfaced by spike):**
+- Bundle `styles.css` line 65-69: malformed orphan property block under `.app` rule. Worked around with inline `<style>` in spike; fix at source by removing the orphan lines (they're between `.app` rule close `}` and `.app.sidebar-collapsed`).
+- Bundle `feed.js` lines 778-789: dead run-clock code references `#rcHr/Mn/Sc`. Delete the `tick()` function and the `setInterval`.
+- Bundle `feed.js` calls `lucide.createIcons()` no-arg. Patch to `lucide.createIcons({ icons: lucide.icons })` directly OR keep the wrapper shim.
+
+**Files that DO NOT exist on this branch yet (Phase 2 creates them):**
+- `src/views/DealFeedExcelView.jsx` (the real one — spike was `__excel-spike.jsx`)
+- `src/vendor/deal-feed/adapter.js` + `.test.js`
+- `src/vendor/deal-feed/sync.js` + `.test.js`
+- `src/vendor/deal-feed/actions.js` + `.test.js`
+
+**Files to delete first thing in Phase 2:**
+- `src/views/__excel-spike.jsx` (throwaway)
+- `scripts/spike-screenshot.mjs` (throwaway)
+- `scripts/scope-prefix-bundle-css.py` (one-shot, output already committed)
+- The `<Route path="/__excel-spike">` line and the `ExcelSpike` import in `src/App.jsx`
+
+The screenshot files at `notes/bmad/deal-feed-excel/spike-*.png` can stay as historical reference.
 
 ---
 
 ## Blockers for Brady
 
-1. **Apply migration 049** — `psql $DATABASE_WRITE_URL -f ~/nightdrop-api/migrations/049_df_buy_boxes_mvp_filters.sql`. Until done, the new MVP filter fields can't persist and POST/PATCH will return 500.
-2. **Verify Netlify production deploy** at https://nightdropai.netlify.app shows commit `6b51fb5`. If still showing prior commit `a74427f`, check the Netlify build log.
-3. **No other manual steps required.** Frontend is shipped, backend is unblocked once migration runs.
+None for Phase 2 entry. Backend is shipped + verified. Frontend branch is clean. BMAD docs locked.
+
+Optional decisions Brady may want to make BEFORE Phase 2 starts (none are blocking):
+- Merge `feat/deal-detail-v1` to main now (Deal Detail V1 has been QA'd + reviewer-approved) or hold? If merged, Phase 2 starts off a main that includes V1.
+- Push main to origin (currently 2 commits ahead: gitignore + coverage untrack).
 
 ---
 
-## Reference docs
+## Key reference paths
 
-- Cross-repo audit (load-bearing): `notes/audit/CROSS-REPO-AUDIT-BUY-BOX-MVP-2026-05-20.md`
-- Backend taxonomy spec: `~/nightdrop-api/docs/taxonomy/mvp-buy-box-taxonomy.md`
-- Backend HANDOFF: `~/parcyl/notes/HANDOFF-nightdrop-api.md`
-- Codemaps: `docs/CODEMAPS/{architecture,backend,frontend,data,dependencies}.md`
-- Session detail (this conversation): `~/.claude/session-data/2026-05-20-bb-mvp-rebuild-session.tmp`
+- BMAD planning: `notes/bmad/deal-feed-excel/` (8 docs, all committed)
+- Bundle vendor source: `src/vendor/deal-feed/` (scope-prefixed under `.nd-excel-shell`)
+- Bundle reference docs (HANDOFF/TYPES/etc from the zip): `notes/bmad/deal-feed-excel/vendor-ref/`
+- Wiring contract: `notes/audit/FRONTEND-WIRING-CONTRACT-2026-05-24.md` (committed on main)
+- Spike screenshots (historical): `notes/bmad/deal-feed-excel/spike-2026-05-25-{theme,grid-crop}.png`
+- Backend repo: `~/nightdrop-api` — `main` carries the Phase 1 work; PR #1 merged
+- Production API: `https://nightdrop-api.onrender.com` — `stage` field live, 0 deals (wiped)
