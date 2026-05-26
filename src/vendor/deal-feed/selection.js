@@ -72,8 +72,15 @@
   };
 
   // --- Setters -----------------------------------------------------------
-  function setCell(r, c)       { S.a = {r,c}; S.f = {r,c}; S.mode = 'cell'; S.extras = []; paint(); }
-  function setRow(r)           { S.a = {r,c:0}; S.f = {r,c:lastC()}; S.mode = 'row'; S.extras = []; paint(); }
+  function markReadAtRow(r) {
+    const tr = rowAt(r);
+    const id = tr?.dataset?.id;
+    if (id && tr?.classList?.contains('dr')) {
+      ND.actions?.markRead?.(id);
+    }
+  }
+  function setCell(r, c)       { S.a = {r,c}; S.f = {r,c}; S.mode = 'cell'; S.extras = []; paint(); markReadAtRow(r); }
+  function setRow(r)           { S.a = {r,c:0}; S.f = {r,c:lastC()}; S.mode = 'row'; S.extras = []; paint(); markReadAtRow(r); }
   function setRowRange(r1, r2) { S.a = {r:r1,c:0}; S.f = {r:r2,c:lastC()}; S.mode = 'row'; S.extras = []; paint(); }
   function setCol(c)           { S.a = {r:0,c}; S.f = {r:lastR(),c}; S.mode = 'col'; S.extras = []; paint(); }
   function setColRange(c1, c2) { S.a = {r:0,c:c1}; S.f = {r:lastR(),c:c2}; S.mode = 'col'; S.extras = []; paint(); }
@@ -462,8 +469,8 @@
         return;
       }
       // Non-editable column on a deal row → open the deal
-      const id = parseInt(tr.dataset.id);
-      if (id && ND._toggleExpand) ND._toggleExpand(id);
+      const id = tr.dataset.id;
+      if (id) ND.actions?.openDetail?.(id);
       return;
     }
 

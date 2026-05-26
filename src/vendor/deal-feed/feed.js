@@ -612,17 +612,16 @@
   function wireRowEvents(kbRows) {
     const ds = currentDataset();
     document.querySelectorAll('tr.dr').forEach(tr => {
-      const id = parseInt(tr.dataset.id);
-      const d = ds.find(x => x.id === id);
+      const id = tr.dataset.id;
+      const d = ds.find(x => String(x.id) === String(id));
       if (!d) return;
       const rIdx = parseInt(tr.dataset.idx);
       tr.addEventListener('click', onRowClick(tr, d, rIdx));
-      // dbl-click on gutter = expand deal detail (the click itself selects row via selection.js)
+      // dbl-click on gutter = open deal detail (the click itself selects row via selection.js)
       const g = tr.querySelector('td.gutter');
       if (g) g.addEventListener('dblclick', e => {
         e.stopPropagation();
-        xId = (xId === d.id) ? null : d.id;
-        rr();
+        ND.actions?.openDetail?.(d.id);
       });
     });
     document.querySelectorAll('.stsel').forEach(s => s.addEventListener('change', e => {

@@ -212,8 +212,8 @@
     return rows.map(r => {
       const tr = S.rowAt(r);
       if (!tr?.classList.contains('dr')) return null;
-      const id = parseInt(tr.dataset.id);
-      return ds.find(x => x.id === id);
+      const id = tr.dataset.id;
+      return ds.find(x => String(x.id) === String(id));
     }).filter(Boolean);
   }
 
@@ -309,8 +309,8 @@
         const tr = S.rowAt(r);
         if (!tr) return '';
         if (tr.classList.contains('dr')) {
-          const id = parseInt(tr.dataset.id);
-          const d = (ND.deals||[]).find(x => x.id === id);
+          const id = tr.dataset.id;
+          const d = (ND.deals||[]).find(x => String(x.id) === String(id));
           if (!d) return '';
           return CSV_COLS.map(c => d[c.key] ?? '').join('\t');
         }
@@ -320,13 +320,22 @@
       navigator.clipboard?.writeText(lines.join('\n'));
       toast(`Copied ${rows.length} row${rows.length===1?'':'s'}`);
     },
-    mark_hot()   { selectedDeals().forEach(d => d.hot = !d.hot);   ND._rr?.(); toast('Toggled hot'); },
-    mark_saved() { selectedDeals().forEach(d => d.saved = !d.saved); ND._rr?.(); toast('Toggled saved'); },
-    mark_read()  { selectedDeals().forEach(d => d.unread = false);  ND._rr?.(); toast('Marked as read'); },
+    mark_hot()   {
+      selectedDeals().forEach(d => ND.actions?.toggleHot?.(d.id, d.hot ? 'hot' : null));
+      toast('Toggled hot');
+    },
+    mark_saved() {
+      selectedDeals().forEach(d => ND.actions?.toggleSave?.(d.id, d.saved));
+      toast('Toggled saved');
+    },
+    mark_read()  {
+      selectedDeals().forEach(d => ND.actions?.markRead?.(d.id));
+      toast('Marked as read');
+    },
     open_detail() {
       const deals = selectedDeals();
       if (deals.length !== 1) return;
-      ND._toggleExpand?.(deals[0].id);
+      ND.actions?.openDetail?.(deals[0].id);
     },
     async delete_row() {
       const deals = selectedDeals();
@@ -338,10 +347,8 @@
         danger: true,
       });
       if (!ok) return;
-      const ids = new Set(deals.map(d => d.id));
-      ND.deals = (ND.deals || []).filter(d => !ids.has(d.id));
+      deals.forEach(d => ND.actions?.deleteDeal?.(d.id));
       ND.sheet?.clear?.();
-      ND._rr?.();
       toast(`Deleted ${deals.length} deal${deals.length===1?'':'s'}`);
     },
   };
