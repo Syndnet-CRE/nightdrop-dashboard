@@ -1854,6 +1854,13 @@ td[data-col="psf"]   .cell-val,
 td[data-col="sf"]    .cell-val,
 .nd-excel-shell td[data-col="hold"]  .cell-val { text-align: right; display: inline-block; width: 100%; }
 
+/* Empty filler rows (tr.empty-row) render a .cell-edit span in every column
+   regardless of alignment. With the column-level right-align rules above,
+   an empty .cell-edit in a numeric column places the caret at the right
+   edge on click \u2014 Sheets/Excel always show the caret on the left for empty
+   cells. Universal override so any future numeric column inherits this. */
+.nd-excel-shell tr.empty-row .cell-edit { text-align: left; }
+
 /* ============================================
    SORT INDICATOR \u2014 triangle direction on column header
    .tri \u2014 default down (descending fallback)
