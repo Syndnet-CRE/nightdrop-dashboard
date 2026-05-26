@@ -1,0 +1,26 @@
+/* ============================================
+   DEAL FEED EXCEL VIEW — host CSS overrides for the vendor bundle.
+
+   Scoped under .nd-excel-shell so they only apply to this view's
+   subtree and never leak into the rest of the host app.
+   ============================================ */
+
+/* Bundle's .main was designed as a 2-row grid: row 1 reserved for a
+   topbar (var(--topbar-h) = 84px), row 2 (1fr) for the feed. The
+   reference index.html placed <div class="topbar"> first and
+   <section class="feed"> second, landing each in its intended row.
+
+   This wrapper omits the bundle's topbar — the host TopHeader replaces
+   it (locked decision 5 in notes/bmad/deal-feed-excel/architecture.md).
+   With only <section class="feed"> as a child, auto-placement drops it
+   into the 84px topbar slot, collapsing the visible spreadsheet to a
+   thin strip. The 1fr row sits empty below.
+
+   Collapse to a single 1fr row so .feed gets all available height.
+   Switch height from 100vh to 100% so .main respects its host parent
+   (.app-content) instead of the viewport, which avoids overshoot
+   below the host TopHeader. */
+.nd-excel-shell .main {
+  grid-template-rows: 1fr;
+  height: 100%;
+}
