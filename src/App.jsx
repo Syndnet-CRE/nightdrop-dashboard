@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense, lazy } from 'react';
 import { Routes, Route, useNavigate, useMatch, useLocation } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import { useDeals, DealsProvider } from './contexts/DealsContext';
@@ -10,7 +10,6 @@ import LeftPanel from './components/LeftPanel';
 import { DealDetail } from './components/DealDetail';
 import { ConfirmModal } from './components/ConfirmModal';
 import BuyBoxPage from './pages/BuyBoxPage';
-import { DashboardView } from './views/DashboardView';
 import { BuyBoxesView } from './views/BuyBoxesView';
 import { MapView } from './views/MapView';
 import { SettingsView } from './views/SettingsView';
@@ -23,6 +22,23 @@ import { ResetPasswordView } from './views/ResetPasswordView';
 import { InviteClaimView } from './views/InviteClaimView';
 import { api } from './lib/api';
 import { useToast } from './contexts/ToastContext';
+
+const DealFeedExcelView = lazy(() => import('./views/DealFeedExcelView'));
+
+function ExcelFeedFallback() {
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: '100%',
+      color: 'var(--ink-3)',
+      fontSize: '13px',
+    }}>
+      Loading deal feed…
+    </div>
+  );
+}
 
 (() => {
   const t = localStorage.getItem('nightdrop-theme') || 'dark';
@@ -241,12 +257,9 @@ function AppShell() {
                   {(!isOnDeal || isModal) && (
                     <>
                       {view === 'dashboard' && (
-                        <DashboardView
-                          kpis={kpis}
-                          onOpenDeal={handleOpenDeal}
-                          filter={feedFilter}
-                          setFilter={setFeedFilter}
-                        />
+                        <Suspense fallback={<ExcelFeedFallback />}>
+                          <DealFeedExcelView />
+                        </Suspense>
                       )}
                       {view === 'map'      && <MapView onOpenDeal={handleOpenDeal}/>}
                       {view === 'boxes'    && (
@@ -258,12 +271,9 @@ function AppShell() {
                         />
                       )}
                       {view === 'calendar' && (
-                        <DashboardView
-                          kpis={kpis}
-                          onOpenDeal={handleOpenDeal}
-                          filter={feedFilter}
-                          setFilter={setFeedFilter}
-                        />
+                        <Suspense fallback={<ExcelFeedFallback />}>
+                          <DealFeedExcelView />
+                        </Suspense>
                       )}
                       {view === 'settings' && <SettingsView onConfirmDanger={setConfirmDanger}/>}
                       {view === 'accounts' && <AccountsView/>}
