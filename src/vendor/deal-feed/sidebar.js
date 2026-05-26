@@ -8,7 +8,7 @@
 
 (function() {
   const STORE_KEY = 'nd:sidebar-collapsed:v1';
-  const app    = document.getElementById('app');
+  const app    = document.getElementById('nd-excel-app');
   const toggle = document.getElementById('sb-toggle');
   if (!app || !toggle) return;
 
