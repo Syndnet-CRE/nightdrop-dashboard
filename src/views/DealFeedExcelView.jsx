@@ -1,10 +1,14 @@
 /* ============================================
    DEAL FEED EXCEL VIEW — host wrapper around the vendor spreadsheet
-   bundle. Mounts at /dashboard. Bundle markup is rendered as JSX
+   bundle. Mounts at /dealsheet. Bundle markup is rendered as JSX
    inside .nd-excel-shell; bundle JS modules are side-effect-imported
    once and attach their own listeners. Host data flows in via
    publishToBundle; bundle mutations are routed back through
    installActionAdapters.
+
+   AppShell keeps a single instance of this wrapper mounted across view
+   switches (toggled via display:none) so the bundle's element-scoped
+   listeners survive navigate-away-and-back.
 
    Story 2.10 of notes/bmad/deal-feed-excel/stories.md.
    ============================================ */

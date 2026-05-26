@@ -1,5 +1,5 @@
 import {
-  LayoutDashboard, Map, Layers, Calendar, Settings,
+  LayoutDashboard, Map, Layers, Settings,
   UserCircle, Plus, Users, Bookmark, Sparkles, Database,
   TrendingUp, Flame, Target, Clock,
 } from 'lucide-react';
@@ -71,10 +71,9 @@ export default function LeftPanel({ view, setView, kpis, onCreateBuyBox, unreadC
   const { buyBoxes } = useDeals();
 
   const navItems = [
-    { id: 'dashboard', label: 'Deal Feed',      Icon: LayoutDashboard },
+    { id: 'dealsheet', label: 'Deal Feed',      Icon: LayoutDashboard },
     { id: 'map',       label: 'Map',            Icon: Map },
     { id: 'boxes',     label: 'Buy Boxes',      Icon: Layers },
-    { id: 'calendar',  label: 'Calendar',       Icon: Calendar },
     { id: 'contacts',  label: 'My Contacts',    Icon: Users },
     { id: 'saved',     label: 'My Saved Deals', Icon: Bookmark },
     { id: 'trending',  label: "What's Trending", Icon: Sparkles },
@@ -105,7 +104,7 @@ export default function LeftPanel({ view, setView, kpis, onCreateBuyBox, unreadC
                 <Icon size={18} />
               </span>
               <span className="left-panel-nav-label">{label}</span>
-              {id === 'dashboard' && unreadCount > 0 && (
+              {id === 'dealsheet' && unreadCount > 0 && (
                 <span className="left-panel-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
               )}
             </button>
