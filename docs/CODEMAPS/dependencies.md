@@ -1,4 +1,4 @@
-<!-- Generated: 2026-05-20 | Files scanned: package.json + integrations | Token estimate: ~500 -->
+<!-- Generated: 2026-05-26 | Files scanned: package.json + integrations | Token estimate: ~550 -->
 # Dependencies — nightdrop-dashboard
 
 ## Runtime stack
@@ -58,6 +58,18 @@ Deleted from `src/`:
 - `components/BuyBoxConfigurator/` (10 files, prior wizard prototype)
 - `components/BuyBoxEditModal.jsx` (legacy edit overlay)
 - `lib/wizardHelpers.js` + `.test.js` (~77 tests dropped; expected)
+
+## Removed by Deal Feed Excel cutover (2026-05-26)
+- `views/DashboardView.jsx` (legacy card feed; replaced by DealFeedExcelView)
+- `components/feed/WeekDayTabs.jsx`, `FeedToolbar.jsx`, `FeedDealCard.jsx`,
+  `MiniCalendar.jsx`, etc. (only retained where the Excel bundle reuses them
+  or where DealDetailPage still needs them)
+- sessionStorage keys `nightdrop-feed-scroll` and `nightdrop-feed-sort`
+
+## In-repo orphans flagged for follow-up
+- Dead `.app` CSS rules: vendor `styles.css:59` and host `styles.css:96`
+- Vendor `adapter.js::buildCalendar` dead export (~46 tests would drop on removal)
+- See `notes/HANDOFF.md` "Known Vendor Latent Bugs" for tracking
 
 ## CORS / network notes
 - Allowed origins on backend: `nightdropai.netlify.app`, `nightdrop.ai`,

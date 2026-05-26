@@ -1,4 +1,8 @@
-<!-- Generated: 2026-05-20 | Files scanned: ~20 | Token estimate: ~750 -->
+<!-- Generated: 2026-05-26 | Files scanned: ~22 | Token estimate: ~750 -->
+<!-- Verified current 2026-05-26: Deal Feed Excel cutover did not change any
+     backend contracts. /dealsheet consumes the same /api/dealfeed/deals + 
+     /api/dealfeed/buy-boxes payloads via DealsContext. Write paths (saveNote, 
+     updateStatus, postFeedback) reuse the existing PATCH endpoints. -->
 # Backend Integration — nightdrop-dashboard
 
 This repo is frontend-only. Backend lives in `~/nightdrop-api` (Render service

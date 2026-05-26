@@ -1,4 +1,8 @@
-<!-- Generated: 2026-05-20 | Files scanned: ~5 | Token estimate: ~600 -->
+<!-- Generated: 2026-05-26 | Files scanned: ~5 | Token estimate: ~600 -->
+<!-- Verified current 2026-05-26: Deal Feed Excel cutover added no new tables or
+     migrations. Vendor bundle reads from DealsContext.deals and writes back
+     via installActionAdapters callbacks (saveNote, updateStatus, postFeedback)
+     — all backend paths unchanged. -->
 # Data — nightdrop-dashboard
 
 This repo holds no database. All persistent data lives in backend

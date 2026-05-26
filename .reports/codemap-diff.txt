@@ -1,96 +1,85 @@
-Codemap diff — 2026-05-22
-Prior scan: 2026-05-21
-Commit reference: f2c5d1f feat(deal-feed): Phase 1 repaint, map landing, signal pill render fix
+Codemap diff — 2026-05-26
+Prior scan: 2026-05-22
+Commit reference: 403baf1 docs(handoff): session-end snapshot after PR #7 + PR #8 merge
+                  ffde142 + 32f089c — Deal Feed Excel cutover polish PRs
 
 Files updated this scan:
-  docs/CODEMAPS/frontend.md      (heavy edit — Deal Feed Phase 1 repaint)
-  docs/CODEMAPS/architecture.md  (touch — InitialRouteGate, /map default landing)
+  docs/CODEMAPS/architecture.md   (heavy — vendor bundle integration, /dealsheet landing)
+  docs/CODEMAPS/frontend.md       (heavy — DealFeedExcelView replaces DashboardView)
+  docs/CODEMAPS/data.md           (header stamp + verified-current note)
+  docs/CODEMAPS/backend.md        (header stamp + verified-current note)
+  docs/CODEMAPS/dependencies.md   (header stamp + new removed-by-cutover section)
 
-Files unchanged (content still accurate):
-  docs/CODEMAPS/backend.md       (last 2026-05-21 — no backend integration changes)
-  docs/CODEMAPS/data.md          (last 2026-05-21 — no schema/state changes)
-  docs/CODEMAPS/dependencies.md  (last 2026-05-21 — no new deps)
+Total file diff: +121 / -48 lines across 5 files.
 
 Architecture-level changes since last scan
 ------------------------------------------
-+ New component: InitialRouteGate (App.jsx inline, inside DealsProvider)
-  Purpose: redirect post-auth users with zero buy boxes to /buy-boxes/new
-  Fires once per mount, only on landing paths (/map, /dashboard)
-
-+ Initial view state changed from 'dashboard' -> 'map'
-+ URL normalizer redirects bare / and /login to /map (was /dashboard)
-+ LoginView + useAuth DEV auto-login redirect to /map
-
-+ Nav label rename: "Dashboard" -> "Deal Feed" in LeftPanel.jsx
-  Internal view id 'dashboard' and URL /dashboard unchanged for back-compat
++ Deal Feed Excel cutover (2026-05-26): /dealsheet is the new primary deal-review surface
++ /dealsheet added to LANDING_PATHS alongside /map
++ Legacy /dashboard and /calendar redirect to /dealsheet
++ New vendor bundle directory: src/vendor/deal-feed/ (~7,500 lines .js + .css)
++ Bundle JS modules (8) loaded once via bundleLoadPromise:
+    data → tabs → selection → context-menu → row-resize → filter-popover → sidebar → feed
++ Bundle JS module intentionally NOT loaded: sidebar-tweaks.js (locked decision 4)
++ Host/bundle sync layer: publishToBundle (host → bundle, rAF-throttled)
+                          installActionAdapters (bundle → host callbacks)
++ AppShell mounts a single DealFeedExcelView instance; toggles display:none on view switch
++ hasVisitedDealsheet latch in App.jsx ensures bundle loads only after first /dealsheet visit
 
 Frontend component changes
 --------------------------
-+ NEW: src/components/feed/FeedToolbar.jsx
-       Sticky filter chips + sort dropdown (recency/score/distress/value)
++ NEW: src/views/DealFeedExcelView.jsx + .css (React wrapper around vendor bundle)
++ NEW: src/vendor/deal-feed/ (20 files — see architecture.md for breakdown)
 
-+ NEW: src/lib/anchorMetric.js
-       Per-class anchor metric resolver
-       {multifamily: $/unit, industrial: $/SF, self_storage: $/NRSF,
-        retail: $/GLA, office: $/SF, land: $/acre, fallback: assessed_value}
+- DELETED: src/views/DashboardView.jsx (replaced by DealFeedExcelView)
+  Note: rollback would require git revert; no in-tree fallback retained
 
-~ MODIFIED: src/components/feed/FeedDealCard.jsx
-       Rewritten horizontal: 205x205 image left, content right
-       Owner-type pill + distress signal pills surfaced on card
-       Inline expander removed; View Details routes to /deal/:id
-       Headline clamped to 1 line; narrative/next-action dropped from card
-       Score badge + overflow menu moved into content column header
-       Mapbox URL stays at 320x320@2x
-       Signal pill renderer now reads .tag first (was .label/.type only),
-         skips pills with no resolvable string
-
-~ MODIFIED: src/views/DashboardView.jsx
-       Removed LeftRail mount
-       Added FeedToolbar mount + sort state with sessionStorage persistence
-       Added scroll-position save/restore via ref + sessionStorage
-       handleNavigateAway flushes scrollTop on card-click before navigate
-
-~ MODIFIED: src/components/LeftPanel.jsx
-       Removed .left-panel-narrow-only duplicate filter chips block
-       Removed TonightsRunCard import and FILTERS const + unused icons
-       Label "Dashboard" -> "Deal Feed"
-
-~ MODIFIED: src/components/DealDetail.jsx
-       Signal pill renderers (Discovery section, Distress table) updated to
-         read .tag first with .label/.description/.type fallback
-       Pills with no resolvable label are skipped entirely
-
-~ MODIFIED: src/styles/feed-layout.css
-       FeedDealCard CSS rewritten for horizontal layout
-       Left-rail reservation removed from .feed-content-row + media queries
-       New rules: .feed-deal-content/header/anchor/pills/owner-pill/detail-btn,
-                  .feed-toolbar/sort-btn/sort-menu/sort-item
-       <=640px collapse rule for horizontal card
-
-- DELETED: src/components/LeftRail.jsx
-- DEAD-CODE (file kept, not mounted):
-       src/components/feed/TonightsRunCard.jsx
-       src/components/MarketNewsfeed.jsx
-       (Phase 3 /trending will re-mount MarketNewsfeed)
+~ MODIFIED: src/App.jsx
+       LANDING_PATHS = {/map, /dealsheet}
+       /dashboard and /calendar URLs → navigate('/dealsheet', { replace: true })
+       URL ↔ view sync handles dealsheet round-trips (lines 188-214)
+       Single-mount latch (hasVisitedDealsheet) ensures bundle stability
+       View toggle uses display:none rather than unmount
 
 State / persistence changes
 ---------------------------
-+ sessionStorage key 'nightdrop-feed-scroll' — feed scroll position
-+ sessionStorage key 'nightdrop-feed-sort'   — feed sort selection
+- sessionStorage 'nightdrop-feed-scroll' (owned by deleted DashboardView)
+- sessionStorage 'nightdrop-feed-sort'   (owned by deleted DashboardView)
++ localStorage   'nd:sidebar-collapsed:v1' (vendor sidebar.js)
++ localStorage   'nd:rowheights:v1'        (vendor row-resize.js)
++ localStorage   'nd:sidebar-tweaks:v2'    (referenced only — sidebar-tweaks.js not imported)
+
+Test floor changes
+------------------
++ tests/dealsheet-persistence.spec.js — 9 Playwright tests including:
+    * Cell selection vs edit-mode visuals across 3 phases (click / right-click / dblclick)
+    * Caret-at-end on dblclick — range.selectNodeContents(span) + range.collapse(false)
+    * Empty-row caret left-align rule (.nd-excel-shell tr.empty-row .cell-edit)
+    * Synthetic-DOM scope-boundary guard (populated tr.dr preserves column right-align)
++ Vitest count: 211 (was 120 at 2026-05-22 stamp; +91 from vendor bundle unit tests
+    across adapter.test.js, sync.test.js, actions.test.js, lucide-shim.test.js)
++ Total test floor: 211 vitest + 9 Playwright = 220
 
 Backend / data / deps
 ---------------------
-  No changes. Backend endpoints, df_* schemas, package.json untouched.
+  No backend contract changes. /dealsheet consumes the same payloads as the
+  deleted card feed (/api/dealfeed/deals + /buy-boxes via DealsContext).
+  Write paths reuse existing PATCH endpoints. No new tables, migrations, or
+  npm dependencies.
 
 Staleness warnings
 ------------------
-  None. All codemaps current as of 2026-05-22.
+  None. All codemaps current as of 2026-05-26.
 
 Open follow-ups (not in this scan)
 ----------------------------------
-  - signalColor() in FeedDealCard + DealDetail keys off sig.type/category,
-    not sig.tag — API objects all resolve to green. Flagged in commit f2c5d1f
-    review notes, not yet fixed.
-  - Dead CSS for .left-rail-floating, .tonights-run-card, .mnf-* still in
-    feed-layout.css and styles.css. Safe (no JSX refs) but should be cleaned
-    in a Phase 5 right-rail pass.
+  - Dead CSS .app rules: vendor styles.css:59, host styles.css:96 (no JSX refs)
+  - Vendor adapter.js::buildCalendar dead export (~46 tests drop on removal)
+  - See notes/HANDOFF.md "Known Vendor Latent Bugs" — post-merge verification of
+    G=end caret placement (PR #7 contract: range.collapse(false))
+
+Next refresh recommended after
+------------------------------
+  - Phase 4 Playwright spec lands (tests/excel-feed.spec.js, PRD flows F1-F14)
+  - buy-box-mvp-rebuild ships (wizard taxonomy/field alignment against backend)
+  - Cleanup PR for dead .app rules + buildCalendar export

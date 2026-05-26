@@ -1,8 +1,12 @@
-<!-- Generated: 2026-05-22 | Files scanned: ~98 | Token estimate: ~780 -->
+<!-- Generated: 2026-05-26 | Files scanned: ~125 | Token estimate: ~900 -->
 # Architecture — nightdrop-dashboard
 
 React 19 + Vite 8 SPA. JSX, no TypeScript. Plain CSS with tokens.
 Production: Netlify auto-deploys from `main` → https://nightdropai.netlify.app
+
+Deal Feed Excel cutover (2026-05-26): `/dealsheet` is now the primary
+post-auth landing surface alongside `/map`. Legacy `/dashboard` and
+`/calendar` redirect to `/dealsheet`.
 
 ## Boundaries
 ```
@@ -27,11 +31,11 @@ BrowserRouter
 
 ## Navigation — hybrid
 - View switching: state-driven (`view` string in AppShell, sidebar click → `setView(...)`).
-- URL-driven only for deal detail (`/deal/:id`) and the buy box wizard
-  (`/buy-boxes/new`, `/buy-boxes/:id/edit`).
-- Default post-auth landing path: `/map` (initial `view = 'map'`). Bare `/` and
-  `/login` URLs normalize to `/map`. Legacy `/dashboard` URL still routes to
-  AppShell with the existing `dashboard` view for back-compat.
+- URL-driven for deal detail (`/deal/:id`), the buy box wizard
+  (`/buy-boxes/new`, `/buy-boxes/:id/edit`), and the Excel deal feed (`/dealsheet`).
+- Landing paths (`LANDING_PATHS` in App.jsx): `/map`, `/dealsheet`. Bare `/`
+  and `/login` URLs normalize to `/map`. `/dashboard` and `/calendar` redirect
+  to `/dealsheet`.
 - Admin/invites gated to `subscriber.email === 'brady@parcyl.ai'`.
 
 ## Top-level dirs
@@ -41,11 +45,15 @@ src/
 ├── hooks/useAuth.jsx       ← auth context, token storage
 ├── contexts/               ← DealsContext, ReadStateContext, DealStateContext, ToastContext
 ├── lib/                    ← api client, taxonomy, format, wizardFormState
-├── views/                  ← page-level components (Dashboard, Map, BuyBoxes, Admin, …)
+├── views/                  ← page-level components (Dashboard, Map, BuyBoxes,
+│                              Admin, DealFeedExcelView, …)
 ├── pages/                  ← URL-routed pages (BuyBoxPage)
 ├── components/             ← shared UI atoms + composites
 │   ├── feed/               ← deal feed cards, chat thread
 │   └── kanban/             ← (placeholder, currently empty)
+├── vendor/deal-feed/       ← vanilla-JS spreadsheet bundle (~7,500 lines
+│                              .js + .css; ported from prior product;
+│                              wrapped by DealFeedExcelView)
 ├── styles/                 ← tokens.css + per-surface CSS files
 ├── assets/                 ← logo PNG, static images
 └── data/mockData.js        ← fallback data when API empty
@@ -74,6 +82,25 @@ DealsContext.fetchAll() (on mount)
   → exposes via useDeals(): {deals, buyBoxes, contacts, refetch, postFeedback, …}
 ```
 
+## Vendor bundle integration — `/dealsheet`
+```
+DealFeedExcelView (src/views/, lazy-loaded)
+  ├─ side-effect imports vendor CSS (styles.css + light-theme.css)
+  ├─ host overrides via DealFeedExcelView.css (loaded AFTER vendor)
+  ├─ bundleLoadPromise (module-scoped) ensures the 8 bundle JS modules
+  │  load exactly once per page lifetime:
+  │     data → tabs → selection → context-menu → row-resize
+  │       → filter-popover → sidebar → feed
+  ├─ publishToBundle(state)         host  → bundle data push (deals, buyBoxes,
+  │                                  readState, etc.) — rAF-throttled by
+  │                                  createRrThrottle()
+  └─ installActionAdapters({...})   bundle → host callbacks (saveNote,
+                                     updateStatus, postFeedback, navigate, …)
+```
+AppShell keeps a single `DealFeedExcelView` instance mounted across view
+switches (toggled via `display:none`) so element-scoped listeners
+attached by the bundle survive navigate-away-and-back.
+
 ## Cross-repo lockstep (DO NOT BREAK)
 The asset class taxonomy must stay identical across 4 files:
 - `~/nightdrop-dashboard/src/lib/buyBoxTaxonomy.js`           (this repo)
@@ -85,10 +112,11 @@ The asset class taxonomy must stay identical across 4 files:
 ```bash
 npm run dev        # vite dev server (5173, auto-bumps if taken)
 npm run build      # production build → dist/
-npm test           # vitest (120 tests)
+npm test           # vitest (211 tests)
 npm run lint       # ESLint
-npx playwright test    # E2E smoke
+npx playwright test    # E2E smoke + dealsheet-persistence (9 tests)
 ```
+Test floor: 211 vitest + 9 Playwright = 220 total.
 
 ## Env vars
 - `VITE_API_BASE_URL` — empty in dev (Vite proxies to nightdrop-api.onrender.com)
@@ -97,3 +125,4 @@ npx playwright test    # E2E smoke
 ## Spec references
 - Backend MVP filter contract: `~/nightdrop-api/docs/taxonomy/mvp-buy-box-taxonomy.md`
 - Cross-repo audit: `notes/audit/CROSS-REPO-AUDIT-BUY-BOX-MVP-2026-05-20.md`
+- Deal Feed Excel cutover plan: `notes/bmad/deal-feed-excel/` (PRD, stories, qa-plan)

@@ -1,4 +1,4 @@
-<!-- Generated: 2026-05-22 | Files scanned: ~78 | Token estimate: ~1000 -->
+<!-- Generated: 2026-05-26 | Files scanned: ~100 | Token estimate: ~1150 -->
 # Frontend — nightdrop-dashboard
 
 ## Routes (src/App.jsx)
@@ -9,14 +9,17 @@
 /invite/:token                  → InviteClaimView (unauth)
 /buy-boxes/new                  → BuyBoxPage mode="new"  → BuyBoxWizard
 /buy-boxes/:id/edit             → BuyBoxPage mode="edit" → BuyBoxWizard
+/dealsheet                      → AppShell  → view='dealsheet' → DealFeedExcelView
 /*  (catch-all auth)            → AppShell  → views switched by `view` state
-                                              (no URLs for non-deal views;
+                                              (most non-deal views are URL-less;
                                                `/map` is the default landing path)
 /deal/:id                       → DealDetailPage  (state.fromMap → DealDetailModal)
 ```
 
 Post-auth flow:
 - Bare `/`, `/login`, and successful login redirects → `/map` (initial `view = 'map'`)
+- `LANDING_PATHS = {'/map', '/dealsheet'}` — both are valid post-auth landings
+- Legacy `/dashboard` and `/calendar` URLs redirect to `/dealsheet`
 - `InitialRouteGate` (mounted inside DealsProvider, fires once on load): if the
   subscriber has zero buy boxes, redirects from any landing path to `/buy-boxes/new`
 
@@ -24,7 +27,7 @@ Post-auth flow:
 
 | `view` value     | Nav label        | Component                       | Description                                  |
 |------------------|------------------|---------------------------------|----------------------------------------------|
-| `dashboard`      | **Deal Feed**    | views/DashboardView.jsx         | Center feed + sticky toolbar + RightRail     |
+| `dealsheet`     | **Deal Feed**    | views/DealFeedExcelView.jsx     | Spreadsheet UI (vendor bundle); URL `/dealsheet` |
 | `map`            | Map              | views/MapView.jsx               | Full-screen Mapbox + DealPanel sidebar (default landing) |
 | `boxes`          | Buy Boxes        | views/BuyBoxesView.jsx          | Kanban (pending / active / paused / gap)     |
 | `accounts`       | Account          | views/AccountsView.jsx          | Owner roll-up (subscriber-level)             |
@@ -32,8 +35,9 @@ Post-auth flow:
 | `invites`        | —                | views/InviteView.jsx            | Admin invite queue (brady@parcyl.ai)         |
 | `admin`          | —                | views/AdminView.jsx             | Admin dashboard (brady@parcyl.ai)            |
 
-Internal `view` id `'dashboard'` and URL `/dashboard` retained for back-compat;
-only the user-facing nav label was renamed in Phase 1.
+The Deal Feed Excel cutover (2026-05-26) replaced the legacy `DashboardView`
+card feed with `DealFeedExcelView` at `/dealsheet`. The DashboardView source
+file has been removed from the tree — rollback would be a git revert.
 
 ## Component hierarchy
 
@@ -84,32 +88,47 @@ POST /api/dealfeed/buy-boxes/preview      → debounced 400ms; AbortController c
 `delivery`, `threshold`, and `matchCount` are intentionally excluded so they
 do not retrigger the counter.
 
-### Deal Feed (Phase 1 horizontal card layout)
+### Deal Feed (Excel cutover, 2026-05-26)
 ```
-views/DashboardView.jsx
-  ├─ ref-attached scroll container (.feed-center-col)
-  │    – sessionStorage scroll-position persistence (key: nightdrop-feed-scroll)
-  │    – two-tier restore on /deal/:id back-nav (immediate + 120ms retry)
-  ├─ feed/WeekDayTabs.jsx      (sticky top: 0 — Sun–Sat strip + MiniCalendar)
-  ├─ feed/FeedToolbar.jsx      (sticky top: 56px — filter chips + sort dropdown)
-  ├─ feed/FeedDealCard.jsx     (horizontal: 205×205 image left, content right)
-  │    ├─ normalizeAssetClass (10-class map, lives inline)
-  │    ├─ humanizeOwnerType   (Individual / LLC / Trust / Corporate)
-  │    ├─ signalLabel/Color   (reads .tag from brief_json signal objects;
-  │                            falls back .label/.description/.type;
-  │                            skips pill if no string resolves)
-  │    ├─ lib/anchorMetric.js  (per-class anchor: $/unit MF, $/SF industrial,
-  │                            $/acre land, $/NRSF self-storage, etc.)
-  │    └─ DealChatThread       (inline expansion on chat-icon click; unchanged)
-  └─ ChatFab (floating)
+views/DealFeedExcelView.jsx           (~400 lines — React wrapper)
+  ├─ side-effect imports vendor CSS:
+  │    vendor/deal-feed/styles.css      (~2,300 lines — vendor base)
+  │    vendor/deal-feed/light-theme.css (~525 lines — light palette overlay)
+  │    DealFeedExcelView.css            (host overrides; cascade-last)
+  ├─ installLucideShim()                (vendor expects window.lucide)
+  ├─ installActionAdapters({...})       (bundle → host: saveNote, updateStatus,
+  │                                      postFeedback, navigate, etc.)
+  ├─ publishToBundle(state)             (host → bundle data push, rAF-throttled
+  │                                      via createRrThrottle)
+  └─ loadBundleOnce() — promise-cached side-effect imports of:
+       vendor/deal-feed/data.js          (~260 lines — sample/seed)
+       vendor/deal-feed/tabs.js          (~220 lines — sheet tab strip)
+       vendor/deal-feed/selection.js     (~810 lines — cell select + edit caret)
+       vendor/deal-feed/context-menu.js  (~355 lines — right-click menu)
+       vendor/deal-feed/row-resize.js    (~130 lines — row height drag)
+       vendor/deal-feed/filter-popover.js(~315 lines — column filter UI)
+       vendor/deal-feed/sidebar.js       (~40 lines — hidden, locked decision 4)
+       vendor/deal-feed/feed.js          (~820 lines — main render orchestrator)
 ```
 
-Sort options (`FeedToolbar`): recency, score, distress (weighted signal count),
-value (assessed_value). Selection persists via sessionStorage
-(`nightdrop-feed-sort`).
+AppShell mounts a single `DealFeedExcelView` instance once the user first
+visits `/dealsheet` (`hasVisitedDealsheet` latch in App.jsx) and keeps it
+mounted thereafter, toggling visibility with `display:none`. This preserves
+the bundle's element-scoped listeners across view switches.
 
-Empty / loading / not-found states owned by `DashboardView`. Mobile collapse
-(`<=640px`): card stacks image-on-top (180px tall full-width) via CSS only.
+Excel-parity contracts locked in tests (`tests/dealsheet-persistence.spec.js`,
+9 tests):
+- Single `#sel-overlay > .sel-rect` per selection; no leaked indicators
+- Right-click opens context menu without entering edit mode
+- dblclick caret lands at END of seeded content via
+  `range.selectNodeContents(span) + range.collapse(false)` (Sheets/Excel parity)
+- Host's universal `:focus-visible { box-shadow: var(--ring-shadow) }` at
+  `src/styles/styles.css:1450` is suppressed inside `.cell-edit`
+- Empty filler rows (`tr.empty-row`) override per-column right-align rules to
+  left-align the caret regardless of column (psf / sf / hold); populated
+  `tr.dr` rows preserve column alignment — locked by synthetic-DOM scope guard
+- Vendor bundle file structure under `src/vendor/deal-feed/` is treated as
+  porting territory: tests cover behavior, not exact selectors.
 
 ### Deal detail (rebuilt 2026-05-22)
 
@@ -192,11 +211,16 @@ views/MapView.jsx
 | `DealStateContext.jsx`           | `useDealState()`      | localStorage deal-state machine             |
 | `useAuth.jsx`                    | `useAuth()`           | JWT + subscriber object                     |
 
-### Persisted UI state (sessionStorage)
-| Key                          | Owner            | Purpose                            |
-|------------------------------|------------------|------------------------------------|
-| `nightdrop-feed-scroll`      | DashboardView    | Restore feed scrollTop on back-nav |
-| `nightdrop-feed-sort`        | DashboardView    | Persist sort selection across loads|
+### Persisted UI state
+
+| Key                            | Storage        | Owner                                  | Purpose                            |
+|--------------------------------|----------------|----------------------------------------|------------------------------------|
+| `nd_return_url`                | sessionStorage | LoginView                              | Post-login redirect target         |
+| `nd:sidebar-collapsed:v1`      | localStorage   | vendor/deal-feed/sidebar.js            | Excel sidebar collapsed state      |
+| `nd:rowheights:v1`             | localStorage   | vendor/deal-feed/row-resize.js         | Per-row height overrides           |
+| `nd:sidebar-tweaks:v2`         | localStorage   | vendor/deal-feed/sidebar-tweaks.js     | Loaded only when sidebar tweaks are enabled (currently not imported) |
+| read/unread per deal           | localStorage   | ReadStateContext                       | Per-subscriber read state          |
+| deal lifecycle state           | localStorage   | DealStateContext                       | Per-subscriber state machine       |
 
 ### Form state pattern (BuyBoxWizard)
 Single deep object held in `useState`. Mutations always immutable
