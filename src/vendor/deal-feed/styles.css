@@ -811,9 +811,12 @@
   text-overflow: ellipsis;
   /* line-height set inline per-row to match cell height for caret centering */
 }
-.nd-excel-shell td.editing { box-shadow: inset 0 0 0 2px var(--row-active-edge); background: rgba(132, 165, 200, 0.06); z-index: 4; }
-.nd-excel-shell td.editing .cell-edit { color: var(--fg); }
-/* Suppress the universal focus-visible outline — td.editing already provides the focus affordance */
+/* Sheets parity (B): the editing-state td has no distinct visual treatment in
+   either theme. State tracking on `td.editing` (added/removed on
+   focus/blur of `.cell-edit`) is preserved but paints nothing. */
+
+/* Suppress the universal focus-visible outline on the contenteditable span —
+   the blinking caret is the focus affordance. */
 .nd-excel-shell .cell-edit, .nd-excel-shell .cell-edit:focus, .nd-excel-shell .cell-edit:focus-visible { outline: none; }
 
 /* Cell text values in real data rows */

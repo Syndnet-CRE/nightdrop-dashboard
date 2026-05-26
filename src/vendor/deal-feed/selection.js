@@ -261,9 +261,14 @@
     const c = +td.dataset.c;
     if (isNaN(r) || isNaN(c)) return;
 
-    // Right-click: if click is inside current selection, leave it; else move
+    // Right-click: if click is inside current selection, leave it; else move.
+    // Suppress the browser's default mousedown behavior of focusing an inner
+    // contenteditable span — Sheets opens the context menu on right-click
+    // without entering edit mode. preventDefault on mousedown does not
+    // affect the subsequent contextmenu event.
     if (e.button === 2) {
       if (!isInSelection(r, c)) setCell(r, c);
+      if (e.target.closest('[contenteditable], .cell-edit')) e.preventDefault();
       return;
     }
 
