@@ -21,6 +21,8 @@ import { createRrThrottle, publishToBundle } from '../vendor/deal-feed/sync';
 // Side-effect CSS imports — Vite will bundle into the lazy chunk.
 import '../vendor/deal-feed/styles.css';
 import '../vendor/deal-feed/light-theme.css';
+// Host overrides — load AFTER vendor CSS so cascade wins.
+import './DealFeedExcelView.css';
 
 // Module-scoped: bundle JS modules are IIFEs that attach document-level
 // listeners. They should run exactly once for the page lifetime, not per
@@ -119,7 +121,7 @@ export default function DealFeedExcelView() {
   }, [deals, buyBoxes, isRead]);
 
   return (
-    <div id="nd-excel-app" className="nd-excel-shell app">
+    <div id="nd-excel-app" className="nd-excel-shell">
       <main className="main">
         <section className="feed sheet-light" data-screen-label="deal-feed">
           <div className="toolbar">
