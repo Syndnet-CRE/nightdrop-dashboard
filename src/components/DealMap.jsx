@@ -107,7 +107,7 @@ export function DealMap({
 
   // Demo cluster bubbles (hardcoded CLUSTER_CITIES) take priority. When demo
   // is not active and enableClustering is on, the real `deals` get auto-clustered
-  // via native Mapbox source. Otherwise, render per-deal Markers (RightRail mini).
+  // via native Mapbox source. Otherwise, render per-deal Markers.
   const inDemoClusterMode = Array.isArray(clusterData) && clusterData.length > 0;
   const inAutoClusterMode = !inDemoClusterMode && enableClustering && Array.isArray(deals) && deals.length > 0;
   const autoClusterGeojson = useMemo(
