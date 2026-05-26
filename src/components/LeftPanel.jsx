@@ -71,7 +71,7 @@ export default function LeftPanel({ view, setView, kpis, onCreateBuyBox, unreadC
   const { buyBoxes } = useDeals();
 
   const navItems = [
-    { id: 'dealsheet', label: 'Deal Feed',      Icon: LayoutDashboard },
+    { id: 'dealsheet', label: 'Deal Sheet',     Icon: LayoutDashboard },
     { id: 'map',       label: 'Map',            Icon: Map },
     { id: 'boxes',     label: 'Buy Boxes',      Icon: Layers },
     { id: 'contacts',  label: 'My Contacts',    Icon: Users },

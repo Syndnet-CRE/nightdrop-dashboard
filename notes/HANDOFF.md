@@ -80,6 +80,12 @@ If Phase 4 finishes fast, two quick cleanups could ride the same session: the de
 
 ---
 
+## Followups (not tickets — addressed in a dedicated PR)
+
+- **Top stats strip stub data.** The bundle's header strip showing `47 SUBMITTED`, `BOXES 48`, `QUEUE 00`, `BRIEFS 00`, `DELIVERED` is rendered from hardcoded values inside the vendor bundle. Same class of problem as the calendar window (bug #3/#4) — vendor demo data baked into source. To be addressed after PR B or in a dedicated stub-data cleanup PR. Surfaced during Brady's PR A local walkthrough on 2026-05-26.
+
+---
+
 ## Blockers for Brady
 
 None. Production is restored, stable, and visually correct. Phase 4 is fully unblocked.

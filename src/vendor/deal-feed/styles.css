@@ -2152,7 +2152,11 @@ td[data-col="sf"]    .cell-val,
 /* ============================================
    RIGHT-CLICK CONTEXT MENU
    ============================================ */
-.nd-excel-shell .ctx-menu {
+/* .ctx-menu and .ctx-* are portaled to document.body (see context-menu.js
+   line 125), so the .nd-excel-shell ancestor scope does not apply. Selectors
+   here are unprefixed; class names are bundle-unique. Matches the pattern
+   applied to .nd-filter-pop in Story 2.2. */
+.ctx-menu {
   position: fixed;
   z-index: 9000;
   background: var(--surf-hi-2, #1c1d1f);
@@ -2165,7 +2169,7 @@ td[data-col="sf"]    .cell-val,
   color: var(--fg);
   user-select: none;
 }
-.nd-excel-shell .ctx-item {
+.ctx-item {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -2174,16 +2178,16 @@ td[data-col="sf"]    .cell-val,
   white-space: nowrap;
   color: var(--fg);
 }
-.nd-excel-shell .ctx-item:hover { background: rgba(45, 162, 0, 0.12); color: var(--accent); }
-.nd-excel-shell .ctx-item i { font-size: 14px; color: var(--fg-muted); width: 16px; text-align: center; }
-.nd-excel-shell .ctx-item:hover i { color: var(--accent); }
-.nd-excel-shell .ctx-item.danger { color: var(--danger, #ef4444); }
-.nd-excel-shell .ctx-item.danger:hover { background: rgba(239, 68, 68, 0.12); color: var(--danger, #ef4444); }
-.nd-excel-shell .ctx-item.danger:hover i { color: var(--danger, #ef4444); }
-.nd-excel-shell .ctx-item.disabled { opacity: 0.4; cursor: not-allowed; }
-.nd-excel-shell .ctx-item.disabled:hover { background: transparent; color: var(--fg-muted); }
-.nd-excel-shell .ctx-divider { height: 1px; background: var(--border); margin: 4px 0; }
-.nd-excel-shell .ctx-kbd {
+.ctx-item:hover { background: rgba(45, 162, 0, 0.12); color: var(--accent); }
+.ctx-item i { font-size: 14px; color: var(--fg-muted); width: 16px; text-align: center; }
+.ctx-item:hover i { color: var(--accent); }
+.ctx-item.danger { color: var(--danger, #ef4444); }
+.ctx-item.danger:hover { background: rgba(239, 68, 68, 0.12); color: var(--danger, #ef4444); }
+.ctx-item.danger:hover i { color: var(--danger, #ef4444); }
+.ctx-item.disabled { opacity: 0.4; cursor: not-allowed; }
+.ctx-item.disabled:hover { background: transparent; color: var(--fg-muted); }
+.ctx-divider { height: 1px; background: var(--border); margin: 4px 0; }
+.ctx-kbd {
   margin-left: auto;
   font-family: var(--font-mono);
   font-size: 10px;
