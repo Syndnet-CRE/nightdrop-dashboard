@@ -118,7 +118,11 @@ function PauseBoxConfirm({ buyBox, onClose }) {
 // One-shot landing gate: after first buy-box load, redirect users with zero
 // buy boxes to the wizard. Only fires on landing paths so explicit deep links
 // (deal detail, settings, the wizard itself) are left alone.
-const LANDING_PATHS = new Set(['/map', '/dashboard']);
+const LANDING_PATHS = new Set(['/map', '/dealsheet']);
+
+// Legacy paths that the deal feed used to mount at. Redirect to the new
+// canonical route so old bookmarks still work.
+const LEGACY_DEALSHEET_PATHS = new Set(['/dashboard', '/calendar']);
 
 function InitialRouteGate() {
   const { buyBoxes, loading, error } = useDeals();
@@ -151,6 +155,14 @@ function AppShell() {
   const [pausingBuyBox, setPausingBuyBox] = useState(null);
   const [kpis, setKpis] = useState(null);
   const [feedFilter, setFeedFilter] = useState('all');
+  // Single-mount latch for the Excel feed wrapper. Once the user has visited
+  // /dealsheet during this session, the wrapper stays in the tree (hidden via
+  // display:none on other views) so the vendor bundle's element-level
+  // listeners (right-click, drag-select, filter triangles, dblclick, hover)
+  // survive view switches. Without this, every navigate-away-and-back cycle
+  // unmounts and remounts the wrapper, destroying the per-element listeners
+  // attached during the bundle's single-shot install pass.
+  const [hasVisitedDealsheet, setHasVisitedDealsheet] = useState(false);
 
   const isOnDeal = !!dealMatch;
 
@@ -159,13 +171,51 @@ function AppShell() {
       navigate('/buy-boxes/new', { replace: true });
     }
   }, [onboardingMatch, navigate]);
+
+  // Legacy /dashboard and /calendar are now /dealsheet.
+  useEffect(() => {
+    if (LEGACY_DEALSHEET_PATHS.has(location.pathname)) {
+      navigate('/dealsheet', { replace: true });
+    }
+  }, [location.pathname, navigate]);
+
+  // URL → view sync. Only fires on pathname changes (not view changes), so
+  // that when handleSetView navigates away from /dealsheet the in-flight
+  // setView('something-else') is not snapped back to 'dealsheet' before the
+  // navigate('/') has a chance to land. React bails out on setView('dealsheet')
+  // when view already is 'dealsheet', so this is safe to call unconditionally.
+  useEffect(() => {
+    if (location.pathname === '/dealsheet') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setView('dealsheet');
+    }
+  }, [location.pathname]);
+
+  // Latch the single-mount flag the first time we land on the dealsheet view.
+  useEffect(() => {
+    if (view === 'dealsheet') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setHasVisitedDealsheet(true);
+    }
+  }, [view]);
+
   const isModal  = isOnDeal && !!location.state?.fromMap;
   const noScroll = view === 'map';
 
   const handleSetView = useCallback((v) => {
     setView(v);
+    // Keep URL in sync. Going TO dealsheet: push /dealsheet. Going AWAY from
+    // dealsheet to any non-URL-bearing view: push '/' so the URL normalizer
+    // resolves it to /map (the default post-login landing). Without this, the
+    // URL→view sync effect would see pathname '/dealsheet' + view !== 'dealsheet'
+    // and snap the view back to 'dealsheet', locking the user on dealsheet.
+    if (v === 'dealsheet' && location.pathname !== '/dealsheet') {
+      navigate('/dealsheet');
+    } else if (v !== 'dealsheet' && location.pathname === '/dealsheet') {
+      navigate('/');
+    }
     if (isOnDeal) navigate('/');
-  }, [isOnDeal, navigate]);
+  }, [isOnDeal, navigate, location.pathname]);
 
   const handleOpenDeal = useCallback((deal) => {
     const state = view === 'map' ? { fromMap: true } : undefined;
@@ -254,11 +304,6 @@ function AppShell() {
 
                   {(!isOnDeal || isModal) && (
                     <>
-                      {view === 'dashboard' && (
-                        <Suspense fallback={<ExcelFeedFallback />}>
-                          <DealFeedExcelView />
-                        </Suspense>
-                      )}
                       {view === 'map'      && <MapView onOpenDeal={handleOpenDeal}/>}
                       {view === 'boxes'    && (
                         <BuyBoxesView
@@ -268,15 +313,25 @@ function AppShell() {
                           onPause={setPausingBuyBox}
                         />
                       )}
-                      {view === 'calendar' && (
-                        <Suspense fallback={<ExcelFeedFallback />}>
-                          <DealFeedExcelView />
-                        </Suspense>
-                      )}
                       {view === 'settings' && <SettingsView onConfirmDanger={setConfirmDanger}/>}
                       {view === 'accounts' && <AccountsView/>}
                       {view === 'invites'  && <InviteView/>}
                       {view === 'admin'    && <AdminView/>}
+
+                      {/* Excel feed wrapper mounts once on first /dealsheet
+                          visit and stays mounted. Hidden via display:none on
+                          other views so the vendor bundle's element-level
+                          listeners stay alive across navigate-away-and-back. */}
+                      {(hasVisitedDealsheet || view === 'dealsheet') && (
+                        <div
+                          data-dealsheet-host
+                          style={{ display: view === 'dealsheet' ? 'block' : 'none', height: '100%' }}
+                        >
+                          <Suspense fallback={<ExcelFeedFallback />}>
+                            <DealFeedExcelView />
+                          </Suspense>
+                        </div>
+                      )}
                     </>
                   )}
 
