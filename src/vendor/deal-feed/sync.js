@@ -5,7 +5,7 @@
    §"Integration pattern — the sync contract".
    ============================================ */
 
-import { toNDDeal, toNDBox, buildCalendar } from './adapter.js';
+import { toNDDeal, toNDBox, isoDate } from './adapter.js';
 
 /**
  * Create a throttler that calls `ND._rr` at most once per animation frame,
@@ -75,7 +75,15 @@ export function publishToBundle({ ND, deals, buyBoxes, isRead, today, requestRr 
 
   ND.deals = safeDeals.map((d) => toNDDeal(d, { isRead })).filter(Boolean);
   ND.boxes = safeBoxes.map(toNDBox).filter(Boolean);
-  ND.calendar = buildCalendar(safeDeals, today);
+
+  // The bundle's data.js defines ND.buildCalendar(), which produces the
+  // Array<Month{ weeks: Array<Week{ days: Array<Day> }> }> shape that
+  // feed.js and tabs.js iterate. It reads ND.deals[*].deliveredOn and
+  // ND.todayISO, so both must be set first. Fall back to an iterable
+  // empty array when the bundle's builder is absent (e.g. unit tests).
+  const todayKey = isoDate(today) || isoDate(new Date());
+  ND.todayISO = todayKey;
+  ND.calendar = typeof ND.buildCalendar === 'function' ? ND.buildCalendar() : [];
 
   if (requestRr && typeof requestRr.request === 'function') {
     requestRr.request();

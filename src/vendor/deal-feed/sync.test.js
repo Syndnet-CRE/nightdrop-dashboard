@@ -160,7 +160,7 @@ describe('publishToBundle', () => {
     expect(ND.deals[0].id).toBe('deal-1');
     expect(ND.boxes).toHaveLength(1);
     expect(ND.boxes[0].id).toBe('box-1');
-    expect(ND.calendar.days.length).toBeGreaterThan(150);
+    expect(Array.isArray(ND.calendar)).toBe(true);
     expect(requestRr.request).toHaveBeenCalledTimes(1);
   });
 
@@ -168,7 +168,66 @@ describe('publishToBundle', () => {
     publishToBundle({ ND, deals: null, buyBoxes: undefined, isRead: () => false, requestRr });
     expect(ND.deals).toEqual([]);
     expect(ND.boxes).toEqual([]);
-    expect(ND.calendar.days.length).toBeGreaterThan(0);
+    expect(Array.isArray(ND.calendar)).toBe(true);
+  });
+
+  it('sets ND.todayISO from the today arg as YYYY-MM-DD before invoking ND.buildCalendar', () => {
+    const ND2 = {
+      buildCalendar: vi.fn(function () {
+        // captured at call time
+        expect(this.todayISO).toBe('2026-05-25');
+        return [{ key: '2026-05', weeks: [] }];
+      }),
+    };
+    publishToBundle({
+      ND: ND2,
+      deals: [baseDeal()],
+      buyBoxes: [],
+      isRead: () => false,
+      today: '2026-05-25T18:30:00Z',
+      requestRr,
+    });
+    expect(ND2.buildCalendar).toHaveBeenCalledTimes(1);
+    expect(ND2.todayISO).toBe('2026-05-25');
+  });
+
+  it('uses current date for ND.todayISO when today arg is missing', () => {
+    publishToBundle({ ND, deals: [baseDeal()], buyBoxes: [], isRead: () => false, requestRr });
+    expect(ND.todayISO).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it('calls ND.buildCalendar after ND.deals is populated and assigns its return to ND.calendar', () => {
+    const sentinel = [{ key: '2026-05', weeks: [{ key: 'w1', days: [{ key: '2026-05-25', count: 3 }] }] }];
+    const ND2 = {
+      buildCalendar: vi.fn(function () {
+        // verify deals are already on ND when buildCalendar runs
+        expect(Array.isArray(this.deals)).toBe(true);
+        expect(this.deals).toHaveLength(1);
+        return sentinel;
+      }),
+    };
+    publishToBundle({
+      ND: ND2,
+      deals: [baseDeal()],
+      buyBoxes: [],
+      isRead: () => false,
+      requestRr,
+    });
+    expect(ND2.calendar).toBe(sentinel);
+    expect(Array.isArray(ND2.calendar)).toBe(true);
+  });
+
+  it('falls back to an iterable empty array when ND.buildCalendar is not a function', () => {
+    publishToBundle({ ND, deals: [baseDeal()], buyBoxes: [], isRead: () => false, requestRr });
+    expect(ND.calendar).toEqual([]);
+    // The bundle's feed.js does `for (const m of ND.calendar)`. The fallback
+    // must be iterable so the feed renders the empty-state row instead of
+    // throwing TypeError: ND.calendar is not iterable.
+    expect(() => {
+      for (const _ of ND.calendar) {
+        void _;
+      }
+    }).not.toThrow();
   });
 
   it('filters out adapter-rejected null deals', () => {
