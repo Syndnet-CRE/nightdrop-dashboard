@@ -21,7 +21,6 @@ import { ForgotPasswordView } from './views/ForgotPasswordView';
 import { ResetPasswordView } from './views/ResetPasswordView';
 import { InviteClaimView } from './views/InviteClaimView';
 import { api } from './lib/api';
-import { useToast } from './contexts/ToastContext';
 
 const DealFeedExcelView = lazy(() => import('./views/DealFeedExcelView'));
 
@@ -142,7 +141,6 @@ function InitialRouteGate() {
 
 
 function AppShell() {
-  const addToast = useToast();
   const { subscriber, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();

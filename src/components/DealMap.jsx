@@ -95,6 +95,7 @@ export function DealMap({
   onViewStateChange = null,
   focusDealId = null,
   clusterData = null,
+  // eslint-disable-next-line no-unused-vars
   demoMode = false,
   enableClustering = false,
 }) {
@@ -210,7 +211,7 @@ export function DealMap({
         </Source>
       )}
 
-      {!inAutoClusterMode && deals.map((d, i) => {
+      {!inAutoClusterMode && deals.map((d) => {
         if (!d.lat || !d.lng) return null;
         const active = selectedId === d.id || hoverId === d.id || hoverDealId === d.id;
         return (
