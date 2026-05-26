@@ -1,0 +1,2278 @@
+/* ============================================
+   nightdrop.ai — Deal Feed
+   Dark, dense, Bloomberg-meets-Sheets aesthetic
+   ============================================ */
+
+.nd-excel-shell {
+  --app-bg: #0a0a0a;
+  --panel-bg: #0f0f0f;
+  --panel-bg-2: #141414;
+  --surf: #171717;
+  --surf-hi: #1c1c1c;
+  --surf-hi-2: #222;
+  --border: #2a2a2a;
+  --border-faint: #1e1e1e;
+  --border-strong: #404040;
+  --gridline: #232427;
+  --gridline-hi: #2d2f33;
+  --row-active: rgba(132, 165, 200, 0.14);
+  --row-active-edge: rgba(132, 165, 200, 0.55);
+  --cell-edit: rgba(132, 165, 200, 0.22);
+  --fg: #e5e5e5;
+  --fg-dim: #b0b0b0;
+  --fg-muted: #888;
+  --fg-faint: #555;
+  --fg-ghost: #333;
+  --accent: #2da200;
+  --accent-hi: #3fbf12;
+  --accent-lo: #1a6900;
+  --accent-tint: rgba(45,162,0,.08);
+  --danger: #ef4444;
+  --danger-tint: rgba(239,68,68,.08);
+  --warn: #f59e0b;
+  --warn-tint: rgba(245,158,11,.08);
+  --info: #38bdf8;
+  --topbar-h: 84px;
+  --nav-w: 240px;
+  --nav-w-collapsed: 64px;
+  --tabbar-h: 38px;
+  --gutter-w: 44px;
+  --colhdr-h: 22px;
+  --font-sans: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'DM Mono', ui-monospace, monospace;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+}
+
+.nd-excel-shell * { box-sizing: border-box; margin: 0; padding: 0; }
+
+.nd-excel-shell, .nd-excel-shell { height: 100%; }
+
+.nd-excel-shell {
+  background: var(--app-bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+.nd-excel-shell .app {
+  display: grid;
+  grid-template-columns: var(--nav-w) 1fr;
+  transition: grid-template-columns 0.22s var(--ease);
+}
+.nd-excel-shell .app.sidebar-collapsed { grid-template-columns: var(--nav-w-collapsed, 64px) 1fr; }
+
+.nd-excel-shell .sidebar, .nd-excel-shell .main { min-height: 0; height: 100%; overflow: hidden; }
+
+/* ============================================
+   SIDEBAR
+   ============================================ */
+
+.nd-excel-shell .sidebar {
+  background: var(--panel-bg);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Chevron toggle sits between the brand and the first nav item.
+   Centered, small, visible in both expanded and collapsed states. */
+.nd-excel-shell .sb-toggle {
+  width: 16px;
+  height: 16px;
+  margin: 6px auto 4px;
+  border-radius: 50%;
+  background: var(--surf-hi);
+  border: 1px solid var(--border);
+  color: var(--fg-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.nd-excel-shell .sb-toggle:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+.nd-excel-shell .sb-toggle i { font-size: 10px; transition: transform .22s var(--ease); }
+.nd-excel-shell .app.sidebar-collapsed .sb-toggle i { transform: rotate(180deg); }
+
+/* No need for extra bottom padding anymore — toggle lives at the top. */
+.nd-excel-shell .sidebar .sb-foot { padding-bottom: 12px; }
+
+.nd-excel-shell .brand {
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.nd-excel-shell .brand-mark {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-lo));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 16px;
+  box-shadow: 0 0 0 1px rgba(45,162,0,.25), 0 6px 20px rgba(45,162,0,.18);
+}
+
+.nd-excel-shell .brand-name {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+}
+.nd-excel-shell .brand-tld { color: var(--accent); font-weight: 700; }
+
+.nd-excel-shell .nav {
+  padding: 12px 10px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.nd-excel-shell .nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  height: 32px;
+  border-radius: 6px;
+  color: var(--fg-dim);
+  text-decoration: none;
+  font-size: 12.5px;
+  font-weight: 500;
+  position: relative;
+  transition: background .12s var(--ease), color .12s var(--ease);
+}
+.nd-excel-shell .nav-item i { font-size: 16px; color: var(--fg-muted); transition: color .12s; }
+.nd-excel-shell .nav-item:hover { background: var(--surf); color: var(--fg); }
+.nd-excel-shell .nav-item:hover i { color: var(--fg); }
+.nd-excel-shell .nav-item.active { color: var(--accent); background: var(--accent-tint); }
+.nd-excel-shell .nav-item.active i { color: var(--accent); }
+.nd-excel-shell .nav-item .badge {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--danger);
+  color: #fff;
+  border-radius: 999px;
+  padding: 1px 7px;
+  letter-spacing: 0;
+}
+
+.nd-excel-shell .sb-stats {
+  margin: 14px 10px 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.nd-excel-shell .sb-stat {
+  background: var(--surf);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 9px 11px 9px;
+}
+.nd-excel-shell .sb-stat-head { display: flex; justify-content: space-between; align-items: center; }
+.nd-excel-shell .sb-stat-num {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--fg);
+  letter-spacing: -0.02em;
+  font-family: var(--font-mono);
+}
+.nd-excel-shell .sb-stat-suf { font-size: 12px; color: var(--fg-muted); margin-left: 1px; }
+.nd-excel-shell .sb-stat-ico { font-size: 13px; opacity: .8; }
+.nd-excel-shell .sb-stat-ico.g { color: var(--accent); }
+.nd-excel-shell .sb-stat-ico.h { color: var(--warn); }
+.nd-excel-shell .sb-stat-ico.b { color: var(--info); }
+.nd-excel-shell .sb-stat-ico.p { color: #a78bfa; }
+.nd-excel-shell .sb-stat-lbl {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--fg-muted);
+  margin-top: 4px;
+}
+
+.nd-excel-shell .sb-buyboxes {
+  margin: 14px 10px 0;
+  display: flex;
+  flex-direction: column;
+}
+.nd-excel-shell .sb-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px 6px;
+  margin-bottom: 2px;
+}
+.nd-excel-shell .sb-section-lbl {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--fg-muted);
+  font-weight: 600;
+}
+.nd-excel-shell .sb-add {
+  width: 18px; height: 18px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--fg-muted);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  transition: all .12s;
+}
+.nd-excel-shell .sb-add:hover { color: var(--fg); border-color: var(--border-strong); }
+
+.nd-excel-shell .sb-bb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 4px;
+  color: var(--fg-dim);
+  text-decoration: none;
+  font-size: 11.5px;
+  transition: background .12s;
+}
+.nd-excel-shell .sb-bb:hover { background: var(--surf); color: var(--fg); }
+.nd-excel-shell .sb-bb-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 6px currentColor;
+}
+
+.nd-excel-shell .sb-foot {
+  margin-top: auto;
+  padding: 8px 10px 12px;
+  border-top: 1px solid var(--border-faint);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+/* ============================================
+   MAIN AREA
+   ============================================ */
+
+.nd-excel-shell .main {
+  display: grid;
+  grid-template-rows: var(--topbar-h) 1fr;
+  overflow: hidden;
+  min-width: 0;
+  height: 100vh;
+}
+
+/* ============================================
+   TOPBAR — TIMELINE + COUNTDOWN
+   ============================================ */
+
+.nd-excel-shell .topbar {
+  background: var(--panel-bg);
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  align-items: center;
+  padding: 0 20px 0 28px;
+  gap: 24px;
+  min-width: 0;
+}
+
+.nd-excel-shell .tl {
+  position: relative;
+  height: 64px;
+  min-width: 0;
+}
+
+.nd-excel-shell .tl-track {
+  position: absolute;
+  left: 12px; right: 12px;
+  top: 50%;
+  height: 2px;
+  transform: translateY(-50%);
+}
+
+.nd-excel-shell .tl-bar {
+  position: absolute;
+  left: 0; right: 0;
+  top: 0;
+  height: 1px;
+  background-image: linear-gradient(90deg, var(--border) 50%, transparent 0);
+  background-size: 6px 1px;
+  background-repeat: repeat-x;
+}
+
+.nd-excel-shell .tl-fill {
+  position: absolute;
+  left: 0;
+  width: 24%;
+  top: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent) 30%, var(--accent));
+  border-radius: 1px;
+  box-shadow: 0 0 12px rgba(45,162,0,.55);
+}
+
+.nd-excel-shell .tl-rocket {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 0 8px rgba(45,162,0,.6));
+}
+
+.nd-excel-shell .tl-stages {
+  position: absolute;
+  inset: 0;
+  margin: 0 12px;
+  pointer-events: none;
+}
+
+.nd-excel-shell .tl-stage {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.nd-excel-shell .tl-stage-top {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  white-space: nowrap;
+  margin-top: 2px;
+  height: 22px;
+}
+.nd-excel-shell .tl-lbl { color: var(--fg-muted); font-weight: 600; font-size: 9px; letter-spacing: .08em; }
+.nd-excel-shell .tl-lbl.eta { color: var(--fg-faint); }
+.nd-excel-shell .tl-num {
+  font-family: var(--font-mono);
+  color: var(--fg);
+  font-weight: 600;
+  font-size: 11px;
+}
+.nd-excel-shell .tl-num.g { color: var(--accent); }
+.nd-excel-shell .tl-num.eta { color: var(--fg-dim); font-size: 10px; }
+
+.nd-excel-shell .tl-tick {
+  width: 1px;
+  height: 8px;
+  background: var(--border);
+  margin-top: 2px;
+}
+
+.nd-excel-shell .tl-diamond {
+  width: 9px; height: 9px;
+  background: var(--surf);
+  border: 1px solid var(--border-strong);
+  transform: rotate(45deg);
+  margin-top: -5px;
+  margin-bottom: -5px;
+}
+.nd-excel-shell .tl-stage.on .tl-diamond {
+  background: var(--accent);
+  border-color: var(--accent-hi);
+  box-shadow: 0 0 12px rgba(45,162,0,.6);
+}
+
+.nd-excel-shell .tl-stage-bot {
+  margin-top: 6px;
+  font-size: 9px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
+  font-weight: 600;
+  height: 14px;
+}
+.nd-excel-shell .tl-stage.on .tl-stage-bot { color: var(--accent); }
+
+.nd-excel-shell .run {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  align-items: center;
+  justify-self: end;
+}
+.nd-excel-shell .run-l {
+  grid-row: 1 / 3;
+  display: flex; flex-direction: column;
+  text-align: right;
+}
+.nd-excel-shell .run-l1, .nd-excel-shell .run-l2 {
+  font-size: 9.5px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  font-weight: 600;
+  line-height: 1.3;
+}
+.nd-excel-shell .run-l2 { color: var(--fg-faint); display: flex; align-items: center; gap: 4px; justify-content: flex-end; }
+.nd-excel-shell .run-spin { font-size: 11px; animation: spin 4s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.nd-excel-shell .run-clock {
+  font-family: var(--font-mono);
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -.02em;
+  color: var(--fg);
+  line-height: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+}
+.nd-excel-shell .rc-num { display: inline-block; min-width: 36px; text-align: center; }
+.nd-excel-shell .rc-sep { color: var(--fg-faint); margin: 0 1px; }
+.nd-excel-shell .rc-num.g { color: var(--accent); text-shadow: 0 0 12px rgba(45,162,0,.45); }
+.nd-excel-shell .run-time {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--fg-muted);
+  text-align: right;
+  letter-spacing: .04em;
+  margin-top: 2px;
+}
+
+/* ============================================
+   FEED
+   ============================================ */
+
+.nd-excel-shell .feed {
+  display: grid;
+  grid-template-rows: 40px 32px auto 1fr auto;
+  overflow: hidden;
+  min-height: 0;
+}
+.nd-excel-shell .feed > .toolbar { grid-row: 1; }
+.nd-excel-shell .feed > .statsbar { grid-row: 2; }
+.nd-excel-shell .feed > .fbar { grid-row: 3; }
+.nd-excel-shell .feed > .feed-main { grid-row: 4; }
+.nd-excel-shell .feed > .tabbar { grid-row: 5; }
+/* When the column-A row exists, slot it inside .feed-main, so feed grid is unchanged */
+
+.nd-excel-shell .toolbar {
+  background: var(--panel-bg-2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.nd-excel-shell .chips { display: flex; gap: 5px; }
+.nd-excel-shell .chip {
+  padding: 4px 11px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 11px;
+  cursor: pointer;
+  color: var(--fg-dim);
+  font-family: inherit;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: all .12s;
+}
+.nd-excel-shell .chip:hover:not(.active) { border-color: var(--border-strong); color: var(--fg); }
+.nd-excel-shell .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+.nd-excel-shell .chip-n { opacity: .7; font-weight: 600; font-family: var(--font-mono); }
+.nd-excel-shell .chip.active .chip-n { opacity: .85; }
+
+.nd-excel-shell .spacer { flex: 1; }
+
+.nd-excel-shell .tbtn {
+  padding: 0 10px;
+  height: 28px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--fg-dim);
+  font-size: 11px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  font-family: inherit;
+  transition: all .12s;
+}
+.nd-excel-shell .tbtn i { font-size: 12px; }
+.nd-excel-shell .tbtn:hover { color: var(--fg); border-color: var(--border-strong); }
+.nd-excel-shell .tbtn.warn { border-color: rgba(45,162,0,.4); color: var(--accent); background: var(--accent-tint); }
+.nd-excel-shell .tbtn-sel { background: transparent; border: none; color: var(--accent); font-size: 11px; outline: none; cursor: pointer; font-family: inherit; }
+
+.nd-excel-shell .density-toggle, .nd-excel-shell .view-toggle {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  overflow: hidden;
+  height: 28px;
+}
+.nd-excel-shell .dbtn, .nd-excel-shell .vbtn {
+  padding: 0 9px;
+  background: transparent;
+  color: var(--fg-muted);
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
+  border-right: 1px solid var(--border);
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all .12s;
+}
+.nd-excel-shell .dbtn i, .nd-excel-shell .vbtn i { font-size: 13px; }
+.nd-excel-shell .dbtn:last-child, .nd-excel-shell .vbtn:last-child { border-right: none; }
+.nd-excel-shell .dbtn:hover, .nd-excel-shell .vbtn:hover { color: var(--fg); }
+.nd-excel-shell .dbtn.active { background: var(--surf-hi); color: var(--fg); }
+.nd-excel-shell .vbtn.active { background: var(--accent); color: #fff; }
+
+.nd-excel-shell .sort { display: flex; align-items: center; gap: 6px; color: var(--fg-muted); font-size: 11px; }
+.nd-excel-shell .sort-l { font-size: 10px; }
+.nd-excel-shell .sort-sel {
+  background: var(--surf);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--fg-dim);
+  font-size: 11px;
+  padding: 3px 6px;
+  outline: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+.nd-excel-shell .sort-sel:focus { border-color: var(--accent); }
+
+/* ============================================
+   STATS BAR
+   ============================================ */
+
+.nd-excel-shell .statsbar {
+  background: var(--panel-bg);
+  border-bottom: 2px solid var(--border);
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+.nd-excel-shell .stat { display: flex; align-items: center; gap: 6px; font-size: 11px; }
+.nd-excel-shell .sl { color: var(--fg-muted); font-size: 10px; text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+.nd-excel-shell .sv { font-family: var(--font-mono); font-weight: 600; color: var(--fg); }
+.nd-excel-shell .sv.g { color: var(--accent); }
+.nd-excel-shell .sv.r { color: var(--danger); }
+.nd-excel-shell .sv.a { color: var(--warn); }
+.nd-excel-shell .sdiv { width: 1px; height: 14px; background: var(--border-faint); }
+
+.nd-excel-shell .sv-views { display: flex; align-items: center; gap: 5px; margin-left: 4px; }
+.nd-excel-shell .sv-chip {
+  padding: 3px 9px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 10px;
+  color: var(--fg-muted);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .12s;
+}
+.nd-excel-shell .sv-chip:hover { border-color: var(--accent); color: var(--accent); }
+.nd-excel-shell .sv-chip.add { border-style: dashed; color: var(--fg-ghost); }
+.nd-excel-shell .sv-chip.add:hover { border-color: var(--fg-muted); color: var(--fg-muted); }
+
+.nd-excel-shell .rc { margin-left: auto; font-size: 10px; color: var(--fg-faint); font-family: var(--font-mono); }
+
+/* ============================================
+   FILTER BAR (active filters)
+   ============================================ */
+
+.nd-excel-shell .fbar {
+  background: var(--app-bg);
+  border-bottom: 1px solid var(--border-faint);
+  padding: 5px 18px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  flex-shrink: 0;
+}
+.nd-excel-shell .ftag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 4px 2px 9px;
+  background: var(--surf);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 10.5px;
+  color: var(--fg-dim);
+}
+.nd-excel-shell .ftag b { color: var(--fg); font-weight: 600; }
+.nd-excel-shell .ftag .rm {
+  width: 16px; height: 16px;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--danger);
+  cursor: pointer;
+  border-radius: 999px;
+  font-size: 10px;
+}
+.nd-excel-shell .ftag .rm:hover { background: rgba(239,68,68,.15); }
+
+/* ============================================
+   TABLE
+   ============================================ */
+
+.nd-excel-shell .feed-main {
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+  background: var(--surf);
+}
+
+.nd-excel-shell .tw {
+  overflow: auto;
+  height: 100%;
+  position: relative;
+  transition: margin-right .2s var(--ease);
+}
+.nd-excel-shell .tw.drawer-open { margin-right: 340px; }
+
+.nd-excel-shell .tw::-webkit-scrollbar { width: 6px; height: 6px; }
+.nd-excel-shell .tw::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 3px; }
+.nd-excel-shell .tw::-webkit-scrollbar-track { background: transparent; }
+
+.nd-excel-shell table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 1320px; table-layout: fixed; }
+
+.nd-excel-shell thead { position: sticky; top: 0; z-index: 50; }
+
+/* Make sure body cells slide UNDER the sticky thead on scroll. */
+.nd-excel-shell thead th { z-index: 51; }
+.nd-excel-shell thead tr.colhdr th { z-index: 52; }
+
+.nd-excel-shell th {
+  background: var(--panel-bg-2);
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--gridline);
+  padding: 0 10px;
+  height: 32px;
+  text-align: left;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  white-space: nowrap;
+  user-select: none;
+  position: relative;
+}
+.nd-excel-shell th:last-child { border-right: 1px solid var(--gridline); }
+
+/* Column-letter row (Excel-style A B C …) */
+.nd-excel-shell tr.colhdr th {
+  background: var(--app-bg);
+  border-bottom: 1px solid var(--gridline);
+  border-right: 1px solid var(--gridline);
+  height: var(--colhdr-h);
+  padding: 0;
+  text-align: center;
+  font-size: 9.5px;
+  letter-spacing: .04em;
+  color: var(--fg-faint);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  text-transform: none;
+}
+.nd-excel-shell tr.colhdr th.gutter-corner { background: var(--panel-bg); }
+
+/* Column resize handle */
+.nd-excel-shell th .col-resize {
+  position: absolute;
+  right: -3px; top: 0; bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+  z-index: 30;
+}
+.nd-excel-shell th .col-resize::before {
+  content: '';
+  position: absolute;
+  left: 2px; top: 6px; bottom: 6px;
+  width: 1px;
+  background: transparent;
+  transition: background .1s;
+}
+.nd-excel-shell th .col-resize:hover::before, .nd-excel-shell th .col-resize.dragging::before { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+.nd-excel-shell th .thi { display: flex; align-items: center; justify-content: space-between; gap: 5px; }
+.nd-excel-shell th .tri {
+  width: 0; height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid var(--fg-ghost);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-top-color .12s;
+}
+.nd-excel-shell th:hover .tri { border-top-color: var(--fg-dim); }
+.nd-excel-shell th .tri.on { border-top-color: var(--accent); }
+
+/* Filter popover */
+.nd-excel-shell .fpop { position: absolute; z-index: 300; }
+.nd-excel-shell .cfp {
+  position: absolute;
+  background: var(--surf-hi-2);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  padding: 10px;
+  min-width: 180px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.7);
+}
+.nd-excel-shell .cfp label { font-size: 10px; color: var(--fg-dim); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+.nd-excel-shell .cfp input, .nd-excel-shell .cfp select {
+  width: 100%;
+  background: var(--surf);
+  border: 1px solid var(--border-strong);
+  border-radius: 3px;
+  color: var(--fg);
+  font-size: 11px;
+  padding: 5px 8px;
+  outline: none;
+  font-family: inherit;
+}
+.nd-excel-shell .cfp input:focus, .nd-excel-shell .cfp select:focus { border-color: var(--accent); }
+.nd-excel-shell .fp-btns { display: flex; gap: 5px; margin-top: 8px; }
+.nd-excel-shell .fp-a { flex: 1; background: var(--accent); border: none; border-radius: 3px; color: #fff; font-size: 10px; padding: 5px 0; cursor: pointer; font-weight: 600; }
+.nd-excel-shell .fp-c { flex: 1; background: var(--surf); border: 1px solid var(--border-strong); border-radius: 3px; color: var(--fg-dim); font-size: 10px; padding: 5px 0; cursor: pointer; }
+
+.nd-excel-shell td {
+  border-bottom: 1px solid var(--gridline);
+  border-right: 1px solid var(--gridline);
+  padding: 0 10px;
+  vertical-align: middle;
+  background: var(--surf);
+  position: relative;
+}
+.nd-excel-shell td:last-child { border-right: 1px solid var(--gridline); }
+
+/* ROW-NUMBER GUTTER */
+.nd-excel-shell td.gutter, .nd-excel-shell th.gutter {
+  background: var(--panel-bg);
+  text-align: center;
+  padding: 0;
+  user-select: none;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--fg-faint);
+  border-right: 1px solid var(--border);
+  width: var(--gutter-w);
+  min-width: var(--gutter-w);
+  position: sticky;
+  left: 0;
+  z-index: 5;
+}
+.nd-excel-shell tr.dr.active td.gutter, .nd-excel-shell tr.dr.exp td.gutter { color: var(--fg); background: var(--surf-hi); }
+.nd-excel-shell tr.dr td.gutter:hover { background: var(--surf-hi); color: var(--fg); cursor: pointer; }
+.nd-excel-shell th.gutter-corner {
+  background: var(--panel-bg);
+  border-right: 1px solid var(--border);
+  position: sticky;
+  left: 0;
+  z-index: 25;
+}
+.nd-excel-shell tr.colhdr th.gutter-corner { z-index: 26; }
+
+/* Editable cell: spans show focus when typed */
+.nd-excel-shell .cell-edit {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0 1px;
+  outline: none;
+  font: inherit;
+  color: inherit;
+  background: transparent;
+  border: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* line-height set inline per-row to match cell height for caret centering */
+}
+.nd-excel-shell td.editing { box-shadow: inset 0 0 0 2px var(--row-active-edge); background: rgba(132, 165, 200, 0.06); z-index: 4; }
+.nd-excel-shell td.editing .cell-edit { color: var(--fg); }
+/* Suppress the universal focus-visible outline — td.editing already provides the focus affordance */
+.nd-excel-shell .cell-edit, .nd-excel-shell .cell-edit:focus, .nd-excel-shell .cell-edit:focus-visible { outline: none; }
+
+/* Cell text values in real data rows */
+.nd-excel-shell .cell-val { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11.5px; color: var(--fg-dim); }
+.nd-excel-shell .cell-val.mono { font-family: var(--font-mono); font-size: 11px; }
+.nd-excel-shell .cell-val.text { color: var(--fg); }
+.nd-excel-shell .cell-val.bold { font-weight: 600; color: var(--fg); }
+.nd-excel-shell .cell-val[contenteditable="true"] { cursor: text; outline: none; }
+.nd-excel-shell .am[contenteditable="true"] { outline: none; cursor: text; }
+.nd-excel-shell .pill[contenteditable="true"] { outline: none; cursor: text; }
+
+.nd-excel-shell tr.dr { cursor: pointer; transition: background .06s; }
+.nd-excel-shell tr.dr td { transition: background .06s; }
+.nd-excel-shell tr.dr:hover td { background: #1c1d1f; }
+.nd-excel-shell tr.dr.unread td.gutter { box-shadow: inset 3px 0 0 var(--accent); }
+
+/* Active row highlight is now driven by the .sel-in / overlay system below.
+   Leaving the .active class as a no-op so the kb-focus styling can compose. */
+.nd-excel-shell tr.dr.active td { /* intentionally empty — selection overlay handles this */ }
+
+/* Expanded = double-click; same wash + accent edge above expansion */
+.nd-excel-shell tr.dr.exp td { background: var(--row-active); }
+.nd-excel-shell tr.dr.exp td.gutter { box-shadow: inset 3px 0 0 var(--accent); color: var(--accent); font-weight: 700; }
+
+/* Multi-select via checkbox */
+.nd-excel-shell tr.dr.sel td { background: rgba(132, 165, 200, 0.08); }
+
+/* Keyboard focus */
+.nd-excel-shell tr.dr.kb-focus td { box-shadow: inset 0 0 0 1px rgba(132, 165, 200, 0.35); }
+.nd-excel-shell tr.dr.kb-focus.active td { box-shadow: inset 0 0 0 1px rgba(132, 165, 200, 0.55); }
+
+.nd-excel-shell tr.xr td { padding: 0; background: #131313; border-bottom: 2px solid var(--accent); border-right: 1px solid var(--gridline); }
+
+/* EMPTY ROWS — Excel-style placeholder cells */
+.nd-excel-shell tr.empty-row td {
+  background: var(--surf);
+  cursor: text;
+  color: var(--fg-faint);
+}
+.nd-excel-shell tr.empty-row td.gutter { background: var(--panel-bg); color: var(--fg-faint); cursor: pointer; }
+.nd-excel-shell tr.empty-row:hover td { background: #1a1b1d; }
+.nd-excel-shell tr.empty-row.active td { /* selection overlay handles row highlight */ }
+
+/* Group/buy-box rows */
+.nd-excel-shell .gr td {
+  background: var(--app-bg);
+  border-bottom: 1px solid var(--border);
+  border-top: 2px solid var(--border);
+  height: 40px;
+  cursor: pointer;
+  user-select: none;
+}
+.nd-excel-shell .gr:hover td { background: #111; }
+.nd-excel-shell .gi {
+  display: flex; align-items: center; gap: 12px;
+  padding: 0 10px;
+  height: 38px;
+}
+.nd-excel-shell .gtog {
+  width: 20px; height: 20px;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--fg-muted);
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+  background: var(--surf);
+  font-family: var(--font-mono);
+  transition: all .12s;
+}
+.nd-excel-shell .gr:hover .gtog { border-color: var(--accent); color: var(--accent); }
+.nd-excel-shell .gn-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 6px currentColor;
+}
+.nd-excel-shell .gn { font-size: 13px; font-weight: 700; color: var(--fg); letter-spacing: -.005em; }
+.nd-excel-shell .ga {
+  font-size: 9.5px;
+  color: var(--fg-muted);
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  font-weight: 600;
+}
+.nd-excel-shell .gdiv { flex: 1; height: 1px; background: var(--border-faint); }
+.nd-excel-shell .gstat { display: flex; flex-direction: column; align-items: center; gap: 0; min-width: 52px; }
+.nd-excel-shell .gsl {
+  font-size: 8.5px;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.nd-excel-shell .gsv { font-family: var(--font-mono); font-size: 11.5px; font-weight: 700; color: var(--fg-dim); }
+.nd-excel-shell .gsv.g { color: var(--accent); }
+.nd-excel-shell .gsv.p { color: #7af74d; }
+.nd-excel-shell .gsv.d { color: var(--fg-faint); }
+.nd-excel-shell .gstat-div { width: 1px; height: 20px; background: var(--border-faint); margin: 0 4px; }
+.nd-excel-shell .gsep td { padding: 0; border: none; height: 6px; background: var(--app-bg); }
+
+/* row elements */
+.nd-excel-shell .am { font-size: 12px; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; letter-spacing: -.005em; }
+.nd-excel-shell .as { font-size: 10px; color: var(--fg-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nd-excel-shell .ab { font-size: 10px; color: var(--fg-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-style: italic; }
+.nd-excel-shell .cb { width: 13px; height: 13px; cursor: pointer; accent-color: var(--accent); }
+.nd-excel-shell .dh { cursor: grab; color: var(--fg-ghost); font-size: 13px; transition: color .12s; display: inline-flex; }
+.nd-excel-shell tr.dr:hover .dh { color: var(--fg-muted); }
+
+.nd-excel-shell .la { width: 6px; height: 6px; border-radius: 50%; background: var(--border); display: inline-block; border: 1px solid var(--border); flex-shrink: 0; }
+.nd-excel-shell .la.r { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 6px var(--accent); }
+.nd-excel-shell .la.m { background: var(--warn); border-color: var(--warn); }
+
+.nd-excel-shell .pill {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 500;
+  border: 1px solid;
+  white-space: nowrap;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.nd-excel-shell .pill-r { background: rgba(239,68,68,.08); border-color: rgba(239,68,68,.25); color: #f87171; }
+.nd-excel-shell .pill-a { background: rgba(245,158,11,.08); border-color: rgba(245,158,11,.25); color: #fbbf24; }
+.nd-excel-shell .pill-g { background: rgba(45,162,0,.08); border-color: rgba(45,162,0,.25); color: #7af74d; }
+.nd-excel-shell .pill-gray { background: rgba(80,80,80,.18); border-color: var(--border-strong); color: var(--fg-dim); }
+
+.nd-excel-shell .stsel {
+  background: var(--surf-hi);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--fg);
+  font-size: 10.5px;
+  padding: 3px 6px;
+  cursor: pointer;
+  outline: none;
+  width: 100%;
+  font-family: inherit;
+}
+.nd-excel-shell .stsel:focus { border-color: var(--accent); }
+
+.nd-excel-shell .ni {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  color: var(--fg-dim);
+  font-size: 11px;
+  width: 100%;
+  outline: none;
+  font-family: inherit;
+  padding: 3px 5px;
+  transition: all .12s;
+}
+.nd-excel-shell .ni:hover { border-color: var(--border-faint); }
+.nd-excel-shell .ni:focus { color: var(--fg); border-color: var(--accent); background: var(--surf-hi); }
+.nd-excel-shell .ni::placeholder { color: var(--fg-ghost); }
+
+.nd-excel-shell .qrow-trig {
+  background: transparent;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  color: var(--fg-muted);
+  font-size: 13px;
+  padding: 0;
+  transition: all .12s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 24px;
+  border-radius: 4px;
+  font-family: inherit;
+}
+.nd-excel-shell .qrow-trig:hover.up { color: var(--accent); border-color: var(--accent); background: var(--accent-tint); }
+.nd-excel-shell .qrow-trig:hover.dn { color: var(--danger); border-color: var(--danger); background: var(--danger-tint); }
+.nd-excel-shell .qrow-trig.on.up { color: var(--accent); border-color: var(--accent); background: var(--accent-tint); }
+.nd-excel-shell .qrow-trig.on.dn { color: var(--danger); border-color: var(--danger); background: var(--danger-tint); }
+
+/* ============================================
+   EXPANDED ROW
+   ============================================ */
+
+.nd-excel-shell .xi { display: flex; flex-direction: column; }
+.nd-excel-shell .xi-body {
+  display: grid;
+  grid-template-columns: 25% 40% 35%;
+  min-height: 220px;
+}
+
+/* Satellite tile */
+.nd-excel-shell .xi-img-wrap {
+  padding: 14px;
+  display: flex;
+  align-items: stretch;
+  border-right: 1px solid var(--border-faint);
+}
+.nd-excel-shell .sat-tile {
+  width: 100%;
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background:
+    radial-gradient(ellipse at 30% 60%, rgba(80,90,70,.35), transparent 55%),
+    radial-gradient(ellipse at 75% 25%, rgba(45,70,30,.4), transparent 50%),
+    repeating-linear-gradient(35deg, #1f1d18 0 28px, #1a1814 28px 56px),
+    repeating-linear-gradient(125deg, transparent 0 80px, rgba(255,255,255,0.025) 80px 81px),
+    repeating-linear-gradient(35deg, transparent 0 80px, rgba(255,255,255,0.025) 80px 81px),
+    linear-gradient(180deg, #1e1c16, #15140f);
+}
+.nd-excel-shell .sat-tile::before, .nd-excel-shell .sat-tile::after {
+  /* roads */
+  content: '';
+  position: absolute;
+  background: rgba(245, 240, 225, .07);
+  box-shadow: 0 0 0 1px rgba(245,240,225,.04);
+}
+.nd-excel-shell .sat-tile::before {
+  left: -10%; right: -10%;
+  top: 38%;
+  height: 5px;
+  transform: rotate(-12deg);
+}
+.nd-excel-shell .sat-tile::after {
+  top: -10%; bottom: -10%;
+  left: 62%;
+  width: 4px;
+  transform: rotate(8deg);
+}
+.nd-excel-shell .sat-meta {
+  position: absolute;
+  top: 8px; left: 8px;
+  background: rgba(8,8,8,.7);
+  backdrop-filter: blur(4px);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 7px;
+  font-size: 9px;
+  color: var(--fg-dim);
+  font-family: var(--font-mono);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  display: flex; align-items: center; gap: 5px;
+}
+.nd-excel-shell .sat-meta i { font-size: 10px; color: var(--accent); }
+.nd-excel-shell .sat-zoom {
+  position: absolute;
+  bottom: 8px; right: 8px;
+  display: flex;
+  background: rgba(8,8,8,.75);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.nd-excel-shell .sat-zoom button {
+  width: 22px; height: 22px;
+  background: transparent;
+  border: none;
+  color: var(--fg-dim);
+  cursor: pointer;
+  border-right: 1px solid var(--border);
+  font-size: 12px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.nd-excel-shell .sat-zoom button:last-child { border-right: none; }
+.nd-excel-shell .sat-zoom button:hover { color: var(--fg); background: rgba(255,255,255,.06); }
+.nd-excel-shell .sat-pin {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -100%);
+  display: flex; flex-direction: column; align-items: center; gap: 0;
+  pointer-events: none;
+}
+.nd-excel-shell .sat-pin-mark {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid #0a0a0a;
+  box-shadow:
+    0 0 0 2px rgba(45,162,0,.55),
+    0 4px 12px rgba(0,0,0,.6);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff;
+  font-size: 11px;
+}
+.nd-excel-shell .sat-pin-stem {
+  width: 1px;
+  height: 14px;
+  background: linear-gradient(180deg, var(--accent), rgba(45,162,0,.1));
+}
+.nd-excel-shell .sat-pulse {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 60px; height: 60px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  transform: translate(-50%, -150%);
+  animation: pulse 2.4s ease-out infinite;
+  opacity: 0;
+  pointer-events: none;
+}
+@keyframes pulse {
+  0% { transform: translate(-50%, -150%) scale(.3); opacity: .7; }
+  100% { transform: translate(-50%, -150%) scale(1.4); opacity: 0; }
+}
+.nd-excel-shell .sat-foot {
+  position: absolute;
+  bottom: 8px; left: 8px;
+  background: rgba(8,8,8,.75);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 9px;
+  color: var(--fg-dim);
+  display: flex; align-items: center; gap: 5px;
+}
+.nd-excel-shell .sat-foot b { color: var(--fg); font-weight: 600; font-family: var(--font-mono); }
+
+.nd-excel-shell .xi-data {
+  padding: 14px 16px;
+  border-right: 1px solid var(--border-faint);
+  overflow: hidden;
+}
+.nd-excel-shell .xi-narr {
+  padding: 14px 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+}
+/* Force the briefing panel to inherit its height from the property-data
+   column (so it never grows the row). The .narr-scroll inside fills
+   the remaining space and scrolls. */
+.nd-excel-shell .xi-narr > .sec-label { flex-shrink: 0; }
+
+.nd-excel-shell .sec-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-faint);
+  margin-bottom: 8px;
+  margin-top: 12px;
+  display: flex; align-items: center; gap: 6px;
+}
+.nd-excel-shell .sec-label:first-child { margin-top: 0; }
+.nd-excel-shell .sec-label.accent { color: var(--accent); }
+.nd-excel-shell .sec-label.accent i { color: var(--accent); }
+.nd-excel-shell .sec-label i { font-size: 11px; color: var(--fg-muted); }
+
+.nd-excel-shell .fact-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px 18px; }
+.nd-excel-shell .fact { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.nd-excel-shell .fl {
+  font-size: 9px;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  font-weight: 600;
+}
+.nd-excel-shell .fv { font-size: 12px; color: var(--fg); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: var(--font-mono); }
+.nd-excel-shell .fv.hi { color: var(--accent); }
+.nd-excel-shell .fv.text { font-family: inherit; }
+
+/* Agent briefing: scrollable bullets + always-visible prose.
+   Scrollbar is invisible; an animated chevron at the bottom hints
+   "more below". 8px top/bottom fade indicates scroll continues.
+   Absolute positioning keeps the panel from growing the grid row —
+   it inherits its height from the property-data column. */
+.nd-excel-shell .narr-scroll {
+  position: absolute;
+  top: 44px;       /* below the sec-label */
+  bottom: 14px;
+  left: 16px;
+  right: 16px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+  /* Top + bottom 8px fade (mask-image protection gradient) */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 8px, #000 calc(100% - 8px), transparent 100%);
+          mask-image: linear-gradient(to bottom, transparent 0, #000 8px, #000 calc(100% - 8px), transparent 100%);
+}
+/* Hide the scrollbar across browsers */
+.nd-excel-shell .narr-scroll { scrollbar-width: none; }
+.nd-excel-shell .narr-scroll::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+.nd-excel-shell .narr-bullets {
+  display: flex; flex-direction: column;
+  gap: 7px;
+  margin-bottom: 12px;
+}
+.nd-excel-shell .narr-bullet {
+  display: grid;
+  grid-template-columns: 14px 1fr;
+  gap: 7px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--fg-dim);
+}
+.nd-excel-shell .narr-bullet i {
+  font-size: 11px;
+  color: var(--accent);
+  margin-top: 4px;
+}
+.nd-excel-shell .narr-bullet b { color: var(--fg); font-weight: 600; }
+.nd-excel-shell .narr-prose {
+  font-size: 11.5px;
+  color: var(--fg-dim);
+  line-height: 1.7;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-faint);
+}
+
+/* "More below" chevron — appears when the scrollable area has hidden
+   content and the user hasn't scrolled to the bottom. Clicking it
+   nudges the scroll down. Kept discreet but visible. */
+.nd-excel-shell .narr-more {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--surf-hi);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  transition: opacity .18s var(--ease), transform .18s var(--ease), background .12s;
+  animation: narrMoreBob 1.6s ease-in-out infinite;
+  z-index: 4;
+}
+.nd-excel-shell .narr-more i { font-size: 13px; color: var(--accent); }
+.nd-excel-shell .narr-more:hover { background: var(--accent); border-color: var(--accent); }
+.nd-excel-shell .narr-more:hover i { color: #fff; }
+.nd-excel-shell .narr-more.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(6px);
+  animation: none !important;
+  visibility: hidden;
+}
+@keyframes narrMoreBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(3px); }
+}
+
+/* Action strip */
+.nd-excel-shell .xi-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border-faint);
+  background: var(--panel-bg);
+}
+.nd-excel-shell .aico {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--fg-muted);
+  cursor: pointer;
+  font-size: 14px;
+  width: 32px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .12s;
+  flex-shrink: 0;
+  font-family: inherit;
+}
+.nd-excel-shell .aico:hover.up { color: var(--accent); border-color: var(--accent); background: var(--accent-tint); }
+.nd-excel-shell .aico:hover.dn { color: var(--danger); border-color: var(--danger); background: var(--danger-tint); }
+.nd-excel-shell .aico:hover.sv { color: var(--warn); border-color: var(--warn); background: var(--warn-tint); }
+.nd-excel-shell .aico:hover.hot { color: #f97316; border-color: #f97316; background: rgba(249,115,22,.08); }
+.nd-excel-shell .aico:hover.vd { color: #a78bfa; border-color: #a78bfa; background: rgba(167,139,250,.08); }
+.nd-excel-shell .aico:hover.mp { color: var(--info); border-color: var(--info); background: rgba(56,189,248,.08); }
+.nd-excel-shell .aico:hover.sh { color: var(--fg); border-color: var(--border-strong); }
+.nd-excel-shell .aico.on.up { color: var(--accent); border-color: var(--accent); background: var(--accent-tint); }
+.nd-excel-shell .aico.on.sv { color: var(--warn); border-color: var(--warn); background: var(--warn-tint); }
+.nd-excel-shell .aico.on.hot { color: #f97316; border-color: #f97316; background: rgba(249,115,22,.08); }
+.nd-excel-shell .act-divider { width: 1px; height: 20px; background: var(--border); margin: 0 6px; flex-shrink: 0; }
+.nd-excel-shell .act-space { flex: 1; }
+
+.nd-excel-shell .act-btn {
+  height: 30px;
+  padding: 0 14px;
+  border-radius: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  font-family: inherit;
+  transition: all .12s;
+}
+.nd-excel-shell .act-btn i { font-size: 13px; }
+.nd-excel-shell .act-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.nd-excel-shell .act-btn.primary:hover { background: var(--accent-hi); border-color: var(--accent-hi); }
+.nd-excel-shell .act-btn.secondary { background: transparent; color: var(--accent); border-color: var(--accent); }
+.nd-excel-shell .act-btn.secondary:hover { background: var(--accent-tint); }
+
+/* ============================================
+   CHAT DRAWER
+   ============================================ */
+
+.nd-excel-shell .chat-drawer {
+  position: absolute;
+  top: 0; right: 0;
+  width: 340px;
+  height: 100%;
+  background: var(--panel-bg);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  z-index: 50;
+  transform: translateX(100%);
+  transition: transform .22s var(--ease);
+}
+.nd-excel-shell .chat-drawer.open { transform: translateX(0); }
+.nd-excel-shell .dh2 {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.nd-excel-shell .dh2-info { min-width: 0; }
+.nd-excel-shell .dtitle {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.nd-excel-shell .ddeal {
+  font-size: 13px;
+  color: var(--fg);
+  font-weight: 600;
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 240px;
+}
+.nd-excel-shell .dclose {
+  background: var(--surf);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--fg-muted);
+  cursor: pointer;
+  font-size: 14px;
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: all .12s;
+}
+.nd-excel-shell .dclose:hover { background: var(--surf-hi); color: var(--fg); border-color: var(--border-strong); }
+.nd-excel-shell .dctx {
+  padding: 6px 16px;
+  background: var(--app-bg);
+  border-bottom: 1px solid var(--border-faint);
+  font-size: 10px;
+  color: var(--fg-faint);
+  display: flex; align-items: center; gap: 5px;
+  flex-shrink: 0;
+}
+.nd-excel-shell .dctx i { font-size: 11px; }
+.nd-excel-shell .dmsgs {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.nd-excel-shell .dmsgs::-webkit-scrollbar { width: 3px; }
+.nd-excel-shell .dmsgs::-webkit-scrollbar-thumb { background: var(--border); }
+.nd-excel-shell .msg {
+  max-width: 88%;
+  padding: 9px 11px;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.nd-excel-shell .msg.u { background: rgba(45,162,0,.12); color: #c6f7ad; align-self: flex-end; border: 1px solid rgba(45,162,0,.3); }
+.nd-excel-shell .msg.a { background: var(--surf); color: var(--fg-dim); align-self: flex-start; border: 1px solid var(--border); }
+.nd-excel-shell .dinp {
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 7px;
+  flex-shrink: 0;
+}
+.nd-excel-shell .dinp input {
+  flex: 1;
+  background: var(--surf);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 7px 10px;
+  color: var(--fg);
+  font-size: 11.5px;
+  outline: none;
+  font-family: inherit;
+}
+.nd-excel-shell .dinp input:focus { border-color: var(--accent); }
+.nd-excel-shell .dsend {
+  background: var(--accent);
+  border: none;
+  border-radius: 5px;
+  padding: 0 11px;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.nd-excel-shell .dsend:hover { background: var(--accent-hi); }
+
+/* ============================================
+   BOTTOM TAB BAR — Excel sheet-tab style
+   ============================================ */
+
+.nd-excel-shell .tabbar {
+  background: var(--app-bg);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  height: var(--tabbar-h);
+  display: flex;
+  align-items: stretch;
+  padding: 0 4px;
+  gap: 1px;
+  position: relative;
+}
+
+/* hamburger / nav-arrow buttons */
+.nd-excel-shell .tb-icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--fg-muted);
+  width: 30px;
+  cursor: pointer;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  align-self: center;
+  height: 28px;
+  border-radius: 4px;
+  transition: all .12s;
+}
+.nd-excel-shell .tb-icon-btn:hover { color: var(--fg); background: var(--surf); }
+.nd-excel-shell .tb-icon-btn svg.lucide { width: 16px; height: 16px; stroke-width: 2; }
+.nd-excel-shell .tb-icon-btn.today {
+  width: auto;
+  padding: 0 10px;
+  color: var(--accent);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.nd-excel-shell .tb-icon-btn.today:hover { background: var(--accent-tint); }
+
+/* Excel sheet tab */
+.nd-excel-shell .sheet-tab {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 1px;
+  height: 100%;
+  min-width: 96px;
+  padding: 0 14px;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 5px 5px 0 0;
+  margin-top: 4px;
+  position: relative;
+  font-family: inherit;
+  color: var(--fg-muted);
+  transition: background .12s, color .12s, border-color .12s;
+  white-space: nowrap;
+}
+.nd-excel-shell .sheet-tab:hover:not(.active) { color: var(--fg); background: rgba(255,255,255,.03); }
+.nd-excel-shell .sheet-tab.active {
+  background: var(--surf);
+  border-color: var(--gridline-hi);
+  color: var(--fg);
+  margin-top: 0;
+  padding-top: 4px;
+}
+.nd-excel-shell .sheet-tab.active::after {
+  /* extend down 1px to cover the tabbar's top border, like Excel */
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 2px;
+  background: var(--surf);
+}
+.nd-excel-shell .sheet-tab.active::before {
+  /* accent top border on active */
+  content: '';
+  position: absolute;
+  left: -1px; right: -1px; top: -1px;
+  height: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(45,162,0,.45);
+}
+.nd-excel-shell .sheet-tab.is-today .sheet-tab-day { color: var(--warn); }
+.nd-excel-shell .sheet-tab.active.is-today .sheet-tab-day { color: var(--accent); }
+
+.nd-excel-shell .sheet-tab-top {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -.005em;
+}
+.nd-excel-shell .sheet-tab-day { color: var(--fg-dim); }
+.nd-excel-shell .sheet-tab.active .sheet-tab-day { color: var(--fg); }
+.nd-excel-shell .sheet-tab-date {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-muted);
+  font-weight: 500;
+}
+.nd-excel-shell .sheet-tab.active .sheet-tab-date { color: var(--fg); }
+
+.nd-excel-shell .sheet-tab-bot {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 9px;
+  color: var(--fg-faint);
+  letter-spacing: .04em;
+  margin-top: 2px;
+}
+.nd-excel-shell .sheet-tab-count {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--fg-muted);
+}
+.nd-excel-shell .sheet-tab.active .sheet-tab-count { color: var(--accent); }
+.nd-excel-shell .sheet-tab.has-deals:not(.active) .sheet-tab-count { color: var(--fg-dim); }
+
+.nd-excel-shell .sheet-tab-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--border);
+  display: inline-block;
+}
+.nd-excel-shell .sheet-tab.has-deals .sheet-tab-dot { background: var(--accent); box-shadow: 0 0 4px var(--accent); }
+.nd-excel-shell .sheet-tab.is-today .sheet-tab-dot { background: var(--warn); box-shadow: 0 0 4px var(--warn); }
+
+.nd-excel-shell .tabbar-spacer { flex: 1; }
+.nd-excel-shell .tabbar-meta {
+  align-self: center;
+  display: inline-flex;
+  gap: 18px;
+  padding-right: 12px;
+  font-size: 10px;
+  color: var(--fg-muted);
+  letter-spacing: .04em;
+}
+.nd-excel-shell .tabbar-meta b { color: var(--fg); font-family: var(--font-mono); font-weight: 600; margin-left: 4px; }
+.nd-excel-shell .tabbar-meta .today-pill {
+  color: var(--accent);
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+/* Hamburger popover */
+.nd-excel-shell .cal-pop {
+  position: absolute;
+  bottom: calc(var(--tabbar-h) + 6px);
+  left: 8px;
+  background: var(--panel-bg);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  box-shadow: 0 16px 36px rgba(0,0,0,.7);
+  z-index: 200;
+  width: 480px;
+  overflow: hidden;
+  display: none;
+}
+.nd-excel-shell .cal-pop.open { display: block; }
+.nd-excel-shell .cal-pop-hd {
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid var(--border-faint);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.nd-excel-shell .cal-pop-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--fg-muted); }
+.nd-excel-shell .cal-pop-close {
+  background: var(--surf);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--fg-muted);
+  cursor: pointer;
+  width: 24px; height: 24px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.nd-excel-shell .cal-pop-close:hover { color: var(--fg); }
+
+.nd-excel-shell .cal-months {
+  display: flex;
+  gap: 4px;
+  padding: 10px 14px 8px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--border-faint);
+}
+.nd-excel-shell .cal-month {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--fg-dim);
+  border-radius: 4px;
+  padding: 5px 10px;
+  font-size: 10.5px;
+  cursor: pointer;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  transition: all .12s;
+}
+.nd-excel-shell .cal-month:hover { border-color: var(--border-strong); color: var(--fg); }
+.nd-excel-shell .cal-month.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+.nd-excel-shell .cal-month-count { font-family: var(--font-mono); font-size: 9.5px; opacity: .75; }
+
+.nd-excel-shell .cal-weeks {
+  padding: 8px 8px 10px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+.nd-excel-shell .cal-week-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 14px;
+  padding: 9px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background .1s;
+}
+.nd-excel-shell .cal-week-row:hover { background: var(--surf); }
+.nd-excel-shell .cal-week-row.active { background: var(--accent-tint); }
+.nd-excel-shell .cal-week-label { font-size: 12px; color: var(--fg); font-weight: 500; }
+.nd-excel-shell .cal-week-range { font-size: 10.5px; color: var(--fg-muted); font-family: var(--font-mono); }
+.nd-excel-shell .cal-week-count { font-size: 10.5px; color: var(--accent); font-family: var(--font-mono); font-weight: 600; min-width: 36px; text-align: right; }
+.nd-excel-shell .cal-week-count.zero { color: var(--fg-faint); font-weight: 400; }
+
+/* Lucide icon defaults — replaces the Tabler webfont path */
+.nd-excel-shell i.ti { display: inline-flex; align-items: center; justify-content: center; line-height: 1; }
+svg.lucide,
+.nd-excel-shell i.ti > svg {
+  width: 1.05em;
+  height: 1.05em;
+  stroke-width: 1.75;
+  vertical-align: -0.15em;
+  flex-shrink: 0;
+}
+.nd-excel-shell .aico svg.lucide, .nd-excel-shell .qrow-trig svg.lucide { width: 14px; height: 14px; }
+.nd-excel-shell .brand-mark svg.lucide { width: 16px; height: 16px; stroke-width: 2; }
+.nd-excel-shell .tab-arrow svg.lucide { width: 12px; height: 12px; }
+
+/* ============================================
+   FOCUS / KEYBOARD HINTS
+   ============================================ */
+.nd-excel-shell *:focus-visible { outline: 2px solid rgba(45,162,0,.6); outline-offset: 1px; }
+.nd-excel-shell button:focus-visible, .nd-excel-shell select:focus-visible, .nd-excel-shell input:focus-visible { outline-offset: 0; }
+
+/* Feed empty (no data + no synthesized stubs) state lives INSIDE the table now */
+.nd-excel-shell tr.feed-empty-row td { background: var(--surf); }
+
+.nd-excel-shell .feed-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px 24px;
+  color: var(--fg-muted);
+  text-align: center;
+}
+.nd-excel-shell .feed-empty i { font-size: 36px; color: var(--fg-ghost); }
+.nd-excel-shell .feed-empty h3 { font-size: 14px; color: var(--fg-dim); font-weight: 600; }
+.nd-excel-shell .feed-empty p { font-size: 12px; color: var(--fg-muted); max-width: 340px; line-height: 1.5; }
+
+/* ring score */
+.nd-excel-shell .score-wrap { display: inline-flex; align-items: center; gap: 5px; }
+
+/* ============================================
+   SHEET SELECTION (Google Sheets-style)
+   ============================================ */
+
+/* Overlay container — sits inside #tw, scrolls with content.
+   pointer-events:none so cells underneath stay clickable. */
+.nd-excel-shell .sel-overlay {
+  position: absolute;
+  top: 0; left: 0;
+  pointer-events: none;
+  z-index: 14;
+}
+
+/* Selection rectangle — 1px accent border, no fill (fill lives on the cells).
+   box-sizing: border-box keeps the border inside the rect so it traces the cells. */
+.nd-excel-shell .sel-rect {
+  position: absolute;
+  box-sizing: border-box;
+  border: 1px solid var(--accent);
+  background: transparent;
+  pointer-events: none;
+}
+.nd-excel-shell .sel-rect.is-extra {
+  border-style: dashed;
+  opacity: 0.85;
+}
+
+/* Single-cell selection — thicker 2px border like Sheets' active cell. */
+.nd-excel-shell .sel-rect.is-cell { border-width: 2px; }
+
+/* Cells inside a selection get a subtle accent wash. Internal gridlines
+   stay visible (Sheets-exact). The 1px green outer rectangle (.sel-rect)
+   handles the selection boundary. */
+.nd-excel-shell td.sel-in {
+  background: rgba(45, 162, 0, 0.10) !important;
+}
+/* The single anchor cell (single-cell mode) keeps its native bg so it
+   reads as the active cursor cell, like Sheets does. */
+.nd-excel-shell td.sel-anchor {
+  background: var(--surf) !important;
+}
+
+/* When the row gutter is part of an active selection, tint the
+   background a little stronger than the cells so the row label still
+   pops. Text color + weight stay exactly normal (Sheets-exact).
+   Layered gradient over an opaque base keeps the cell 100% opaque so
+   nothing bleeds through on horizontal scroll. */
+.nd-excel-shell td.gutter.gutter-on {
+  background:
+    linear-gradient(rgba(45, 162, 0, 0.22), rgba(45, 162, 0, 0.22)),
+    var(--panel-bg-2) !important;
+}
+
+/* When a column header is part of a selection, only the background
+   tints. Letter (A B C…) and column-name text stay 100% normal.
+   Opaque base so body rows hide behind it on vertical scroll. */
+.nd-excel-shell #grid thead th.col-on {
+  background:
+    linear-gradient(rgba(45, 162, 0, 0.22), rgba(45, 162, 0, 0.22)),
+    var(--panel-bg-2) !important;
+}
+
+/* Hover must NOT override the selection tint — Sheets keeps the
+   selection wash visible regardless of mouse position. */
+tr.dr:hover td.sel-in,
+.nd-excel-shell tr.empty-row:hover td.sel-in {
+  background: rgba(45, 162, 0, 0.10) !important;
+}
+tr.dr:hover td.gutter.gutter-on,
+.nd-excel-shell tr.empty-row:hover td.gutter.gutter-on {
+  background:
+    linear-gradient(rgba(45, 162, 0, 0.22), rgba(45, 162, 0, 0.22)),
+    var(--panel-bg-2) !important;
+}
+
+/* Top-left corner highlight when select-all is active. Opaque base
+   so the corner stays solid as both gutter and thead pin to it. */
+.nd-excel-shell th.gutter-corner.corner-on {
+  background:
+    linear-gradient(rgba(45, 162, 0, 0.28), rgba(45, 162, 0, 0.28)),
+    var(--panel-bg-2) !important;
+}
+
+/* ============================================
+   HOVER-ROW / HOVER-COL CROSSHAIR
+   When mousing over a cell, faintly tint that row's gutter number
+   and that column's header letter so the user can always find the
+   coordinate (Sheets/Excel behavior).
+   ============================================ */
+.nd-excel-shell td.gutter.gutter-hover:not(.gutter-on) {
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.06)),
+    var(--panel-bg-2);
+}
+.nd-excel-shell #grid thead th.col-hover:not(.col-on) {
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.06)),
+    var(--panel-bg-2);
+}
+
+/* ============================================
+   NUMERIC CELLS \u2014 right-align (Sheets default for numbers)
+   Score keeps its left-aligned ring; psf / sf / hold right-align.
+   ============================================ */
+td[data-col="psf"],
+td[data-col="sf"],
+.nd-excel-shell td[data-col="hold"] { text-align: right; }
+td[data-col="psf"]   .cell-edit,
+td[data-col="sf"]    .cell-edit,
+.nd-excel-shell td[data-col="hold"]  .cell-edit { text-align: right; }
+td[data-col="psf"]   .cell-val,
+td[data-col="sf"]    .cell-val,
+.nd-excel-shell td[data-col="hold"]  .cell-val { text-align: right; display: inline-block; width: 100%; }
+
+/* ============================================
+   SORT INDICATOR \u2014 triangle direction on column header
+   .tri \u2014 default down (descending fallback)
+   .tri.asc \u2014 up arrow (\u25b2)
+   .tri.desc \u2014 down arrow (\u25bc)
+   ============================================ */
+.nd-excel-shell th .tri.asc {
+  border-top: none;
+  border-bottom: 5px solid var(--fg-ghost);
+}
+.nd-excel-shell th:hover .tri.asc { border-bottom-color: var(--fg-dim); }
+.nd-excel-shell th .tri.asc.on { border-bottom-color: var(--accent); }
+
+/* ============================================
+   NAME BOX \u2014 cell address indicator in the top-left corner
+   ============================================ */
+.nd-excel-shell .cell-addr-box {
+  display: block;
+  width: 100%;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--fg-dim);
+  letter-spacing: 0;
+  white-space: nowrap;
+  overflow: visible;
+  padding: 0 2px;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* While the user is mid-drag, suppress text selection so highlighting works. */
+.nd-excel-shell #tw.is-selecting, .nd-excel-shell #tw.is-selecting * { user-select: none; -webkit-user-select: none; }
+
+/* ============================================
+   COLLAPSED SIDEBAR — sub-element rules
+   Applied when .app has `.sidebar-collapsed` class.
+   All icons sit at a uniform 20px in plain centered slots —
+   no tiles, no extra chrome. Thin separators divide sections.
+   ============================================ */
+
+/* Brand: hide wordmark, center logo */
+.nd-excel-shell .app.sidebar-collapsed .sidebar .brand { padding: 0; justify-content: center; gap: 0; }
+.nd-excel-shell .app.sidebar-collapsed .sidebar .brand-name { display: none; }
+
+/* Nav items: center icons, hide labels, uniform 20px icon */
+.nd-excel-shell .app.sidebar-collapsed .sidebar .nav-item {
+  justify-content: center;
+  padding: 9px 0;
+  margin: 2px 0;
+  border-radius: 0;
+  position: relative;
+}
+.nd-excel-shell .app.sidebar-collapsed .sidebar .nav-item > span:not(.badge) { display: none; }
+.nd-excel-shell .app.sidebar-collapsed .sidebar .nav-item i { margin: 0; font-size: 16px; }
+
+/* 99+ pill: small red circular badge with the count, overlapping the
+   icon's top-right corner like an iPhone notification dot. Anchored
+   to the row's horizontal center + a small nudge right so it always
+   sits exactly on the icon's top-right corner regardless of sidebar width. */
+.nd-excel-shell .app.sidebar-collapsed .sidebar .nav-item .badge {
+  position: absolute;
+  top: 1px;
+  left: calc(50% + 2px);
+  right: auto;
+  width: 14px;
+  height: 14px;
+  min-width: 14px;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--danger);
+  color: #fff;
+  font-size: 7px;
+  font-weight: 700;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  letter-spacing: -0.05em;
+  border: 1.5px solid var(--panel-bg);
+}
+
+/* Stat cards: bare 20px icons, no tile, no number, no label, no border */
+.nd-excel-shell .app.sidebar-collapsed .sidebar .sb-stats {
+  grid-template-columns: 1fr;
+  gap: 0;
+  margin: 0;
+  padding: 10px 0 6px;
+  margin-top: 10px;
+  border-top: 1px solid var(--border-faint);
+}
+.nd-excel-shell .app.sidebar-collapsed .sidebar .sb-stat {
+  padding: 9px 0;
+  border: none;
+  background: transparent;
+  display: flex;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 0;
+  transition: background .12s;
+}
+.nd-excel-shell .app.sidebar-collapsed .sidebar .sb-stat:hover { background: var(--surf); }
+.app.sidebar-collapsed .sidebar .sb-stat-num,
+.nd-excel-shell .app.sidebar-collapsed .sidebar .sb-stat-lbl { display: none; }
+.nd-excel-shell .app.sidebar-collapsed .sidebar .sb-stat-head {
+  width: auto;
+  height: auto;
+  background: transparent;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nd-excel-shell .app.sidebar-collapsed .sidebar .sb-stat-ico { font-size: 16px; opacity: 1; }
+
+/* Buy Boxes: hidden entirely when collapsed */
+.nd-excel-shell .app.sidebar-collapsed .sidebar .sb-buyboxes { display: none; }
+
+/* Foot (Account / Settings): plain 20px icons, separated by line */
+.nd-excel-shell .app.sidebar-collapsed .sidebar .sb-foot {
+  margin-top: 10px;
+  padding: 10px 0 56px;
+  border-top: 1px solid var(--border-faint);
+}
+
+/* Sidebar internals don't need horizontal overflow when collapsed */
+.nd-excel-shell .app.sidebar-collapsed .sidebar { overflow: visible; }
+
+/* Force every Lucide SVG inside the collapsed sidebar to the same 16px box. */
+.app.sidebar-collapsed .sidebar .nav-item svg.lucide,
+.app.sidebar-collapsed .sidebar .sb-stat-ico.lucide,
+.app.sidebar-collapsed .sidebar .sb-stat-ico svg.lucide,
+.nd-excel-shell .app.sidebar-collapsed .sidebar .sb-foot svg.lucide {
+  width: 16px;
+  height: 16px;
+  stroke-width: 1.75;
+}
+.nd-excel-shell .app.sidebar-collapsed .sidebar .brand-mark { width: 26px; height: 26px; }
+.nd-excel-shell .app.sidebar-collapsed .sidebar .brand-mark svg.lucide { width: 13px; height: 13px; }
+
+/* ============================================
+   SIDEBAR DESIGN-STYLE VARIANTS  (Style A is default; no override needed)
+   ============================================ */
+
+/* Style B — Pill-style active.
+   The active nav row gets a rounded accent-green pill that wraps the icon. */
+.nd-excel-shell .app.sidebar-collapsed .sidebar[data-style="B"] .nav-item.active {
+  background: var(--accent);
+  color: #fff;
+  border-radius: 8px;
+  margin: 2px 14px;
+}
+.nd-excel-shell .app.sidebar-collapsed .sidebar[data-style="B"] .nav-item.active i { color: #fff; }
+.nd-excel-shell .app.sidebar-collapsed .sidebar[data-style="B"] .nav-item.active .badge {
+  border-color: var(--accent);
+}
+/* Expanded (Style B still applies — pill wraps icon + label) */
+.nd-excel-shell .sidebar[data-style="B"] .nav-item.active {
+  background: var(--accent-tint);
+  border-left: 0;
+}
+
+/* Style C — Side accent bar.
+   2px vertical accent bar on the LEFT edge of the active row.
+   Applies to BOTH expanded and collapsed sidebars. Active icon
+   turns accent green to match the bar. */
+.nd-excel-shell .app.sidebar-collapsed .sidebar[data-style="C"] .nav-item.active {
+  background: transparent;
+  box-shadow: inset 2px 0 0 var(--accent);
+  border-radius: 0;
+  margin: 0;
+}
+.nd-excel-shell .sidebar[data-style="C"] .nav-item.active {
+  background: transparent;
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+/* ============================================
+   BRAND LOGO VARIANTS  (Logo 1 is default; no override needed)
+   ============================================ */
+
+/* Logo 2 — bold "N" monogram inside the green tile */
+.nd-excel-shell .sidebar[data-logo="2"] .brand-mark .brand-mono {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-size: 16px;
+  color: #fff;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+.nd-excel-shell .app.sidebar-collapsed .sidebar[data-logo="2"] .brand-mark .brand-mono { font-size: 13px; }
+
+/* Logo 3 — filled moon glyph (Lucide ti-moon, rendered with white stroke). */
+.nd-excel-shell .sidebar[data-logo="3"] .brand-mark svg.lucide { fill: #fff; }
+
+/* Logo 4 — solid green circle, no inner glyph */
+.nd-excel-shell .sidebar[data-logo="4"] .brand-mark {
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 1px rgba(45, 162, 0, .35), 0 6px 20px rgba(45, 162, 0, .22);
+}
+
+/* Logo 5 — outlined moon, transparent tile, accent stroke only */
+.nd-excel-shell .sidebar[data-logo="5"] .brand-mark {
+  background: transparent;
+  border: 1.5px solid var(--accent);
+  box-shadow: none;
+  color: var(--accent);
+}
+.nd-excel-shell .sidebar[data-logo="5"] .brand-mark svg.lucide { fill: none; stroke: var(--accent); }
+
+/* ============================================
+   TWEAKS PANEL  (floating bottom-right; opens via host edit-mode toggle)
+   ============================================ */
+.nd-excel-shell .sb-tweaks {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 280px;
+  background: var(--surf-hi-2, #1c1d1f);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  padding: 14px 14px 12px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+  z-index: 9000;
+  display: none;
+  font-family: var(--font-sans);
+  color: var(--fg);
+}
+.nd-excel-shell .sb-tweaks.open { display: block; }
+.nd-excel-shell .sbt-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.nd-excel-shell .sbt-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg);
+  letter-spacing: 0.01em;
+}
+.nd-excel-shell .sbt-close {
+  width: 22px; height: 22px;
+  background: transparent;
+  border: none;
+  color: var(--fg-muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.nd-excel-shell .sbt-close:hover { background: var(--surf); color: var(--fg); }
+.nd-excel-shell .sbt-section { margin-bottom: 10px; }
+.nd-excel-shell .sbt-section:last-of-type { margin-bottom: 6px; }
+.nd-excel-shell .sbt-label {
+  font-size: 9.5px;
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.nd-excel-shell .sbt-row { display: flex; gap: 4px; }
+.nd-excel-shell .sbt-opt {
+  flex: 1;
+  padding: 7px 0;
+  background: var(--surf);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--fg-dim);
+  font-size: 11.5px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .12s;
+}
+.nd-excel-shell .sbt-opt:hover { border-color: var(--accent); color: var(--accent); }
+.nd-excel-shell .sbt-opt.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.nd-excel-shell .sbt-sub {
+  font-size: 10.5px;
+  color: var(--fg-muted);
+  margin-top: 5px;
+  font-style: italic;
+}
+.nd-excel-shell .sbt-foot {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-faint);
+}
+.nd-excel-shell .sbt-hint {
+  font-size: 10px;
+  color: var(--fg-faint);
+}
+
+/* ============================================
+   RIGHT-CLICK CONTEXT MENU
+   ============================================ */
+.nd-excel-shell .ctx-menu {
+  position: fixed;
+  z-index: 9000;
+  background: var(--surf-hi-2, #1c1d1f);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  padding: 4px 0;
+  min-width: 220px;
+  box-shadow: 0 12px 36px rgba(0,0,0,.75);
+  font-size: 12px;
+  color: var(--fg);
+  user-select: none;
+}
+.nd-excel-shell .ctx-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+  color: var(--fg);
+}
+.nd-excel-shell .ctx-item:hover { background: rgba(45, 162, 0, 0.12); color: var(--accent); }
+.nd-excel-shell .ctx-item i { font-size: 14px; color: var(--fg-muted); width: 16px; text-align: center; }
+.nd-excel-shell .ctx-item:hover i { color: var(--accent); }
+.nd-excel-shell .ctx-item.danger { color: var(--danger, #ef4444); }
+.nd-excel-shell .ctx-item.danger:hover { background: rgba(239, 68, 68, 0.12); color: var(--danger, #ef4444); }
+.nd-excel-shell .ctx-item.danger:hover i { color: var(--danger, #ef4444); }
+.nd-excel-shell .ctx-item.disabled { opacity: 0.4; cursor: not-allowed; }
+.nd-excel-shell .ctx-item.disabled:hover { background: transparent; color: var(--fg-muted); }
+.nd-excel-shell .ctx-divider { height: 1px; background: var(--border); margin: 4px 0; }
+.nd-excel-shell .ctx-kbd {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--fg-muted);
+  background: var(--surf);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 5px;
+}
+
+/* ============================================
+   CONFIRMATION MODAL (edit deal-row data)
+   ============================================ */
+.nd-excel-shell .cf-back {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 9500;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+.nd-excel-shell .cf-back.open { display: flex; }
+.nd-excel-shell .cf-box {
+  background: var(--surf-hi-2, #1c1d1f);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  padding: 22px 24px 18px;
+  max-width: 460px;
+  width: 92%;
+  box-shadow: 0 20px 60px rgba(0,0,0,.75);
+}
+.nd-excel-shell .cf-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fg);
+  margin: 0 0 6px;
+}
+.nd-excel-shell .cf-body {
+  font-size: 12.5px;
+  color: var(--fg-dim);
+  line-height: 1.55;
+  margin: 0 0 16px;
+}
+.nd-excel-shell .cf-body code {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  background: var(--surf);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 5px;
+  color: var(--fg);
+}
+.nd-excel-shell .cf-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.nd-excel-shell .cf-row label.cf-remember {
+  margin-right: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--fg-muted);
+  cursor: pointer;
+}
+.nd-excel-shell .cf-row label.cf-remember input { accent-color: var(--accent); }
+.nd-excel-shell .cf-btn {
+  border: 1px solid var(--border-strong);
+  border-radius: 5px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  background: var(--surf);
+  color: var(--fg);
+}
+.nd-excel-shell .cf-btn:hover { border-color: var(--accent); color: var(--accent); }
+.nd-excel-shell .cf-btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+.nd-excel-shell .cf-btn.primary:hover { background: var(--accent-hi, #36c200); color: #fff; }
+.nd-excel-shell .cf-btn.danger {
+  background: var(--danger, #ef4444);
+  border-color: var(--danger, #ef4444);
+  color: #fff;
+}
+.nd-excel-shell .cf-btn.danger:hover { background: #d83a3a; color: #fff; }

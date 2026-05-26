@@ -183,6 +183,7 @@ export function BuyBoxWizard({ mode, initialData, onSuccess, onCancel }) {
     if (!form.assets || form.assets.length === 0) {
       clearTimeout(debounceRef.current);
       if (abortRef.current) abortRef.current.abort();
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPreviewState('idle');
       setErrorKind(null);
       setForm(f => (f.matchCount === null ? f : { ...f, matchCount: null }));
@@ -225,6 +226,9 @@ export function BuyBoxWizard({ mode, initialData, onSuccess, onCancel }) {
       clearTimeout(debounceRef.current);
       if (abortRef.current) abortRef.current.abort();
     };
+    // filterKey is a stable hash of all preview-relevant form fields;
+    // depending on form directly would re-fire on unrelated edits.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterKey]);
 
   useEffect(() => {

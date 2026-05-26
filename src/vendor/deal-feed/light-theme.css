@@ -1,0 +1,512 @@
+/* ============================================
+   LIGHT THEME — scoped to .sheet-light
+   Applies only inside <section class="feed sheet-light">
+   Left nav + top status header are untouched.
+   The right-side chat drawer stays dark via an
+   inner override at the bottom of this file.
+   ============================================ */
+
+.nd-excel-shell .sheet-light {
+  /* Surfaces */
+  --app-bg:      #ffffff;
+  --panel-bg:    #f8f9fa;  /* statsbar */
+  --panel-bg-2:  #f1f3f4;  /* toolbar + column headers */
+  --surf:        #ffffff;  /* cell background */
+  --surf-hi:     #f6f8fa;  /* hover */
+  --surf-hi-2:   #ffffff;  /* popovers / modals */
+
+  /* Borders + gridlines */
+  --border:        #d6d9de;
+  --border-faint:  #e6e8eb;
+  --border-strong: #b0b4ba;
+  --gridline:      #e3e5e8;
+  --gridline-hi:   #c8ccd2;
+
+  /* Text */
+  --fg:        #1f1f1f;
+  --fg-dim:    #3c4043;
+  --fg-muted:  #5f6368;
+  --fg-faint:  #80868b;
+  --fg-ghost:  #bcc0c4;
+  --fg-inverse:#ffffff;
+
+  /* Selection wash (used when user clicks a row outside the green selection) */
+  --row-active:      rgba(45, 162, 0, 0.10);
+  --row-active-edge: rgba(45, 162, 0, 0.55);
+  --cell-edit:       rgba(45, 162, 0, 0.18);
+
+  /* Accent tint slightly stronger so it reads on white */
+  --accent-tint: rgba(45, 162, 0, 0.10);
+
+  background: var(--app-bg);
+  color: var(--fg);
+}
+
+/* ---- Hardcoded dark colors used by the existing CSS:
+        re-point each to light values inside the sheet ---- */
+
+.nd-excel-shell .sheet-light tr.dr:hover td { background: #f1f4f6 !important; }
+.nd-excel-shell .sheet-light tr.empty-row td { background: #ffffff; color: var(--fg-muted); }
+.nd-excel-shell .sheet-light tr.empty-row:hover td { background: #f8fafa !important; }
+.nd-excel-shell .sheet-light .gr td { background: #f1f3f4 !important; }
+.nd-excel-shell .sheet-light .gr:hover td { background: #e8eaed !important; }
+.nd-excel-shell .sheet-light tr.xr td { background: #f8f9fa !important; border-bottom-color: var(--accent) !important; }
+
+/* Scrollbars on the sheet body */
+.nd-excel-shell .sheet-light .tw::-webkit-scrollbar-thumb { background: #c8ccd2 !important; }
+.nd-excel-shell .sheet-light .tw::-webkit-scrollbar-thumb:hover { background: #9ba0a6 !important; }
+
+/* Caret colors — make the blinking cursor pop on light bg using brand green */
+.sheet-light .cell-edit,
+.sheet-light .am[contenteditable],
+.sheet-light .pill[contenteditable],
+.sheet-light .cell-val[contenteditable],
+.nd-excel-shell .sheet-light .ni { caret-color: var(--accent); }
+
+/* Text hierarchy inside cells */
+.nd-excel-shell .sheet-light .cell-val { color: #5f6368; }
+.nd-excel-shell .sheet-light .cell-val.text { color: #1f1f1f; }
+.nd-excel-shell .sheet-light .cell-val.bold { color: #1f1f1f; font-weight: 600; }
+.nd-excel-shell .sheet-light .cell-val.mono { color: #3c4043; }
+.nd-excel-shell .sheet-light .am { color: #1f1f1f; font-weight: 600; }
+.nd-excel-shell .sheet-light .as { color: #5f6368; }
+.nd-excel-shell .sheet-light .ab { color: #80868b; font-style: italic; }
+
+/* Notes input */
+.nd-excel-shell .sheet-light .ni { background: transparent; color: #1f1f1f; border-color: transparent; }
+.nd-excel-shell .sheet-light .ni::placeholder { color: #9aa0a6; }
+.nd-excel-shell .sheet-light .ni:hover { border-color: #d6d9de; }
+.nd-excel-shell .sheet-light .ni:focus { background: #ffffff; color: #1f1f1f; border-color: var(--accent); }
+
+/* Stage select */
+.nd-excel-shell .sheet-light .stsel { background: #ffffff; color: #1f1f1f; border-color: #d6d9de; }
+.nd-excel-shell .sheet-light .stsel:focus { border-color: var(--accent); }
+
+/* ---- Top toolbar (chips + view toggle + sort) ---- */
+.nd-excel-shell .sheet-light .toolbar { background: var(--panel-bg-2); border-bottom: 1px solid var(--border); }
+.nd-excel-shell .sheet-light .chip { background: #ffffff; border-color: #d6d9de; color: #3c4043; }
+.nd-excel-shell .sheet-light .chip:hover:not(.active) { border-color: #5f6368; color: #1f1f1f; }
+.nd-excel-shell .sheet-light .chip.active { background: var(--accent); border-color: var(--accent); color: #ffffff; }
+.nd-excel-shell .sheet-light .tbtn { background: #ffffff; border-color: #d6d9de; color: #3c4043; }
+.nd-excel-shell .sheet-light .tbtn:hover { border-color: var(--accent); color: var(--accent); }
+.nd-excel-shell .sheet-light .tbtn.warn { background: var(--accent-tint); border-color: var(--accent); color: var(--accent); }
+.sheet-light .density-toggle,
+.nd-excel-shell .sheet-light .view-toggle { background: #ffffff; border: 1px solid #d6d9de; }
+.sheet-light .dbtn,
+.nd-excel-shell .sheet-light .vbtn { color: #5f6368; border-right-color: #d6d9de; }
+.sheet-light .dbtn:hover,
+.nd-excel-shell .sheet-light .vbtn:hover { color: #1f1f1f; background: #f1f3f4; }
+.nd-excel-shell .sheet-light .dbtn.active { background: #e8eaed; color: #1f1f1f; }
+.nd-excel-shell .sheet-light .vbtn.active { background: var(--accent); color: #ffffff; }
+.nd-excel-shell .sheet-light .sort-sel { background: #ffffff; color: #1f1f1f; border: 1px solid #d6d9de; }
+
+/* ---- Stats bar ---- */
+.nd-excel-shell .sheet-light .statsbar { background: var(--panel-bg); }
+.nd-excel-shell .sheet-light .sl { color: #5f6368; }
+.nd-excel-shell .sheet-light .sv { color: #1f1f1f; }
+.nd-excel-shell .sheet-light .sv.g { color: var(--accent); }
+.nd-excel-shell .sheet-light .sv.r { color: #c5221f; }
+.nd-excel-shell .sheet-light .sv.a { color: #b06000; }
+.nd-excel-shell .sheet-light .rc { color: #80868b; }
+.nd-excel-shell .sheet-light .sv-chip { color: #5f6368; border-color: #d6d9de; }
+.nd-excel-shell .sheet-light .sv-chip:hover { color: var(--accent); border-color: var(--accent); }
+
+/* ---- Filter bar ---- */
+.nd-excel-shell .sheet-light .fbar { background: #ffffff; border-bottom: 1px solid var(--border-faint); }
+.nd-excel-shell .sheet-light .ftag { background: #ffffff; border-color: #d6d9de; color: #3c4043; }
+.nd-excel-shell .sheet-light .ftag b { color: #1f1f1f; }
+
+/* ---- Table chrome ---- */
+.nd-excel-shell .sheet-light .feed-main { background: var(--surf); }
+
+/* Column letter row (A B C ...) */
+.nd-excel-shell .sheet-light tr.colhdr th { background: var(--panel-bg-2); color: #5f6368; border-bottom-color: var(--border); border-right-color: var(--gridline); }
+.nd-excel-shell .sheet-light tr.colhdr th.gutter-corner { background: var(--panel-bg-2); }
+
+/* Column name row (Score Address ...) */
+.nd-excel-shell .sheet-light thead tr:not(.colhdr) th { background: var(--panel-bg-2); color: #1f1f1f; border-bottom: 1px solid var(--border); border-right: 1px solid var(--gridline); }
+.nd-excel-shell .sheet-light th .tri { border-top-color: #9aa0a6; }
+.nd-excel-shell .sheet-light th:hover .tri { border-top-color: #1f1f1f; }
+.nd-excel-shell .sheet-light th .tri.on { border-top-color: var(--accent); }
+
+/* Row-number gutter cells */
+.nd-excel-shell .sheet-light td.gutter, .nd-excel-shell .sheet-light th.gutter { background: var(--panel-bg-2); color: #80868b; border-right: 1px solid var(--border); }
+.nd-excel-shell .sheet-light tr.dr td.gutter:hover { background: #e8eaed; color: #1f1f1f; }
+
+/* Body cells */
+.nd-excel-shell .sheet-light td { background: var(--surf); color: var(--fg); border-bottom: 1px solid var(--gridline); border-right: 1px solid var(--gridline); }
+.nd-excel-shell .sheet-light tr.dr td { color: #1f1f1f; }
+
+/* Empty-row placeholder cells */
+.nd-excel-shell .sheet-light tr.empty-row td.gutter { background: var(--panel-bg-2); color: #80868b; }
+
+/* Group/buy-box rows */
+.nd-excel-shell .sheet-light .gn { color: #1f1f1f; }
+.nd-excel-shell .sheet-light .ga { color: #5f6368; }
+.nd-excel-shell .sheet-light .gtog { color: #5f6368; }
+.nd-excel-shell .sheet-light .gsl { color: #5f6368; }
+.nd-excel-shell .sheet-light .gsv { color: #1f1f1f; }
+.nd-excel-shell .sheet-light .gsv.g { color: var(--accent); }
+.nd-excel-shell .sheet-light .gsv.p { color: #1e8e3e; }
+.nd-excel-shell .sheet-light .gsv.d { color: #80868b; }
+.nd-excel-shell .sheet-light .gstat-div { background: #d6d9de; }
+.nd-excel-shell .sheet-light .gdiv { background: #d6d9de; }
+
+/* Signal pills — keep tonal coding but darker on white */
+.nd-excel-shell .sheet-light .pill { border: 1px solid var(--border); }
+.nd-excel-shell .sheet-light .pill-r { background: rgba(217, 48, 37, 0.10); border-color: rgba(217, 48, 37, 0.30); color: #c5221f; }
+.nd-excel-shell .sheet-light .pill-a { background: rgba(232, 126, 0, 0.12); border-color: rgba(232, 126, 0, 0.32); color: #b06000; }
+.nd-excel-shell .sheet-light .pill-g { background: rgba(30, 142, 62, 0.12); border-color: rgba(30, 142, 62, 0.32); color: #1e8e3e; }
+.nd-excel-shell .sheet-light .pill-gray { background: #f1f3f4; border-color: #d6d9de; color: #3c4043; }
+
+/* Score ring background ring (the SVG track) - matches light bg */
+.nd-excel-shell .sheet-light .score-wrap svg circle[stroke="#222"] { stroke: #e3e5e8; }
+
+/* Address column subtitle dots / brief */
+.nd-excel-shell .sheet-light .la.r { background: var(--accent); }
+.nd-excel-shell .sheet-light .la.m { background: var(--warn); }
+
+/* ---- Day-tabs bar (Excel-style) ---- */
+.nd-excel-shell .sheet-light .tabbar { background: var(--panel-bg); border-top: 1px solid var(--border); }
+.nd-excel-shell .sheet-light .sheet-tab { color: #5f6368; }
+.nd-excel-shell .sheet-light .sheet-tab:hover:not(.active) { color: #1f1f1f; background: rgba(0,0,0,.04); }
+.nd-excel-shell .sheet-light .sheet-tab.active { background: #ffffff; border-color: var(--border); color: #1f1f1f; }
+.nd-excel-shell .sheet-light .sheet-tab.active::after { background: #ffffff; }
+.nd-excel-shell .sheet-light .sheet-tab.active::before { background: var(--accent); }
+.nd-excel-shell .sheet-light .sheet-tab-day { color: #5f6368; }
+.nd-excel-shell .sheet-light .sheet-tab.active .sheet-tab-day { color: #1f1f1f; }
+.nd-excel-shell .sheet-light .sheet-tab-date { color: #80868b; }
+.nd-excel-shell .sheet-light .sheet-tab.active .sheet-tab-date { color: #1f1f1f; }
+.nd-excel-shell .sheet-light .sheet-tab-count { color: #80868b; }
+.nd-excel-shell .sheet-light .sheet-tab.active .sheet-tab-count { color: var(--accent); }
+.nd-excel-shell .sheet-light .sheet-tab.has-deals:not(.active) .sheet-tab-count { color: #3c4043; }
+.nd-excel-shell .sheet-light .sheet-tab.is-today .sheet-tab-day { color: #b06000; }
+
+/* ---- Selection overlay tweaks on light ----
+   The accent wash needs to read on white without burying text.
+   Cells get a soft 10% tint, gutter/header get ~20% so labels pop.
+   For gutter/header we LAYER the tint over an opaque base so the
+   cell stays 100% opaque (body rows can't bleed through on scroll). */
+.nd-excel-shell .sheet-light td.sel-in { background: rgba(45, 162, 0, 0.10) !important; }
+.nd-excel-shell .sheet-light td.sel-anchor { background: #ffffff !important; }
+.nd-excel-shell .sheet-light td.gutter.gutter-on {
+  background:
+    linear-gradient(rgba(45, 162, 0, 0.20), rgba(45, 162, 0, 0.20)),
+    #f1f3f4 !important;
+}
+.nd-excel-shell .sheet-light #grid thead th.col-on {
+  background:
+    linear-gradient(rgba(45, 162, 0, 0.20), rgba(45, 162, 0, 0.20)),
+    #f1f3f4 !important;
+}
+.nd-excel-shell .sheet-light th.gutter-corner.corner-on {
+  background:
+    linear-gradient(rgba(45, 162, 0, 0.26), rgba(45, 162, 0, 0.26)),
+    #f1f3f4 !important;
+}
+
+/* Hover must NOT override the selection tint on light theme either. */
+.sheet-light tr.dr:hover td.sel-in,
+.nd-excel-shell .sheet-light tr.empty-row:hover td.sel-in {
+  background: rgba(45, 162, 0, 0.10) !important;
+}
+.sheet-light tr.dr:hover td.gutter.gutter-on,
+.nd-excel-shell .sheet-light tr.empty-row:hover td.gutter.gutter-on {
+  background:
+    linear-gradient(rgba(45, 162, 0, 0.20), rgba(45, 162, 0, 0.20)),
+    #f1f3f4 !important;
+}
+
+/* Light theme: hover-crosshair tints */
+.nd-excel-shell .sheet-light td.gutter.gutter-hover:not(.gutter-on) {
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.05)),
+    #f1f3f4;
+}
+.nd-excel-shell .sheet-light #grid thead th.col-hover:not(.col-on) {
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.05)),
+    #f1f3f4;
+}
+
+/* Light theme: Name Box color */
+.nd-excel-shell .sheet-light .cell-addr-box { color: #3c4043; }
+
+/* Editing fill */
+.nd-excel-shell .sheet-light td.editing { background: rgba(45, 162, 0, 0.06); box-shadow: inset 0 0 0 2px var(--accent); }
+
+/* Active filter dropdown popover lives outside .sheet-light if appended to body */
+/* Keep .cfp light too */
+.nd-excel-shell .sheet-light .cfp { background: #ffffff; border-color: var(--border-strong); box-shadow: 0 12px 36px rgba(0,0,0,0.15); }
+.nd-excel-shell .sheet-light .cfp label { color: #5f6368; }
+.nd-excel-shell .sheet-light .cfp input, .nd-excel-shell .sheet-light .cfp select { background: #ffffff; color: #1f1f1f; border-color: #d6d9de; }
+
+/* ---- Chat drawer (Discuss panel) \u2014 light theme ---- */
+.nd-excel-shell .sheet-light .chat-drawer {
+  background: #ffffff;
+  color: #1f1f1f;
+  border-left: 1px solid var(--border);
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.06);
+}
+.nd-excel-shell .sheet-light .chat-drawer .dh2 {
+  background: #f1f3f4;
+  border-bottom: 1px solid var(--border);
+  color: #1f1f1f;
+}
+.nd-excel-shell .sheet-light .chat-drawer .dtitle { color: #5f6368; }
+.nd-excel-shell .sheet-light .chat-drawer .ddeal { color: #1f1f1f; }
+.nd-excel-shell .sheet-light .chat-drawer .dclose { color: #5f6368; }
+.nd-excel-shell .sheet-light .chat-drawer .dclose:hover { background: rgba(0,0,0,0.06); color: #1f1f1f; }
+.nd-excel-shell .sheet-light .chat-drawer .dctx {
+  background: #fafbfc;
+  border-bottom: 1px solid var(--border-faint);
+  color: #5f6368;
+}
+.nd-excel-shell .sheet-light .chat-drawer .dctx i { color: var(--accent); }
+.nd-excel-shell .sheet-light .chat-drawer .dmsgs { background: #ffffff; }
+.nd-excel-shell .sheet-light .chat-drawer .msg.u {
+  background: #f1f3f4;
+  border: 1px solid #d6d9de;
+  color: #1f1f1f;
+}
+.nd-excel-shell .sheet-light .chat-drawer .msg.a {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  color: #1f1f1f;
+}
+.nd-excel-shell .sheet-light .chat-drawer .msg b { color: #1f1f1f; font-weight: 600; }
+.nd-excel-shell .sheet-light .chat-drawer .dinp {
+  background: #ffffff;
+  border-top: 1px solid var(--border);
+}
+.nd-excel-shell .sheet-light .chat-drawer .dinp input {
+  background: #ffffff;
+  border: 1px solid #d6d9de;
+  color: #1f1f1f;
+}
+.nd-excel-shell .sheet-light .chat-drawer .dinp input::placeholder { color: #9aa0a6; }
+.nd-excel-shell .sheet-light .chat-drawer .dinp input:focus { border-color: var(--accent); }
+.nd-excel-shell .sheet-light .chat-drawer .dsend {
+  background: var(--accent);
+  color: #ffffff;
+}
+.nd-excel-shell .sheet-light .chat-drawer .dsend:hover { background: var(--accent-hi); }
+
+/* Hide the chat-drawer scrollbar (Sheets/Notion-style invisible scroll) */
+.nd-excel-shell .sheet-light .chat-drawer .dmsgs { scrollbar-width: none; }
+.nd-excel-shell .sheet-light .chat-drawer .dmsgs::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+/* ============================================
+   ROW RESIZE HANDLES
+   Drag the bottom edge of any gutter cell to
+   resize that row. Limits enforced in JS.
+   ============================================ */
+
+.nd-row-resize {
+  position: absolute;
+  left: 0;
+  right: -1px;
+  bottom: -2px;
+  height: 5px;
+  cursor: row-resize;
+  z-index: 9;
+}
+.nd-row-resize::after {
+  content: '';
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  top: 2px;
+  height: 1px;
+  background: transparent;
+  transition: background .1s, height .1s;
+}
+.nd-row-resize:hover::after,
+body.is-row-resizing .nd-row-resize::after {
+  background: var(--accent);
+  height: 2px;
+  box-shadow: 0 0 6px rgba(45, 162, 0, 0.5);
+}
+body.is-row-resizing { cursor: row-resize !important; user-select: none; }
+body.is-row-resizing * { user-select: none !important; }
+
+/* ============================================
+   FILTER POPOVER — Google Sheets style
+   ============================================ */
+.nd-filter-pop {
+  position: fixed;
+  z-index: 9000;
+  width: 280px;
+  max-height: 460px;
+  background: #ffffff;
+  border: 1px solid #d6d9de;
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16), 0 2px 6px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-sans);
+  color: #1f1f1f;
+  overflow: hidden;
+}
+.nd-filter-pop .fp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid #e6e8eb;
+}
+.nd-filter-pop .fp-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1f1f1f;
+  letter-spacing: .02em;
+}
+.nd-filter-pop .fp-close {
+  width: 22px; height: 22px;
+  border: none;
+  background: transparent;
+  color: #5f6368;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.nd-filter-pop .fp-close:hover { background: #f1f3f4; color: #1f1f1f; }
+
+.nd-filter-pop .fp-sort {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px 6px 8px;
+  border-bottom: 1px solid #e6e8eb;
+  background: #fafbfc;
+}
+.nd-filter-pop .fp-sortbtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  background: transparent;
+  border: none;
+  font-size: 12px;
+  font-family: inherit;
+  color: #3c4043;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.nd-filter-pop .fp-sortbtn:hover { background: rgba(45, 162, 0, 0.10); color: var(--accent); }
+.nd-filter-pop .fp-sortbtn i { font-size: 13px; color: #5f6368; }
+.nd-filter-pop .fp-sortbtn:hover i { color: var(--accent); }
+
+.nd-filter-pop .fp-search {
+  position: relative;
+  padding: 8px 10px;
+  border-bottom: 1px solid #e6e8eb;
+}
+.nd-filter-pop .fp-search i {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px;
+  color: #80868b;
+  pointer-events: none;
+}
+.nd-filter-pop .fp-search-input {
+  width: 100%;
+  padding: 6px 8px 6px 28px;
+  font-size: 12px;
+  font-family: inherit;
+  background: #ffffff;
+  border: 1px solid #d6d9de;
+  border-radius: 4px;
+  color: #1f1f1f;
+  outline: none;
+}
+.nd-filter-pop .fp-search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(45,162,0,0.15); }
+
+.nd-filter-pop .fp-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.nd-filter-pop .fp-all {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #fafbfc;
+  border-bottom: 1px solid #e6e8eb;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1f1f1f;
+  cursor: pointer;
+  user-select: none;
+}
+.nd-filter-pop .fp-all input { accent-color: var(--accent); }
+.nd-filter-pop .fp-count {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: #80868b;
+  font-weight: 500;
+}
+
+.nd-filter-pop .fp-options {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+  background: #ffffff;
+}
+.nd-filter-pop .fp-options::-webkit-scrollbar { width: 8px; }
+.nd-filter-pop .fp-options::-webkit-scrollbar-thumb { background: #d6d9de; border-radius: 4px; }
+.nd-filter-pop .fp-options::-webkit-scrollbar-thumb:hover { background: #b0b4ba; }
+
+.nd-filter-pop .fp-opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: #3c4043;
+  cursor: pointer;
+  user-select: none;
+}
+.nd-filter-pop .fp-opt:hover { background: rgba(45, 162, 0, 0.06); }
+.nd-filter-pop .fp-opt input { accent-color: var(--accent); flex-shrink: 0; }
+.nd-filter-pop .fp-opt-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nd-filter-pop .fp-foot {
+  display: flex;
+  gap: 6px;
+  padding: 8px 10px;
+  border-top: 1px solid #e6e8eb;
+  background: #fafbfc;
+}
+.nd-filter-pop .fp-btn {
+  flex: 1;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  background: #ffffff;
+  border: 1px solid #d6d9de;
+  border-radius: 4px;
+  color: #3c4043;
+  cursor: pointer;
+}
+.nd-filter-pop .fp-btn:hover { border-color: #5f6368; color: #1f1f1f; }
+.nd-filter-pop .fp-btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+  font-weight: 600;
+}
+.nd-filter-pop .fp-btn.primary:hover { background: var(--accent-hi, #36c200); border-color: var(--accent-hi, #36c200); }
+.nd-filter-pop .fp-clear-btn:hover { border-color: var(--danger, #ef4444); color: var(--danger, #ef4444); }

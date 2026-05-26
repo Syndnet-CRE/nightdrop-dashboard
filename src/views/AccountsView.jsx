@@ -217,6 +217,7 @@ export function AccountsView() {
     }
   }, [addToast]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { load(); }, [load]);
 
   async function handleAction(action, sub) {

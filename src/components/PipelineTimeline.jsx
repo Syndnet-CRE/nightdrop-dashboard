@@ -1,3 +1,10 @@
+/* eslint-disable react-refresh/only-export-components */
+// File exports the PipelineTimeline component plus helpers
+// (getStage, getMarkerPct, nextHLabel, pad, getSimulatedBoxCount,
+// getSimulatedBoxTotal) that PipelineTimeline.test.js imports.
+// Fast Refresh's "only-export-components" rule is purely an HMR
+// optimization hint, not a correctness issue. Splitting helpers
+// to a sibling file is tracked separately.
 import { useEffect, useRef, useState } from 'react';
 import { Timer } from 'lucide-react';
 import PipelineTrack from './PipelineTrack.jsx';
@@ -117,6 +124,7 @@ const CD = {
   rail:   { num: 28, sep: 20 },
 };
 
+// eslint-disable-next-line no-unused-vars
 export function PipelineTimeline({ mode = 'full', size = 'xl', showLabels = false, showPhase = true } = {}) {
   const theme      = useTheme();
   const isLight    = theme === 'light';
