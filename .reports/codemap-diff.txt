@@ -30,15 +30,13 @@ backend contract are all identical to the codemap baseline.
 
 Test surface changes
 --------------------
-Vitest: stable floor 211 → currently 206 on main. Pre-existing breakage from
-728ff08 (UTC→local isoDate). 5 tests in src/vendor/deal-feed/adapter.test.js
-hardcode UTC-style ISO expectations. Needs follow-up PR to restore 211/211.
+Vitest floor: 211/211 (restored by PR #11 fixing the adapter.test.js
+UTC-midnight fixtures broken by 728ff08).
 
 Playwright dealsheet-persistence: 9/9 floor unchanged.
-Playwright excel-feed (NEW, on PR #10 only): 3/3 — F1 / F3 / F14.
+Playwright excel-feed (NEW, on PR #10): 3/3 — F1 / F3 / F14.
 
-New combined floor (post-PR-10 merge): 12 Playwright + 211 vitest = 223 total.
-Currently 12 Playwright + 206 vitest = 218 on main pending the adapter-test PR.
+Combined floor (post-PR-10 merge): 12 Playwright + 211 vitest = 223 total.
 
 Staleness check
 ---------------
@@ -46,8 +44,6 @@ All 5 codemaps still <24h old. No staleness flags.
 
 Action items for next codemap refresh
 -------------------------------------
-1. After PR #10 + adapter-test PR merge, bump architecture.md test count to
-   211 vitest + 12 Playwright = 223 floor (drop the "currently broken" caveat).
-2. Once Phase 4 Stage 2 lands, expand the excel-feed.spec.js entry in
+1. Once Phase 4 Stage 2 lands, expand the excel-feed.spec.js entry in
    frontend.md to list F2/F5/F8/F9/F11/F12/F13 contracts.
-3. Once Stage 3 lands, finalize Phase 4 contract list with all 14 flows.
+2. Once Stage 3 lands, finalize Phase 4 contract list with all 14 flows.

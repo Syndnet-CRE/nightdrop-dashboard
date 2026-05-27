@@ -112,17 +112,14 @@ The asset class taxonomy must stay identical across 4 files:
 ```bash
 npm run dev        # vite dev server (5173, auto-bumps if taken)
 npm run build      # production build → dist/
-npm test           # vitest (211 tests on stable; 206 currently on main —
-                   # 5 adapter.test.js TZ expectations broken by 728ff08
-                   # isoDate UTC→local fix, needs follow-up PR)
+npm test           # vitest (211 tests)
 npm run lint       # ESLint
 npx playwright test    # E2E. Floor: 12 = 9 dealsheet-persistence
                        # + 3 excel-feed Stage 1 (F1/F3/F14).
                        # Pre-existing flake: 10 in critical-flows + smoke BB-1
                        # (page-fade overlay interception).
 ```
-Test floor (stable): 211 vitest + 12 Playwright = 223 total once adapter tests
-are restored. Currently 206 + 12 = 218 on main pending the adapter-test PR.
+Test floor: 211 vitest + 12 Playwright = 223 total.
 
 ## Env vars
 - `VITE_API_BASE_URL` — empty in dev (Vite proxies to nightdrop-api.onrender.com)
