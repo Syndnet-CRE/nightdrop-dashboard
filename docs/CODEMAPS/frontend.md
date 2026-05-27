@@ -1,4 +1,4 @@
-<!-- Generated: 2026-05-26 | Files scanned: ~100 | Token estimate: ~1150 -->
+<!-- Generated: 2026-05-26 (session 4 refresh: + excel-feed.spec.js Stage 1) | Files scanned: ~100 | Token estimate: ~1150 -->
 # Frontend — nightdrop-dashboard
 
 ## Routes (src/App.jsx)
@@ -117,7 +117,9 @@ mounted thereafter, toggling visibility with `display:none`. This preserves
 the bundle's element-scoped listeners across view switches.
 
 Excel-parity contracts locked in tests (`tests/dealsheet-persistence.spec.js`,
-9 tests):
+9 tests; `tests/excel-feed.spec.js`, 3 Stage 1 tests for PRD F1/F3/F14 —
+chrome flows: shell + toolbar inventory, sort dropdown shape, density toggle
+re-renders heights. Stages 2/3 add data-bound flows F2/F4-F13.):
 - Single `#sel-overlay > .sel-rect` per selection; no leaked indicators
 - Right-click opens context menu without entering edit mode
 - dblclick caret lands at END of seeded content via

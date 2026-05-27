@@ -1,85 +1,49 @@
-Codemap diff — 2026-05-26
-Prior scan: 2026-05-22
-Commit reference: 403baf1 docs(handoff): session-end snapshot after PR #7 + PR #8 merge
-                  ffde142 + 32f089c — Deal Feed Excel cutover polish PRs
+Codemap diff — 2026-05-26 (session 4 micro-refresh)
+Prior scan: 2026-05-26 (session 3, commit 474bd53)
+
+Range: 474bd53..688882b (PR #9 merge + auto-commit + PR #10 push)
 
 Files updated this scan:
-  docs/CODEMAPS/architecture.md   (heavy — vendor bundle integration, /dealsheet landing)
-  docs/CODEMAPS/frontend.md       (heavy — DealFeedExcelView replaces DashboardView)
-  docs/CODEMAPS/data.md           (header stamp + verified-current note)
-  docs/CODEMAPS/backend.md        (header stamp + verified-current note)
-  docs/CODEMAPS/dependencies.md   (header stamp + new removed-by-cutover section)
+  docs/CODEMAPS/architecture.md   (test count + adapter.test.js break note)
+  docs/CODEMAPS/frontend.md       (excel-feed.spec.js Stage 1 added to contracts list)
 
-Total file diff: +121 / -48 lines across 5 files.
+Files unchanged (verified still accurate):
+  docs/CODEMAPS/backend.md        (no backend contract changes)
+  docs/CODEMAPS/data.md           (no schema / migration changes)
+  docs/CODEMAPS/dependencies.md   (no new deps; package.json untouched)
 
-Architecture-level changes since last scan
-------------------------------------------
-+ Deal Feed Excel cutover (2026-05-26): /dealsheet is the new primary deal-review surface
-+ /dealsheet added to LANDING_PATHS alongside /map
-+ Legacy /dashboard and /calendar redirect to /dealsheet
-+ New vendor bundle directory: src/vendor/deal-feed/ (~7,500 lines .js + .css)
-+ Bundle JS modules (8) loaded once via bundleLoadPromise:
-    data → tabs → selection → context-menu → row-resize → filter-popover → sidebar → feed
-+ Bundle JS module intentionally NOT loaded: sidebar-tweaks.js (locked decision 4)
-+ Host/bundle sync layer: publishToBundle (host → bundle, rAF-throttled)
-                          installActionAdapters (bundle → host callbacks)
-+ AppShell mounts a single DealFeedExcelView instance; toggles display:none on view switch
-+ hasVisitedDealsheet latch in App.jsx ensures bundle loads only after first /dealsheet visit
+Total file diff this micro-refresh: +9 / -6 lines across 2 files.
 
-Frontend component changes
---------------------------
-+ NEW: src/views/DealFeedExcelView.jsx + .css (React wrapper around vendor bundle)
-+ NEW: src/vendor/deal-feed/ (20 files — see architecture.md for breakdown)
+Source-level changes since 474bd53
+-----------------------------------
+83ff4b9  chore(tests): delete fake-DOM wizard tests in smoke.spec.js  (-484 lines, test-only)
+728ff08  fix(adapter): isoDate uses local time, not UTC               (+14 / -2 in src/vendor/deal-feed/adapter.js)
+688882b  test(excel-feed): Phase 4 Stage 1 — F1/F3/F14 chrome flows   (NEW tests/excel-feed.spec.js, +216 lines)
 
-- DELETED: src/views/DashboardView.jsx (replaced by DealFeedExcelView)
-  Note: rollback would require git revert; no in-tree fallback retained
+Total src/** diff since 474bd53: +14 / -2 lines, 1 file changed (adapter.js).
+Architecture, routes, components, data model, dependencies: all unchanged.
 
-~ MODIFIED: src/App.jsx
-       LANDING_PATHS = {/map, /dealsheet}
-       /dashboard and /calendar URLs → navigate('/dealsheet', { replace: true })
-       URL ↔ view sync handles dealsheet round-trips (lines 188-214)
-       Single-mount latch (hasVisitedDealsheet) ensures bundle stability
-       View toggle uses display:none rather than unmount
+Architecture-level changes since 474bd53
+-----------------------------------------
+None. The vendor bundle, the host shell, the DealsContext data flow, and the
+backend contract are all identical to the codemap baseline.
 
-State / persistence changes
----------------------------
-- sessionStorage 'nightdrop-feed-scroll' (owned by deleted DashboardView)
-- sessionStorage 'nightdrop-feed-sort'   (owned by deleted DashboardView)
-+ localStorage   'nd:sidebar-collapsed:v1' (vendor sidebar.js)
-+ localStorage   'nd:rowheights:v1'        (vendor row-resize.js)
-+ localStorage   'nd:sidebar-tweaks:v2'    (referenced only — sidebar-tweaks.js not imported)
+Test surface changes
+--------------------
+Vitest floor: 211/211 (restored by PR #11 fixing the adapter.test.js
+UTC-midnight fixtures broken by 728ff08).
 
-Test floor changes
-------------------
-+ tests/dealsheet-persistence.spec.js — 9 Playwright tests including:
-    * Cell selection vs edit-mode visuals across 3 phases (click / right-click / dblclick)
-    * Caret-at-end on dblclick — range.selectNodeContents(span) + range.collapse(false)
-    * Empty-row caret left-align rule (.nd-excel-shell tr.empty-row .cell-edit)
-    * Synthetic-DOM scope-boundary guard (populated tr.dr preserves column right-align)
-+ Vitest count: 211 (was 120 at 2026-05-22 stamp; +91 from vendor bundle unit tests
-    across adapter.test.js, sync.test.js, actions.test.js, lucide-shim.test.js)
-+ Total test floor: 211 vitest + 9 Playwright = 220
+Playwright dealsheet-persistence: 9/9 floor unchanged.
+Playwright excel-feed (NEW, on PR #10): 3/3 — F1 / F3 / F14.
 
-Backend / data / deps
----------------------
-  No backend contract changes. /dealsheet consumes the same payloads as the
-  deleted card feed (/api/dealfeed/deals + /buy-boxes via DealsContext).
-  Write paths reuse existing PATCH endpoints. No new tables, migrations, or
-  npm dependencies.
+Combined floor (post-PR-10 merge): 12 Playwright + 211 vitest = 223 total.
 
-Staleness warnings
-------------------
-  None. All codemaps current as of 2026-05-26.
+Staleness check
+---------------
+All 5 codemaps still <24h old. No staleness flags.
 
-Open follow-ups (not in this scan)
-----------------------------------
-  - Dead CSS .app rules: vendor styles.css:59, host styles.css:96 (no JSX refs)
-  - Vendor adapter.js::buildCalendar dead export (~46 tests drop on removal)
-  - See notes/HANDOFF.md "Known Vendor Latent Bugs" — post-merge verification of
-    G=end caret placement (PR #7 contract: range.collapse(false))
-
-Next refresh recommended after
-------------------------------
-  - Phase 4 Playwright spec lands (tests/excel-feed.spec.js, PRD flows F1-F14)
-  - buy-box-mvp-rebuild ships (wizard taxonomy/field alignment against backend)
-  - Cleanup PR for dead .app rules + buildCalendar export
+Action items for next codemap refresh
+-------------------------------------
+1. Once Phase 4 Stage 2 lands, expand the excel-feed.spec.js entry in
+   frontend.md to list F2/F5/F8/F9/F11/F12/F13 contracts.
+2. Once Stage 3 lands, finalize Phase 4 contract list with all 14 flows.
