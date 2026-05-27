@@ -1,104 +1,145 @@
 HANDOFF
-Date: 2026-05-26 (session 2 — continued from earlier same-day session)
+Date: 2026-05-26 (session 3 — continued from session 2 via /resume-session)
 Repo: nightdrop-dashboard
-Session objective: Two Sheets/Excel-parity fixes on the Deal Feed Excel cutover.
-Status: COMPLETE — PR #7 and PR #8 both merged to main.
+Session objective: Phase 4 prep — refresh codemaps, run instinct analysis, save the css-scope-guard skill, audit existing Playwright specs, and ship the Story 4.3 HIGH cleanup as a prerequisite for the Phase 4 spec.
+Status: PARTIAL — codemaps refresh merged to main as `474bd53`; PR #9 (`chore/smoke-spec-cleanup`, commit `8fdd637`) open and awaiting Brady's merge call. Phase 4 spec itself not yet started.
 
 ---
 
 ## What was done
 
-### Ship 1 — Cell selection + edit-mode visuals (PR #7, branch `fix/cell-selection-vs-edit-indicators`)
+### Ship A — Codemaps refresh (merged on main as `474bd53`)
 
-Two commits: `9f72d06` (main fix) + `c78cd40` (focus box-shadow follow-up).
+Single commit. 5 codemap files + 1 .reports file, +183/−121 lines.
 
-The cell-selection rectangle and the cell-edit visual were stepping on each other. Fixes landed in `src/vendor/deal-feed/selection.js`, `styles.css`, `light-theme.css`. Three-phase Playwright test (`tests/dealsheet-persistence.spec.js:230`) locks:
-- Phase A — left-click: exactly one `#sel-overlay > .sel-rect`, no `td.editing` anywhere, anchor td has no inset box-shadow, no green wash tint on single-cell anchor.
-- Phase B — right-click: context menu opens, no editing class added, `.cell-edit` span is NOT focused, still one rectangle.
-- Phase C — dblclick: one rectangle, td.editing tracked, td has no inset shadow, **`.cell-edit` span has no focus box-shadow** (host's universal `:focus-visible { box-shadow: var(--ring-shadow) }` at `src/styles/styles.css:1450` was painting a 3px green ring inside the cell — locked suppressed), activeElement is the span, **caret lands at END of seeded content** (G-lock via `range.selectNodeContents(span) + range.collapse(false)`).
+- `docs/CODEMAPS/architecture.md` — added vendor bundle integration section, updated LANDING_PATHS to `{/map, /dealsheet}`, reflected `/dashboard` + `/calendar` redirects, bumped test floor to 220.
+- `docs/CODEMAPS/frontend.md` — replaced stale "Deal Feed (Phase 1 horizontal card layout)" section with the Excel cutover surface (`DealFeedExcelView` + `src/vendor/deal-feed/` bundle layout), updated routes table for `/dealsheet`, refreshed persisted-UI state table (sessionStorage → localStorage keys owned by the bundle), removed stale DashboardView references.
+- `docs/CODEMAPS/data.md` + `backend.md` — verified-current notes (no contract changes from cutover).
+- `docs/CODEMAPS/dependencies.md` — listed components removed by the cutover, in-repo orphans flagged for follow-up.
+- `.reports/codemap-diff.txt` — regenerated full diff summary 2026-05-22 → 2026-05-26.
 
-The focus box-shadow finding (commit `c78cd40`) emerged from Brady's local probe — the original PR was approved before he saw the inner ring still painting on dblclick.
+### Ship B — Story 4.3 HIGH cleanup (PR #9, branch `chore/smoke-spec-cleanup`, commit `8fdd637`, **OPEN — NOT YET MERGED**)
 
-### Ship 2 — Empty filler row caret left-align (PR #8, branch `fix/empty-row-cell-text-align`, commit `8bea9cc`)
+Single commit. 1 file, −484/+0 lines (pure deletion).
 
-Single commit. 3 files, +88/−1.
+Deleted from `tests/smoke.spec.js`:
+- `openWizard()` helper (lines 1-265 pre-cleanup) that injected ~250 lines of synthesized HTML representing the **OLD 7-step wizard** (`.modal`, `.check-card`, `.wizard-current-step` classes).
+- `Buy Box Wizard Tests` describe block (lines 622-840 pre-cleanup) containing 6 tests that exercised the fake fixture end-to-end. Provided zero coverage; the production wizard is 10 steps using `.bbwiz-*` classes.
 
-Empty filler rows (`tr.empty-row`) render a `.cell-edit` span in every column. The column-level right-align rules at `styles.css:1847-1855` (psf/sf/hold) cascaded onto those spans, so clicking an empty cell in a numeric column placed the caret on the right edge. Sheets/Excel always show the caret on the left for empty cells.
+Surface preserved in `smoke.spec.js`:
+- `Nightdrop Dashboard Smoke Test` — 3 tests (homepage, deal detail, multi-deal)
+- `Buy Box Command Center` — BB-1 through BB-6 (current `.bbwiz-*` selectors, mocked API — flagged separately for Story 4.3 MEDIUM rewrite to fix skip-on-not-found anti-pattern)
 
-Fix: one CSS rule at `src/vendor/deal-feed/styles.css:1857-1862`:
+Full gate before push: lint clean, vitest 211/211, build clean (525ms), Playwright `dealsheet-persistence.spec.js` 9/9 (test floor preserved). 10 pre-existing Playwright failures across `critical-flows.spec.js` (9 tests) and `smoke.spec.js` BB-1 — confirmed pre-existing by switching to main and re-running the canary `unauthenticated root shows login form` test; same `<div class="page-fade">` overlay interception failure exists on main HEAD. NOT regressions from this PR.
 
-```css
-.nd-excel-shell tr.empty-row .cell-edit { text-align: left; }
-```
+### Side-quest — context-watch hook fix
 
-Specificity `(0, 3, 1)`. Beats `td[data-col="psf"] .cell-edit` and `td[data-col="sf"] .cell-edit` outright on specificity; ties `.nd-excel-shell td[data-col="hold"] .cell-edit` at `(0, 3, 1)` and wins on cascade order (later in file).
+Discovered the `[CTX] N% of 180000` reported by the UserPromptSubmit hook was wrong for Opus 4.7 (1M context). Root cause: `~/.claude/scripts/ctx-watch.sh` faithfully echoed Claude Code's `effectiveWindow=180000` from its debug log — Claude Code's autocompact logger doesn't know about the 1M tier.
 
-Regression test at `tests/dealsheet-persistence.spec.js:388` locks two invariants:
-- Empty filler row `.cell-edit` in psf/sf/hold → `text-align: left`.
-- Synthetically-injected `tr.dr .cell-edit` in psf/sf/hold → still `text-align: right`. **Scope boundary guard** — the new rule must not bleed into populated rows. Synthetic row is appended, asserted, removed within the same `page.evaluate()` block. No test pollution.
+Fix:
+- `~/.claude/scripts/ctx-watch.sh` — added user-override layer. Order of precedence: `$CLAUDE_CTX_WINDOW` env var → `~/.claude/ctx-window.conf` (first numeric line) → Claude Code's reported window.
+- `~/.claude/ctx-window.conf` — new file, pinned to `1000000`.
 
-TDD: RED confirmed first (psf computed `right`), then GREEN. Reviews APPROVED zero findings (both code-reviewer and security-reviewer).
+Verified by re-running the hook: now reports `[CTX] N% of 1000000`. Not git-tracked (lives in `~/.claude`).
 
-### HANDOFF.md doc work (folded into PR #8)
+### Skill saved — `playwright-css-scope-guard`
 
-- Renamed section `## Followups (not tickets — addressed in a dedicated PR)` → `## Known Vendor Latent Bugs`. The work it was supposed to land in had shipped, so the rename was overdue.
-- Added a deferred entry: post-merge verification of whether G=end (PR #7's `range.collapse(false)`) fully resolved the open cursor-position concern in real authored usage. Decision criteria written into the entry.
-- Preserved the existing "top stats strip stub data" bullet.
+Written to `~/.claude/skills/learned/playwright-css-scope-guard.md`. Captures the synthetic-DOM-injection scope-boundary pattern that locked the PR #8 empty-row caret test. Pattern reference: `tests/dealsheet-persistence.spec.js:388`. Not git-tracked.
+
+### Instinct analysis
+
+`/instinct-status` reported 16 global instincts, 0 project-scoped, all ≥88% confidence. `/evolve` analysis returned "Potential skill clusters found: 0" — each instinct is single-domain. Skipped `--generate` (would write empty files).
 
 ---
 
 ## Test count
 
-- Vitest: 211/211 (unchanged this session).
-- Playwright: **9/9** (was 8 before this session; +1 from PR #8's empty-row caret test). PR #7 modified an existing test in place rather than adding one.
-- **Floor: 220 total.**
+- Vitest: 211/211 (unchanged).
+- Playwright: **9/9** for `dealsheet-persistence.spec.js` (test floor preserved). Total suite is 31 tests post-cleanup (was 37; -6 from PR #9); 21 pass / 10 pre-existing flake.
+- **Floor: 220 total** (211 vitest + 9 dealsheet-persistence).
 
 ---
 
-## Architecture decisions locked this session
+## Architecture / process decisions locked this session
 
-1. **Edit-mode caret placement contract.** On dblclick into a populated cell, `selection.js` uses `range.selectNodeContents(span) + range.collapse(false)` to land the caret at the END of existing content (Sheets/Excel parity). G-lock test asserts this at `tests/dealsheet-persistence.spec.js:365`.
-2. **Focus box-shadow on `.cell-edit` must be suppressed explicitly.** The host's universal `:focus-visible { box-shadow: var(--ring-shadow) }` at `src/styles/styles.css:1450` paints a 3px green ring inside cells on dblclick if not suppressed. Vendor bundle's outline suppression is not enough — box-shadow needs its own override. Locked by Phase C assertion.
-3. **Empty filler row `.cell-edit` always left-aligns.** Universal rule scoped to `tr.empty-row` so any future numeric column inherits the correct behavior without per-column updates.
-4. **Scope guards for cascade rules use synthetic DOM injection.** When the data path can't easily produce both sides of an assertion, inject the alternate state via `innerHTML`, assert, then remove inside the same `page.evaluate()`. See `tests/dealsheet-persistence.spec.js:388` for the pattern.
+1. **Context-window display source of truth.** `~/.claude/ctx-window.conf` overrides Claude Code's stale `effectiveWindow` value. Edit that file (first numeric line) if Brady switches to a non-1M-tier model. The hook continues to write `~/.claude/ctx-status.txt` for the status line / other scripts.
+2. **Codemap freshness pattern.** When the Deal Feed Excel cutover replaces a major surface, refresh both `architecture.md` and `frontend.md` heavily; touch others with verified-current notes only if contracts didn't change. `.reports/codemap-diff.txt` records the diff summary for the next refresh.
+3. **Test cleanup separates from feature work.** Story 4.3 HIGH cleanup landed as its own PR (#9), not folded into the Phase 4 branch. Smaller diff to review, honest test-count baseline (220 → 214 → 228 after Phase 4 lands), reversible.
+4. **Pre-existing Playwright failures get tracked, not fixed under unrelated PRs.** The 10 `page-fade` overlay failures are Story 4.3 MEDIUM scope. Confirmed pre-existing on main via canary test — never silently regress them, but don't expand scope to fix them mid-cleanup.
 
 ---
 
 ## What was NOT done
 
-- **Phase 4** — Playwright `tests/excel-feed.spec.js` covering PRD flows F1–F14 + selector audit. Still queued. Now unblocked.
-- **Phase 5** — Manual browser walkthrough of all 14 PRD flows.
-- **Dead `.app` rules** — vendor `styles.css:59` `.nd-excel-shell .app` and host `styles.css:96` bare `.app`. Both still present. Separate cleanup ticket.
-- **Adapter `buildCalendar` dead-export** — still in `adapter.js`. Removal would drop ~46 tests. Future small PR.
-- **Bundle's hardcoded calendar window** — `data.js:174-176` still hardcodes `today = 2026-05-24`. Vendor demo data baked into source.
-- **Backend orphan endpoint** — `GET /api/dealfeed/agent/messages` orphaned in Ship 1 of the earlier session. Ticket lives at `notes/bmad/deal-feed-excel/orphan-routes.md` for the backend repo.
-- **`feat/deal-detail-v1` branch** — still unmerged on its own branch.
-- **Post-merge verification of G=end caret placement.** Real-world authored usage may surface a residual issue. Listed in `## Known Vendor Latent Bugs` in this file with decision criteria.
+- **PR #9 not yet merged.** Awaiting Brady's call on (1) running code-reviewer + security-reviewer (deletion-only PR; security has nothing to review), (2) merge strategy (squash recommended), (3) immediate Path B kickoff.
+- **Story 4.3 MEDIUM rewrite** — BB-1 through BB-6 in `smoke.spec.js` use `if (await ...isVisible({timeout:...}).catch(() => false))` skip-on-not-found anti-pattern. Rewrite to `expect(locator).toBeVisible({timeout})` fail-loud. ~3 hours. Separate PR. Would deterministically surface the `page-fade` overlay issue.
+- **Story 4.3 LOW rewrite** — first 3 smoke tests use `waitForTimeout(2000)` after `page.goto`. Swap for deterministic visibility waits. ~30 min. Separate PR.
+- **`page-fade` overlay investigation** — root cause of the 10 pre-existing Playwright failures. Likely a route transition or animation element not being awaited. Tied to Story 4.3 MEDIUM.
+- **Phase 4 spec** — `tests/excel-feed.spec.js` covering PRD flows F1-F14. Branch `test/phase-4-playwright` not yet created. **THIS IS THE NEXT-SESSION OBJECTIVE.**
+- **Dead `.app` rules** — vendor `styles.css:59` `.nd-excel-shell .app` and host `styles.css:96` bare `.app`. Both still present.
+- **`buildCalendar` dead export** — still in `src/vendor/deal-feed/adapter.js`. Removal would drop ~46 tests.
+- **`feat/deal-detail-v1` branch** — still unmerged on its own branch (carryover from prior sessions).
+- **Post-merge verification of G=end caret placement** — open question from PR #7 / session 2 HANDOFF.
 
 ---
 
-## Next session
+## Next session — finish Story 4.2 (Phase 4 spec)
 
-**Phase 4** — write `tests/excel-feed.spec.js` covering PRD flows F1–F14 + audit existing Playwright suites for stale selectors/timings.
+**Objective:** write `tests/excel-feed.spec.js` covering PRD flows F1-F14 on branch `test/phase-4-playwright` off clean main. Land it with full gate green + reviewers.
 
 Procedure:
+
 1. `cd ~/nightdrop-dashboard && claude --dangerously-skip-permissions`
 2. Read this HANDOFF.md (Read tool, not cat — see global rules).
-3. `git switch main && git pull` — main is ahead of last local pull (PRs #7 and #8 merged).
-4. Branch off main as `test/phase-4-playwright`.
-5. Read `notes/bmad/deal-feed-excel/PRD.md` flows F1–F14.
-6. **Story 4.3 first (fast cleanup):** audit `tests/dealsheet-persistence.spec.js` and `tests/smoke.spec.js` for any stale selectors, brittle timeouts, or dead assertions. Light refactor in same branch is fine.
-7. **Story 4.2 (the bulk):** write the new spec. One test per PRD flow. Use `authAndOpenApp` helper pattern from the existing spec. Mock API endpoints; do not hit live backend.
-8. Full gate: lint, vitest (211/211 floor), build, Playwright (220+ floor).
-9. Reviews: code-reviewer + security-reviewer. Report results, do not predict.
-10. If Phase 4 lands fast, dead `.app` rule cleanup and adapter `buildCalendar` removal are each a small follow-up PR.
+3. `/resume-session 2026-05-26-ndsh-pr9-cleanup` (or just `/resume-session` for most-recent) to load full session context including the audit findings, Path B detail, and decisions log.
+4. Check PR #9 status: `gh pr view 9`.
+   - **If merged:** `git switch main && git pull --ff-only`. Confirm at the squash commit of #9 or newer. Proceed to step 5.
+   - **If still open:** address any review comments. Run reviewers if not yet run (`code-reviewer` agent with PR diff; `security-reviewer` will return clean). Then `gh pr merge 9 --squash --delete-branch` (or `--merge` if Brady prefers). Then step 5.
+5. `git switch -c test/phase-4-playwright` off the new main.
+6. Read `notes/bmad/deal-feed-excel/PRD.md` flows F1-F14 (already in the resumed session context, but a fresh Read is fine).
+7. Read `tests/dealsheet-persistence.spec.js` once more for the `authAndOpenApp` mock template (lines 18-65). The new spec follows the same pattern.
+8. Create `tests/excel-feed.spec.js`. One test (or one logical group) per PRD flow:
+   - **F1** Load and orient — `.nd-excel-shell` mounts, day row count visible (`Showing N of M`)
+   - **F2** Filter — Hot chip → grid filters to `feedback === 'hot'`, All restores
+   - **F3** Sort — Sort dropdown commits via bundle sort handler, grid re-renders
+   - **F4** Per-column filter — `.tri` opens `.nd-filter-pop`; `N filters` chip in toolbar
+   - **F5** Single-row select + read tracking — cell click fires `markRead(dealId)` once, unread style disappears
+   - **F6** Range select + copy — drag C2:E5, name box shows `C2:E5 4R × 3C`, Cmd+C → clipboard TSV
+   - **F7** Multi-range select + bulk action — Cmd-click adds, bulk toolbar `Export (4)`, `Set Stage → Researching` fires PATCH per row
+   - **F8** Right-click context menu — `.ctx-menu` items; `Mark Hot` → `postFeedback(dealId, 'hot')`
+   - **F9** Inline cell edit — dblclick notes cell, type, blur/Enter, `saveNote(dealId, text)` PATCH
+   - **F10** Stage dropdown — click stage cell, dropdown opens, pick value, PATCH `/stage` optimistic
+   - **F11** Inline expand — dblclick gutter, `xtr` row appears with AI narrative + ext (parcel/county/zoning/year built/last sale); dblclick again collapses
+   - **F12** Open detail — dblclick non-editable cell, `navigate('/deal/:id')`
+   - **F13** Day switching — `.tabbar` day click filters grid; empty days show stub rows per current behavior
+   - **F14** Density toggle — Compact/Normal/Comfortable, row heights adjust, persist to localStorage `nd:rowheights:v1`
+9. Mock API surface: `/api/dealfeed/auth/me`, `/buy-boxes`, `/deals` (with non-empty deal fixtures this time so F2-F12 have data), `/deals/dashboard/kpis`. Mock all PATCH endpoints (`/feedback`, `/notes`, `/status`, `/stage`) and assert they fire with correct payloads.
+10. Vendor bundle attaches listeners outside React lifecycle — `await page.waitForTimeout(3000)` after `/dealsheet` navigation is acceptable here (same pattern locked in `dealsheet-persistence.spec.js`). Don't try to deterministically await bundle ready — there's no signal.
+11. Full gate: `npm run lint`, `npm test -- --run` (211/211 floor), `npm run build`, dev server + `npx playwright test` (dealsheet-persistence 9/9 floor + new excel-feed.spec.js 14/14 = 23/23 floor for the cutover surface; full suite total ~45 with 10 pre-existing flakes from critical-flows and BB-1 unchanged).
+12. Reviewers: `code-reviewer` agent + `security-reviewer` agent on the new spec. Report results, do not predict.
+13. Push, PR, merge.
 
-`tests/excel-feed.spec.js` does not exist yet. Naming is per the prior session's plan — keep it unless there's a reason to consolidate into `dealsheet-persistence.spec.js`.
+**Naming note:** Keep `tests/excel-feed.spec.js` per the original plan. Resist consolidating into `dealsheet-persistence.spec.js` — the persistence spec is about wrapper-survives-navigation invariants; F1-F14 are user flows. Different abstraction levels.
 
 ---
 
 ## Blockers for Brady
 
-None. Both PRs merged and on main.
+- **PR #9 needs your merge call.** Three decisions, all in the "ready to ship" buckets:
+  - Run code-reviewer + security-reviewer first? (deletion-only PR; security has nothing; up to you whether time is worth it)
+  - Squash or merge commit? (recommend squash)
+  - Proceed straight to Path B / Phase 4 spec after merge?
+- **Optional:** confirm whether to commit the 3 modified screenshot PNGs in `tests/screenshots/` (currently uncommitted on `chore/smoke-spec-cleanup`, stashed during this HANDOFF write). They're Playwright run artifacts; harmless either way.
+- **Latent:** G=end caret placement in real authored usage (carryover from session 2 HANDOFF). No action required until you have an opinion.
 
-One thing to confirm at leisure: in real authored usage of the Deal Feed Excel cutover, does the caret placement on cell edit-mode entry (G=end) feel right? If not, file a reproducer and we'll address it in a separate PR. If it's fine, delete the cursor-position entry from `## Known Vendor Latent Bugs` in this file's next update.
+---
+
+## Saved session files
+
+For `/resume-session` continuity:
+
+- `~/.claude/session-data/2026-05-26-ndsh-pr78-session.tmp` — PRs #7 + #8 (session 2)
+- `~/.claude/session-data/2026-05-26-ndsh-phase4-prep-session.tmp` — codemaps + instincts + audit (session 3 first half)
+- `~/.claude/session-data/2026-05-26-ndsh-pr9-cleanup-session.tmp` — PR #9 cleanup (session 3 second half — most current)
+
+`/resume-session` with no args picks the most recent — that's the right entry point.
