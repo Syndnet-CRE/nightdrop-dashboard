@@ -1,116 +1,101 @@
 HANDOFF
-Date: 2026-05-26 (session 4 — continued from session 3 via /resume-session)
+Date: 2026-05-27 (session 5 — continued from session 4 via /resume-session)
 Repo: nightdrop-dashboard
-Session objective: Wrap PR #9 (Story 4.3 HIGH cleanup) and ship Phase 4 Stage 1 Playwright spec (F1/F3/F14 chrome flows).
-Status: COMPLETE — PR #9 merged via squash; PR #10 (Phase 4 Stage 1) opened with reviewer-approved chrome-flow tests.
+Session objective: Land the adapter-test follow-up that PR #10 needed (restore vitest 211/211), merge PR #10 with the codemap caveat dropped, and ship Phase 4 Stage 2 (F2/F5/F8/F9/F11/F12/F13).
+Status: COMPLETE — PR #11 (adapter-tests) merged. PR #10 (Phase 4 Stage 1) rebased and merged. PR #12 (Phase 4 Stage 2) opened with reviewer-approved data-bound flow tests.
 
 ---
 
 ## What was done
 
-### PR #9 wrap — Story 4.3 HIGH cleanup, merged
+### PR #11 — adapter-test UTC-midnight fix, merged
 
-- Ran code-reviewer + security-reviewer (per session-3 post-mortem commitment to stop skipping reviewers on "obvious" PRs). Both returned zero findings — confirmed pure deletion, no cross-file references to the removed `openWizard()` helper.
-- Reverted the 3 unstaged PNG screenshot artifacts on the branch so the diff was clean before merge.
-- Squash-merged via `gh pr merge 9 --squash --delete-branch`. Main advanced to `83ff4b9`.
-- Branch `chore/smoke-spec-cleanup` deleted on origin.
+- Branched `fix/adapter-tests-local-tz` off `main` post-PR-#9 merge.
+- Swapped the 5 brittle `T00:00:00Z` UTC-midnight fixture strings in `src/vendor/deal-feed/adapter.test.js` to `T12:00:00Z` (noon UTC) so the isoDate-now-uses-local-TZ semantics from commit `728ff08` no longer break across US/EU CI runners. Production code untouched. Acknowledged in the comment that UTC+12/+13 zones are not covered (out of scope for US/EU CI).
+- code-reviewer ran and returned 1 LOW on comment wording ("never crosses a day boundary" was overstated). Tightened to "stable across US and EU CI runners."
+- `gh pr merge 11 --squash --delete-branch` succeeded — main advanced to `bdade6d`.
 
-### PR #10 — Phase 4 Stage 1 spec (`tests/excel-feed.spec.js`)
+### PR #10 — Phase 4 Stage 1, rebased and merged
 
-Branch `test/phase-4-playwright` off post-#9 main. One new file, +194 lines, no source changes.
+- Switched back to `test/phase-4-playwright`, rebased onto `origin/main` (clean).
+- Added a third commit dropping the now-obsolete "vitest currently 206 on main pending the adapter-test PR" caveat from `docs/CODEMAPS/architecture.md` and `.reports/codemap-diff.txt`. No amend — new commit per the global "always create new commits" rule.
+- Force-pushed with `--force-with-lease`. PR went `OPEN+MERGEABLE` after GitHub re-evaluated.
+- `gh pr merge 10 --squash --delete-branch` succeeded — main at `f2aa54e`.
 
-Tests added (3, all passing):
-- **F1** — shell mounts + toolbar chrome inventory (`.toolbar`, `.chips`, `.density-toggle`, `.sort-sel`) + stats bar + row count `#rc` text matches anchored `/^Showing \d+ of \d+$/`.
-- **F3** — `.sort-sel` dropdown lists Score/Recency/Distress/Value in order; selectOption commits to all 3 non-default values.
-- **F14** — density toggle: clicking `.dbtn[data-d=compact|normal|comfortable]` rotates `.active` correctly; empty-row `getBoundingClientRect().height` matches `feed.js` `rh` map (36/44/56 with ±1px tolerance for the bottom border).
+### PR #12 — Phase 4 Stage 2 (THIS PR)
+
+Branch `test/phase-4-stage-2` off post-PR-#10 main. One file changed (`tests/excel-feed.spec.js`, +294/-11). 7 new tests, all green.
+
+Tests added:
+- **F2** — clicking the `.chip[data-f="hot"]` chip filters `tr.dr` from 2 deals to 1 (the hot deal). Active class rotates off `All`, onto `Hot`.
+- **F5** — clicking a deal-row cell drops `tr.unread` count by 1, sets `#cellAddr` to `"A1"`, writes `dealfeed.read.${SUBSCRIBER_ID}:deal-1 = 'true'` to localStorage.
+- **F8** — right-click → context menu's `.ctx-item[data-act="mark_hot"]` fires `POST /api/dealfeed/deals/deal-2/feedback` with body `{ feedback: 'hot' }`. Method explicitly re-asserted at the assertion site.
+- **F9** — filling the notes input and blurring fires `PATCH /api/dealfeed/deals/deal-1/notes` with body `{ notes: 'follow-up tuesday' }`. Method explicitly re-asserted.
+- **F11** — bundle-machinery-only: `window.ND._toggleExpand('deal-1')` adds a `tr.xr` (which the PRD calls `tr.xtr` — the PRD is wrong; the actual class is `tr.xr`), calling again removes it. There is NO UI handler in the bundle that calls `_toggleExpand`. The gutter's dblclick handler (feed.js:622) routes to `openDetail`, not expand. Flagged below as the F11 UI gap.
+- **F12** — dbl-click on `tr.dr td[data-col="address"]` navigates to `/deal/deal-1`. (First pass used `data-col="addr"`; the actual column key is `address` per feed.js:49 — fixed.)
+- **F13** — clicking `.sheet-tab[data-day="2026-05-23"]` swaps the visible `tr.dr` set from today's 2 deals to the sibling-day's 2 deals.
+
+### Bundle gap discovered while writing Stage 2: calendar is FROZEN
+
+While debugging F2 (which initially failed with 0 rows visible), I found that the bundle's data.js hardcodes `ND.todayISO = '2026-05-24'` (line 153) AND auto-runs `ND.calendar = ND.buildCalendar()` at module-load time. Then tabs.js's IIFE (line 6) captures `cal = ND.calendar` and initializes `ND.state.activeMonth/activeWeek/activeDay` ONCE at IIFE time. The first `publishToBundle()` from React DOES update `ND.todayISO` and rebuild `ND.calendar`, but tabs.js never re-initializes `state` from the new calendar.
+
+So the bundle's active day is permanently pinned to `2026-05-24` (a Sunday), and the visible week is May 18–24 2026 — regardless of the real wall-clock today. Stage 2's fixture works around this by using constants `BUNDLE_TODAY='2026-05-24'` and `BUNDLE_SIBLING='2026-05-23'` to land deals inside the frozen week. The block comment above the helpers explains the workaround for future readers.
+
+This is a real bundle bug worth fixing — when the bundle's hardcoded date is replaced with a dynamic initializer that derives from `ND.todayISO`, the fixture constants can be swapped to dynamic dates and the rest of the spec still works.
+
+### F11 UI gap discovered
+
+The bundle defines `ND._toggleExpand(id)` (feed.js:815) and renders a `tr.xr` sibling when `xId === d.id`, but NOTHING in the bundle UI calls `_toggleExpand`. The gutter dblclick (feed.js:622) goes to `openDetail`. The PRD says "dbl-click row gutter → tr.xtr appears" — both the trigger AND the class name are wrong vs the bundle. Stage 2 exercises `_toggleExpand` directly via `page.evaluate` so the underlying machinery stays regression-proof for when a UI trigger is added later. Worth deciding: add a UI trigger to feed.js or remove the expand machinery as dead code.
+
+### Reviewer findings — addressed inline (no separate commits)
+
+- **HIGH** — `request.postData()` semantic clarity for PATCH requests. Added explicit `expect(request.method()).toBe('PATCH')` / `'POST'` assertions next to body assertions in F8 + F9 so the intent is obvious at the use site.
+- **MEDIUM** — subscriber-id coupling. Extracted `SUBSCRIBER_ID = 'test-uuid-1'` constant at top of file; F5's localStorage assertion now reads it. Single source of truth.
+- **MEDIUM (write-routes scoped at helper-level)** — accepted as documented intentional. Acceptable trade-off for the Stage 2 size.
+- **MEDIUM (runtime bundle-date validation)** — rejected. The reviewer's proposed check would read `window.ND.todayISO` which `publishToBundle` updates to REAL today, NOT the frozen `'2026-05-24'`. Wrong target. The frozen state lives in `tabs.js`'s captured `state.activeDay`, which isn't a public surface to assert against without coupling to bundle internals. The current failure mode (`toHaveCount(2)` returning 0 with the test comment block explaining why) is informative enough.
+- **LOW (F11 HANDOFF cross-reference)** — fixed; the comment now says "flagged in the PR body" instead of HANDOFF.
+- **LOW (selector + style notes)** — no change needed.
 
 Gate results:
 - `npm run lint` — clean.
-- `npm run build` — clean, DealFeedExcelView lazy chunk 390.26 KB / 89.38 KB gzipped.
-- `npx playwright test tests/dealsheet-persistence.spec.js tests/excel-feed.spec.js` — **12/12 pass** (9 dealsheet floor + 3 new).
-- code-reviewer: 1 HIGH (regex was actually correct on semantics, but added `$` anchor anyway as belt-and-suspenders). 2 MEDIUM (F14 tolerance rationale OK, no teardown OK since Playwright isolates per-test). LOW concerns acknowledged.
-- security-reviewer: non-issue, no real backend, mocks only.
-
-### Stage split rationale (documented in spec header)
-
-- **Stage 1 (this PR):** F1, F3, F14 — chrome flows that pass with `deals: []` mock.
-- **Stage 2 (next session):** F2, F5, F8, F9, F11, F12, F13 — need non-empty deal fixture flowing through `publishToBundle` so `tr.dr` rows render. Plus PATCH route mocks for hot/notes/stage.
-- **Stage 3 (later):** F4 per-column filter, F6 range-copy-as-TSV, F7 bulk Set Stage, F10 stage dropdown. Clipboard permissions, drag choreography, PATCH sequencing.
-
-Reason for split: writing all 14 in one PR would have either flaked on data-flow setup or ballooned scope past one clean review. Stage 1 locks the chrome scaffolding first.
+- `npm test -- --run` — 211/211 vitest pass.
+- `npm run build` — clean, DealFeedExcelView lazy chunk 390.26 KB / 89.38 KB gzipped (unchanged).
+- `npx playwright test tests/dealsheet-persistence.spec.js tests/excel-feed.spec.js` — 19/19 pass (9 dealsheet + 10 excel-feed).
 
 ---
 
 ## What was NOT done
 
-- **Stage 2 + Stage 3** of Phase 4 (the remaining 11 flows). Scoped out by design.
-- **No investigation of the 9 pre-existing critical-flows failures** (`<div class="page-fade">` overlay interception). Tracked from session 3.
-
----
-
-## Anomalies discovered this session
-
-### Mystery auto-commit during the session (`728ff08` on main, `ad1acac` on my branch)
-
-While I was setting up `test/phase-4-playwright`, an external process committed `fix(adapter): isoDate uses local time, not UTC` to **both** branches simultaneously at `22:26:04 -0500`. Same content, different SHAs. Authored as `syndnet-cre <support@syndnet.com>` (same identity as Brady's normal commits).
-
-Brady — was this you from another session, a scheduled trigger, or another Claude instance? Whatever it was:
-- The fix itself is correct (CT-evening deals were filing under the next UTC calendar day).
-- **But it broke `src/vendor/deal-feed/adapter.test.js`** — 5 vitest tests now fail with TZ-shifted expectations (e.g. `'2026-05-25T00:00:00Z'` was expected to produce `'2026-05-25'`, but local TZ returns `'2026-05-24'`). Vitest on `main` is now **206/211, not 211/211**.
-- This is **NOT a regression from PR #10** — verified by running vitest on `main` directly (same 5 failures).
-- I rebased `test/phase-4-playwright` onto current `main`, which auto-deduped the duplicate adapter commit.
-
-### Required follow-up: fix `adapter.test.js`
-
-The 5 failing tests hardcode UTC-style ISO date expectations (`'2026-05-25T00:00:00Z'` → `'2026-05-25'`). They need to be updated to either:
-- Compute expected values via the same local-TZ logic as the production function (read `d.getFullYear()/getMonth()+1/getDate()`), or
-- Use Date objects constructed via local parts so the test is TZ-stable regardless of the host's clock.
-
-Until this lands, the **vitest gate floor of 211/211 cannot be met on main**. This is Brady's call: separate follow-up PR vs roll into Stage 2.
-
----
-
-## Files touched this session
-
-| File | Status | Notes |
-|------|--------|-------|
-| `tests/excel-feed.spec.js` | Created | 194 lines, 3 tests (F1, F3, F14), Stage 1 of Phase 4 |
-| `notes/HANDOFF.md` | Rewritten | This session's summary |
-| `tests/screenshots/*.png` | Reverted on `chore/smoke-spec-cleanup` before merge | Test artifacts, not in PR scope |
-
-PR #9: **MERGED** (squash, branch deleted).
-PR #10: **OPEN** awaiting Brady's merge call.
-
----
-
-## Decisions made
-
-- **Reviewers run on PR #10 before push** — per session-3 post-mortem, no exceptions on "obvious" PRs. Both returned clean.
-- **F14 ±1px tolerance over exact match** — `tr.style.height` would only work if the bundle set inline height on `<tr>` (it sets on `<td>`). `getBoundingClientRect` includes 1px bottom border. Tolerance is the right call here.
-- **F1 regex anchored with `^$`** — accepted reviewer's recommendation. Original regex was semantically correct (`\d+` requires digits, would not match "Loading…") but the anchor is belt-and-suspenders against partial-hydrate states.
-- **Stage split documented in the spec header** — every reader of the spec sees the intent without needing to read HANDOFF.
-- **Rebased rather than merged the duplicate adapter commit** — keeps history linear and dedupes the identical-content commit. `git rebase main` auto-skipped the redundant cherry-pick.
-- **Did NOT fix `adapter.test.js` in this PR** — out of scope, surfaced as a follow-up. Mixing scope was the wrong move.
-
----
-
-## Blockers & open questions for Brady
-
-1. **Who/what auto-committed `728ff08`?** Either you (great — fix is correct), another Claude session (worth knowing for orchestration), or a scheduled trigger. Should be identified before similar drift happens again.
-2. **Decide:** fix `adapter.test.js` as a separate small PR before PR #10 merges, or fold into Stage 2? Recommend separate small PR so the vitest gate floor is restorable independent of Phase 4 progress.
-3. **PR #10 merge call:** squash vs merge commit. Squash recommended (clean 1-commit PR).
+- **Stage 3** of Phase 4 (F4/F6/F7/F10). Tracked as Task #8. Different fixture needs — clipboard permissions, drag choreography, PATCH sequencing.
+- **Bundle calendar-freeze fix.** Out of scope for tests-only PR. Issue is in `src/vendor/deal-feed/data.js:153` and `src/vendor/deal-feed/tabs.js:6,17-21`. Either:
+  - Move `ND.todayISO` set to a function called at `publishToBundle` time, and have tabs.js's render() re-derive state from `ND.todayISO` on each render.
+  - Or accept the freeze as intentional and document it.
+- **F11 UI trigger.** Either wire a dblclick handler that calls `_toggleExpand` (cleanest UX would be Ctrl/Cmd+E or a row-gutter chevron) or delete the dead machinery.
+- **9 pre-existing critical-flows failures** (page-fade overlay interception). Tracked from session 3, still untouched.
+- **Story 4.3 MEDIUM/LOW rewrites** in `smoke.spec.js`. Tracked from session 3.
 
 ---
 
 ## Next session
 
-**If "fix adapter tests, then merge PR #10":** branch off main → update the 5 `adapter.test.js` cases to local-TZ-aware expectations → vitest 211/211 again → small PR → merge → then proceed to PR #10 merge.
+Three clean exit paths:
 
-**If "merge PR #10 first":** `gh pr merge 10 --squash --delete-branch` → sync main → branch `test/phase-4-playwright-stage-2` → build deal-fixture helper (see Task #7 in the task list) → implement F2/F5/F8/F9/F11/F12/F13.
+**Path A — "merge PR #12 then ship Stage 3":**
+1. Brady reviews + merges PR #12.
+2. Branch `test/phase-4-stage-3` off main.
+3. Implement F4 per-column filter, F6 range-copy-as-TSV (needs `context.grantPermissions(['clipboard-read'])`), F7 bulk-set-stage, F10 stage dropdown.
+4. Full gate + reviewer + PR.
 
-**Resume command:** `/resume-session 2026-05-26-ndsh-phase4-stage1` (or `/resume-session` for most-recent).
+**Path B — "pivot to deal sheet visual wiring + deal ID page field population" (per session-4 compaction hint):**
+- Merge PR #12 first to keep the test floor clean.
+- Then start a new branch for the visual/field work. BMAD required (touches 3+ files, multi-session scope).
 
-Blockers for Brady:
-- Identify the auto-commit source.
-- Decide on the `adapter.test.js` sequencing (separate PR vs roll into Stage 2).
-- Approve PR #10 merge strategy.
+**Path C — "address the bundle calendar-freeze bug first":**
+- Out of scope for tests; would let Stage 2 fixture use real dates instead of hardcoded BUNDLE_TODAY.
+- Could unlock additional cross-day testing in Stage 3.
+
+Brady's call.
+
+Branch: `test/phase-4-stage-2` at `<commit-sha>` on origin.
+
+Start command: `cd ~/nightdrop-dashboard && claude --dangerously-skip-permissions`
