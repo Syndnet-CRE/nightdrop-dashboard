@@ -91,7 +91,9 @@ describe('categoryToPillClass', () => {
 
 describe('isoDate', () => {
   it('returns YYYY-MM-DD for valid input', () => {
-    expect(isoDate('2026-05-25T00:00:00Z')).toBe('2026-05-25');
+    // Mid-day UTC times stay on the same local-TZ Y-M-D across US and EU
+    // CI runners (isoDate now uses local time per the 2026-05-26 isoDate fix).
+    expect(isoDate('2026-05-25T12:00:00Z')).toBe('2026-05-25');
     expect(isoDate(new Date('2026-01-01T12:00:00Z'))).toBe('2026-01-01');
   });
   it('returns null for invalid / nullish / "null" string', () => {
@@ -173,12 +175,12 @@ function baseDeal(overrides = {}) {
     property_city: 'Austin',
     property_state: 'TX',
     property_zip: '78701',
-    sent_at: '2026-05-25T00:00:00Z',
+    sent_at: '2026-05-25T12:00:00Z',
     asset_class: 'self_storage',
     value: 1_200_000,
     building_sf: 8000,
     owner_type: 'llc',
-    last_sale_date: '2018-05-25T00:00:00Z',
+    last_sale_date: '2018-05-25T12:00:00Z',
     updated_at: REF.toISOString(),
     stage: 'New',
     feedback: null,
@@ -274,7 +276,7 @@ describe('toNDDeal', () => {
 
   it('falls back to created_at when sent_at is missing', () => {
     const out = toNDDeal(
-      baseDeal({ sent_at: null, created_at: '2026-04-01T00:00:00Z' })
+      baseDeal({ sent_at: null, created_at: '2026-04-01T12:00:00Z' })
     );
     expect(out.deliveredOn).toBe('2026-04-01');
   });
@@ -412,12 +414,14 @@ describe('buildCalendar', () => {
   });
 
   it('counts deals into ISO buckets via sent_at', () => {
+    // Mid-day UTC so each timestamp buckets to its UTC Y-M-D across US and EU
+    // CI runners (isoDate uses local time per the 2026-05-26 fix).
     const deals = [
-      { sent_at: '2026-05-25T01:00:00Z' },
-      { sent_at: '2026-05-25T23:00:00Z' },
+      { sent_at: '2026-05-25T12:00:00Z' },
+      { sent_at: '2026-05-25T13:00:00Z' },
       { sent_at: '2026-05-24T12:00:00Z' },
       { sent_at: null },
-      { sent_at: '2026-05-26T00:00:00Z' },
+      { sent_at: '2026-05-26T12:00:00Z' },
     ];
     const { days } = buildCalendar(deals, REF);
     const may25 = days.find((d) => d.key === '2026-05-25');
@@ -430,7 +434,7 @@ describe('buildCalendar', () => {
 
   it('falls back to created_at when sent_at is missing on a deal', () => {
     const { days } = buildCalendar(
-      [{ sent_at: null, created_at: '2026-05-24T00:00:00Z' }],
+      [{ sent_at: null, created_at: '2026-05-24T12:00:00Z' }],
       REF
     );
     const may24 = days.find((d) => d.key === '2026-05-24');
