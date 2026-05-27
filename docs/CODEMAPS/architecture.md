@@ -1,4 +1,4 @@
-<!-- Generated: 2026-05-26 | Files scanned: ~125 | Token estimate: ~900 -->
+<!-- Generated: 2026-05-26 (session 4 refresh: test counts only) | Files scanned: ~125 | Token estimate: ~900 -->
 # Architecture — nightdrop-dashboard
 
 React 19 + Vite 8 SPA. JSX, no TypeScript. Plain CSS with tokens.
@@ -112,11 +112,17 @@ The asset class taxonomy must stay identical across 4 files:
 ```bash
 npm run dev        # vite dev server (5173, auto-bumps if taken)
 npm run build      # production build → dist/
-npm test           # vitest (211 tests)
+npm test           # vitest (211 tests on stable; 206 currently on main —
+                   # 5 adapter.test.js TZ expectations broken by 728ff08
+                   # isoDate UTC→local fix, needs follow-up PR)
 npm run lint       # ESLint
-npx playwright test    # E2E smoke + dealsheet-persistence (9 tests)
+npx playwright test    # E2E. Floor: 12 = 9 dealsheet-persistence
+                       # + 3 excel-feed Stage 1 (F1/F3/F14).
+                       # Pre-existing flake: 10 in critical-flows + smoke BB-1
+                       # (page-fade overlay interception).
 ```
-Test floor: 211 vitest + 9 Playwright = 220 total.
+Test floor (stable): 211 vitest + 12 Playwright = 223 total once adapter tests
+are restored. Currently 206 + 12 = 218 on main pending the adapter-test PR.
 
 ## Env vars
 - `VITE_API_BASE_URL` — empty in dev (Vite proxies to nightdrop-api.onrender.com)
