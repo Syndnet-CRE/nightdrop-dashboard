@@ -96,6 +96,6 @@ Three clean exit paths:
 
 Brady's call.
 
-Branch: `test/phase-4-stage-2` at `<commit-sha>` on origin.
+Branch: `test/phase-4-stage-2` at `66dcbf7` on origin.
 
 Start command: `cd ~/nightdrop-dashboard && claude --dangerously-skip-permissions`
