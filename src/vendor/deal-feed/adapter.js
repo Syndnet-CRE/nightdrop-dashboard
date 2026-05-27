@@ -61,12 +61,24 @@ export function categoryToPillClass(category) {
   return PILL_CLASS_BY_CATEGORY[String(c).toLowerCase()] || '';
 }
 
-/** ISO date YYYY-MM-DD, time-zone-stable (UTC). null on invalid. */
+/**
+ * ISO date YYYY-MM-DD using the user's local time-zone. null on invalid.
+ *
+ * Previously this used `toISOString()` which is UTC. That caused deals created
+ * in the evening US Central Time (after 7pm CT in summer / 6pm CT in winter)
+ * to land on the next calendar day in the dashboard's day filter, because UTC
+ * had already rolled over. The calendar's "today" was also UTC-based, so on
+ * busy late-evening sessions deals would silently disappear into "tomorrow".
+ * Always treat dates from the user's local clock, not UTC.
+ */
 export function isoDate(input) {
   if (!hasVal(input)) return null;
   const d = input instanceof Date ? input : new Date(input);
   if (isNaN(d.getTime())) return null;
-  return d.toISOString().slice(0, 10);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 const WEEKDAY_FMT = new Intl.DateTimeFormat('en-US', {
