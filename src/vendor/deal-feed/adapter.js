@@ -253,6 +253,14 @@ export function toNDDeal(hostDeal, ctx = {}) {
     cleanNull(hostDeal.sent_at);
   const la = computeLA(updatedAtRaw);
 
+  // lat/lng are not used by the bundle's table renderer today, but the
+  // expanded-row view + the in-bundle detail handoff both need them, and
+  // future consumers shouldn't have to round-trip through useDeals() for
+  // coordinates. Pass through camelCase first (current backend), then
+  // legacy latitude/longitude.
+  const lat = cleanNull(hostDeal.lat) ?? cleanNull(hostDeal.latitude) ?? cleanNull(briefJson?.lat) ?? null;
+  const lng = cleanNull(hostDeal.lng) ?? cleanNull(hostDeal.longitude) ?? cleanNull(briefJson?.lng) ?? null;
+
   return {
     id,
     bx,
@@ -265,6 +273,8 @@ export function toNDDeal(hostDeal, ctx = {}) {
     asset,
     psf,
     sf: hasVal(buildingSf) ? Number(buildingSf) : null,
+    lat: hasVal(lat) ? Number(lat) : null,
+    lng: hasVal(lng) ? Number(lng) : null,
     owner,
     hold,
     sig,

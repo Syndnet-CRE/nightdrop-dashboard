@@ -441,6 +441,34 @@ describe('toNDDeal — backend camelCase shape', () => {
     expect(out.psf).toBe(38);
   });
 
+  it('passes lat/lng through from backend camelCase to bundle output', () => {
+    const out = toNDDeal(backendDeal());
+    expect(out.lat).toBe(40.005138);
+    expect(out.lng).toBe(-104.991611);
+  });
+
+  it('falls back to briefJson.lat/lng when top-level coords are missing', () => {
+    const out = toNDDeal(backendDeal({
+      lat: null,
+      lng: null,
+      briefJson: { ...backendDeal().briefJson, lat: 39.7, lng: -104.9 },
+    }));
+    expect(out.lat).toBe(39.7);
+    expect(out.lng).toBe(-104.9);
+  });
+
+  it('coerces lat/lng to numbers when backend sends strings', () => {
+    const out = toNDDeal(backendDeal({ lat: '40.5', lng: '-105.0' }));
+    expect(out.lat).toBe(40.5);
+    expect(out.lng).toBe(-105.0);
+  });
+
+  it('returns null lat/lng when backend omits coordinates', () => {
+    const out = toNDDeal(backendDeal({ lat: null, lng: null, briefJson: {} }));
+    expect(out.lat).toBe(null);
+    expect(out.lng).toBe(null);
+  });
+
   it('reads entityType as the owner label (skips humanizeOwnerType slug path)', () => {
     const out = toNDDeal(backendDeal());
     expect(out.owner).toBe('LLC/Corp');
