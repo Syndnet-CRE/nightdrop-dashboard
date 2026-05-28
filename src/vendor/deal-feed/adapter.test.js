@@ -499,6 +499,42 @@ describe('toNDDeal — backend camelCase shape', () => {
     expect(out.saved).toBe(true);
   });
 
+  it('reads original_loan_amount into ext.mortAmt (formerly hardcoded "—")', () => {
+    // Backend's normalizeDeal returns the loan principal as
+    // `original_loan_amount` — confirmed in the 2026-05-27 ALL_KEYS dump
+    // for brady@parcyl.ai.
+    const out = toNDDeal(backendDeal({ original_loan_amount: 2_400_000 }));
+    expect(out.ext.mortAmt).toBe(2_400_000);
+  });
+
+  it('reads lender_name_standardized into ext.mortLender (formerly hardcoded "—")', () => {
+    const out = toNDDeal(backendDeal({ lender_name_standardized: 'Wells Fargo Bank, N.A.' }));
+    expect(out.ext.mortLender).toBe('Wells Fargo Bank, N.A.');
+  });
+
+  it('falls back to briefJson.mortgage_amount when top-level original_loan_amount is missing', () => {
+    const out = toNDDeal(backendDeal({
+      original_loan_amount: null,
+      briefJson: { ...backendDeal().briefJson, mortgage_amount: 1_750_000 },
+    }));
+    expect(out.ext.mortAmt).toBe(1_750_000);
+  });
+
+  it('falls back to briefJson.lender_name when top-level lender_name_standardized is missing', () => {
+    const out = toNDDeal(backendDeal({
+      lender_name_standardized: null,
+      briefJson: { ...backendDeal().briefJson, lender_name: 'Local Credit Union' },
+    }));
+    expect(out.ext.mortLender).toBe('Local Credit Union');
+  });
+
+  it('keeps ext.mortAmt / mortLender as "—" placeholder when no mortgage data is available', () => {
+    const out = toNDDeal(backendDeal());
+    // Default backendDeal fixture has no mortgage fields.
+    expect(out.ext.mortAmt).toBe('—');
+    expect(out.ext.mortLender).toBe('—');
+  });
+
   it('reads first signal tag and category into sig + sc', () => {
     const out = toNDDeal(backendDeal());
     expect(out.sig).toBe('LLC Absentee Owner — Potential Liquidity Event');
