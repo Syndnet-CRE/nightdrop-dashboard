@@ -87,6 +87,16 @@ export default function DealFeedExcelView() {
         markRead,
         navigate,
       });
+      // Re-trigger bundle module init that may have run during a previous
+      // detached DOM window (React 18 StrictMode mounts → cleans up → mounts
+      // again, and bundle imports continue resolving in the background while
+      // the DOM is briefly empty). All these are idempotent.
+      //  - selection.js install: dataset.selWired guard prevents double-wiring
+      //  - tabs.js renderTabs: re-paints from current state, no side effects
+      //  - feed.js _rr: same — re-paints the grid from current state
+      if (typeof ND.sheet?.install === 'function') ND.sheet.install();
+      if (typeof ND.renderTabs === 'function') ND.renderTabs();
+      if (typeof ND._rr === 'function') ND._rr();
       readyRef.current = true;
       // Initial publish — host state may have arrived before the bundle loaded.
       publishToBundle({

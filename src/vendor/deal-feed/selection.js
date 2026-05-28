@@ -801,6 +801,15 @@
     paint();
   };
 
+  // Expose install for the React host to call after JSX commit. The IIFE-time
+  // install() below can race with React 18 StrictMode's mount/unmount cycle
+  // (the bundle imports resolve while the DOM is briefly detached after
+  // cleanup, so $tw() returns null and the wiring silently no-ops). The host
+  // calls ND.sheet.install() after loadBundleOnce resolves; install is
+  // idempotent (dataset.selWired guard) so the IIFE-time attempt + the
+  // host-side re-trigger are safe.
+  ND.sheet.install = install;
+
   // wait for DOM, then install
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', install);
