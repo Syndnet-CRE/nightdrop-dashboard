@@ -120,6 +120,7 @@ export function DealHero({ deal }) {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 12, alignItems: 'stretch' }}>
         {/* Image / Map container */}
         <div
+          data-testid="hero-map-container"
           style={{
             background: 'var(--card)',
             border: '1px solid var(--card-border)',
