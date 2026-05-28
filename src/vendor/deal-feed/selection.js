@@ -462,8 +462,13 @@
     const c = +td.dataset.c;
     if (isNaN(r) || isNaN(c)) return;
 
-    // Deal rows: route most cells to "open deal detail", only refinable
-    // numeric columns ($/SF, SF, Hold) enter edit.
+    // Deal rows: dbl-click anywhere on the row toggles the inline expand
+    // (per the original Deal Feed Excel design — the expanded row hosts the
+    // property image, brief data, AI narrative, thumbs/save/hot/flag, an
+    // "Open Deal Room" link that navigates to /deal/:id, and the chat
+    // discuss trigger). Refinable numeric columns ($/SF, SF, Hold) still
+    // enter edit mode instead. The "Open Deal Room" affordance for
+    // navigating to the full deal page lives inside the expanded row.
     if (tr.classList.contains('dr')) {
       const colKey = td.dataset.col;
       if (EDITABLE_DR_COLS.has(colKey)) {
@@ -473,9 +478,15 @@
         startEdit(r, c, td);
         return;
       }
-      // Non-editable column on a deal row → open the deal
+      // Non-editable column on a deal row → toggle the inline expand row.
       const id = tr.dataset.id;
-      if (id) ND.actions?.openDetail?.(id);
+      if (id && typeof ND._toggleExpand === 'function') {
+        ND._toggleExpand(id);
+      } else if (id) {
+        // Fallback if feed.js hasn't exposed _toggleExpand yet (defensive;
+        // shouldn't happen because feed.js is loaded last).
+        ND.actions?.openDetail?.(id);
+      }
       return;
     }
 

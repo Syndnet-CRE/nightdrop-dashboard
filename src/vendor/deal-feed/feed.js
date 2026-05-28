@@ -617,11 +617,17 @@
       if (!d) return;
       const rIdx = parseInt(tr.dataset.idx);
       tr.addEventListener('click', onRowClick(tr, d, rIdx));
-      // dbl-click on gutter = open deal detail (the click itself selects row via selection.js)
+      // dbl-click on gutter = toggle inline expand row (xId machinery in this
+      // file). The expanded row renders the property image card, brief data,
+      // AI narrative panel, thumbs/save/hot/flag action icons, the "Open
+      // Deal Room" link (which still navigates to /deal/:id), and the chat
+      // discuss button. Wiring was inadvertently changed to openDetail
+      // during the actions-routing refactor on 2026-05-26 (PR #6); restored
+      // here so the original Deal Feed Excel design behavior works again.
       const g = tr.querySelector('td.gutter');
       if (g) g.addEventListener('dblclick', e => {
         e.stopPropagation();
-        ND.actions?.openDetail?.(d.id);
+        ND._toggleExpand(d.id);
       });
     });
     document.querySelectorAll('.stsel').forEach(s => s.addEventListener('change', e => {
