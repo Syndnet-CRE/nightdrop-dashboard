@@ -347,6 +347,192 @@ describe('toNDDeal', () => {
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
+// toNDDeal — backend camelCase contract (post 2026-05-20 rebuild)
+// ──────────────────────────────────────────────────────────────────────────────
+//
+// The backend `/api/dealfeed/deals` route's normalizeDeal returns camelCase
+// + shorter field names (sentAt, buyBoxId, briefJson, addr, sf, entityType,
+// yearBuilt, attomId, apn). This block freezes the adapter's behavior against
+// that shape so the next contract drift surfaces as a test failure rather
+// than silently empty UI in production.
+
+describe('toNDDeal — backend camelCase shape', () => {
+  function backendDeal(overrides = {}) {
+    // Shape mirrors what /api/dealfeed/deals returned for brady@parcyl.ai
+    // on 2026-05-27 (verified via DevTools fetch).
+    return {
+      id: '90bfc8c9-f93a-40d6-84e1-be120ace88c4',
+      addr: '17101 HURON ST',
+      property_city: 'BROOMFIELD',
+      property_state: 'CO',
+      property_zip: '80023',
+      city: 'BROOMFIELD',
+      asset: 'Self Storage / Mini-Warehouse',
+      score: 6,
+      value: 6170330,
+      sf: 164372,
+      yearBuilt: 2012,
+      lat: 40.005138,
+      lng: -104.991611,
+      box: 'Self storage CO',
+      buyBoxId: '91fd3243-c6c4-47ca-942f-8919df5deb79',
+      sentAt: '2026-05-27T07:03:21.978Z',
+      entityType: 'LLC/Corp',
+      owner: 'EGP 17101 BROOMFIELD LLC',
+      absentee: true,
+      stage: 'New',
+      status: 'new',
+      is_read: false,
+      deal_state: 'active',
+      attomId: '216254725',
+      apn: '',
+      narrative: 'Self-storage facility...',
+      signals: [
+        { tag: 'LLC Absentee Owner — Potential Liquidity Event', category: 'ownership' },
+        { tag: 'No Mortgage Data — Possible Free & Clear Asset', category: 'financial' },
+      ],
+      briefJson: {
+        bullets: [
+          { label: 'Owner:', body: 'EGP 17101 BROOMFIELD LLC, LLC/Corp absentee owner.' },
+          { label: 'Asset:', body: '164k SF self-storage on 11.58 acres.' },
+        ],
+        summary: 'EGP 17101 BROOMFIELD LLC holds a purpose-built self-storage.',
+        last_sale_date: '2018-05-25T00:00:00Z',
+        last_sale_price: 4500000,
+        parcel_id: 'R12345',
+        county: 'Broomfield',
+        zoning: 'C-2',
+      },
+      notes: '',
+      feedback: null,
+      saved_at: null,
+      ...overrides,
+    };
+  }
+
+  it('extracts identity + addr from backend camelCase', () => {
+    const out = toNDDeal(backendDeal(), { isRead: () => false });
+    expect(out.id).toBe('90bfc8c9-f93a-40d6-84e1-be120ace88c4');
+    expect(out.addr).toBe('17101 HURON ST');
+    expect(out.city).toBe('BROOMFIELD, CO 80023');
+  });
+
+  it('prefers camelCase buyBoxId over legacy box/buy_box_id', () => {
+    const out = toNDDeal(backendDeal());
+    expect(out.bx).toBe('91fd3243-c6c4-47ca-942f-8919df5deb79');
+  });
+
+  it('reads sentAt and computes local-TZ deliveredOn', () => {
+    const out = toNDDeal(backendDeal());
+    // 2026-05-27T07:03:21.978Z is May 27 in UTC and remains May 27 in any
+    // North American TZ where CI typically runs.
+    expect(out.deliveredOn).toBe('2026-05-27');
+  });
+
+  it('passes through asset label when backend returns a formatted string', () => {
+    const out = toNDDeal(backendDeal());
+    expect(out.asset).toBe('Self Storage / Mini-Warehouse');
+  });
+
+  it('reads sf for building square footage; computes psf', () => {
+    const out = toNDDeal(backendDeal());
+    expect(out.sf).toBe(164372);
+    // 6170330 / 164372 = 37.54 → rounds to 38
+    expect(out.psf).toBe(38);
+  });
+
+  it('reads entityType as the owner label (skips humanizeOwnerType slug path)', () => {
+    const out = toNDDeal(backendDeal());
+    expect(out.owner).toBe('LLC/Corp');
+  });
+
+  it('reads briefJson.bullets and surfaces first bullet body in brief', () => {
+    const out = toNDDeal(backendDeal());
+    expect(out.bullets).toHaveLength(2);
+    expect(out.brief).toBe('EGP 17101 BROOMFIELD LLC, LLC/Corp absentee owner.');
+  });
+
+  it('reads briefJson.summary into narr', () => {
+    const out = toNDDeal(backendDeal());
+    expect(out.narr).toBe('EGP 17101 BROOMFIELD LLC holds a purpose-built self-storage.');
+  });
+
+  it('reads briefJson.last_sale_date into ext.lastSale and computes hold', () => {
+    const out = toNDDeal(backendDeal());
+    expect(out.ext.lastSale).toBe('2018-05-25T00:00:00Z');
+    expect(out.ext.lastPrice).toBe(4500000);
+    // 2018-05-25 is ~8 years before 2026 — yearsSince floors at 7 or 8 depending
+    // on the exact date of the test run; assert a sensible range.
+    expect(out.hold).toMatch(/^[67] yr$|^8 yr$/);
+  });
+
+  it('treats saved_at-present as saved=true even when no `saved` boolean is on the row', () => {
+    const out = toNDDeal(backendDeal({ saved_at: '2026-05-27T08:00:00Z' }));
+    expect(out.saved).toBe(true);
+  });
+
+  it('reads first signal tag and category into sig + sc', () => {
+    const out = toNDDeal(backendDeal());
+    expect(out.sig).toBe('LLC Absentee Owner — Potential Liquidity Event');
+    // 'ownership' is not in PILL_CLASS_BY_CATEGORY → returns ''
+    expect(out.sc).toBe('');
+  });
+
+  it('falls back to hostDeal.narrative when briefJson.summary is empty', () => {
+    const out = toNDDeal(backendDeal({ briefJson: { ...backendDeal().briefJson, summary: '' } }));
+    expect(out.narr).toBe('Self-storage facility...');
+  });
+
+  it('legacy snake_case still works alongside camelCase (mixed fixture)', () => {
+    // The pre-2026-05-20 backend response style — must keep working until all
+    // call sites are confirmed camelCase.
+    const out = toNDDeal({
+      id: 'legacy-1',
+      address: '500 Legacy St',
+      sent_at: '2026-05-27T12:00:00Z',
+      asset_class: 'self_storage',
+      building_sf: 9000,
+      value: 1_350_000,
+      owner_type: 'llc',
+      buy_box_id: 'legacy-uuid',
+      brief_json: { bullets: [{ body: 'legacy bullet' }], summary: 'legacy summary' },
+      stage: 'New',
+      feedback: null,
+      signals: [],
+      notes: '',
+    });
+    expect(out.addr).toBe('500 Legacy St');
+    expect(out.deliveredOn).toBe('2026-05-27');
+    expect(out.asset).toBe('Self Storage');
+    expect(out.sf).toBe(9000);
+    expect(out.psf).toBe(150);
+    expect(out.owner).toBe('LLC');
+    expect(out.bx).toBe('legacy-uuid');
+    expect(out.brief).toBe('legacy bullet');
+    expect(out.narr).toBe('legacy summary');
+  });
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// buildCalendar — backend camelCase contract
+// ──────────────────────────────────────────────────────────────────────────────
+
+describe('buildCalendar — backend camelCase sentAt', () => {
+  it('counts deals by sentAt (camelCase) into the correct day bucket', () => {
+    const { days } = buildCalendar(
+      [
+        { sentAt: '2026-05-25T12:00:00Z' },
+        { sentAt: '2026-05-25T15:00:00Z' },
+        { sentAt: '2026-05-24T12:00:00Z' },
+      ],
+      REF
+    );
+    expect(days.find((d) => d.key === '2026-05-25').count).toBe(2);
+    expect(days.find((d) => d.key === '2026-05-24').count).toBe(1);
+  });
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
 // toNDBox
 // ──────────────────────────────────────────────────────────────────────────────
 
