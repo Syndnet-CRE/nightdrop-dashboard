@@ -73,12 +73,12 @@ function StatBlock({ k, v, accent, palette, align = 'left' }) {
       <div style={{
         fontSize: 7, fontWeight: 700,
         letterSpacing: '0.14em', textTransform: 'uppercase',
-        color: '#5C6070',
+        color: 'var(--stat-label-fg)',
       }}>{k}</div>
       <div style={{
         fontSize: 9, fontWeight: 700,
         letterSpacing: '0.02em',
-        color: accent ? palette.light : '#C9CCD6',
+        color: accent ? palette.light : 'var(--stat-value-fg)',
         fontVariantNumeric: 'tabular-nums',
         whiteSpace: 'nowrap',
       }}>{v}</div>
@@ -119,7 +119,7 @@ function EQTicker({ progress, palette }) {
         const h = isLeading ? leadH : isDone ? 3 + (i % 2) : 2;
         const color = isLeading ? palette.lightest
                     : isDone   ? palette.primary
-                                : 'rgba(255,255,255,0.10)';
+                                : 'var(--eq-pending-bar)';
         return (
           <div key={i} style={{
             width: 2, height: h,
@@ -154,12 +154,12 @@ function DiamondGate({ node, state, palette }) {
         position: 'relative',
         width:  state === 'active' ? SIZE_ACTIVE : SIZE_NORMAL,
         height: state === 'active' ? SIZE_ACTIVE : SIZE_NORMAL,
-        background: state === 'pending' ? '#0D0D0D' : palette.primary,
-        border: `1.5px solid ${state === 'pending' ? '#3a3d48' : palette.primary}`,
+        background: state === 'pending' ? 'var(--diamond-pending-bg)' : palette.primary,
+        border: `1.5px solid ${state === 'pending' ? 'var(--diamond-pending-border)' : palette.primary}`,
         transform: 'rotate(45deg)',
         boxShadow: state === 'active'
-          ? `0 0 0 3px #0D0D0D, 0 0 12px ${palette.primary}`
-          : `0 0 0 3px #0D0D0D`,
+          ? `0 0 0 3px var(--diamond-shadow-bg), 0 0 12px ${palette.primary}`
+          : `0 0 0 3px var(--diamond-shadow-bg)`,
         transition: 'all 0.2s cubic-bezier(.2,0,0,1)',
       }}>
         {state === 'active' && (
@@ -175,9 +175,9 @@ function DiamondGate({ node, state, palette }) {
         transform: 'translateX(-50%)',
         fontSize: 8.5, fontWeight: 700, textTransform: 'uppercase',
         letterSpacing: '0.1em',
-        color: state === 'pending' ? '#5C6070'
+        color: state === 'pending' ? 'var(--diamond-label-pending)'
              : state === 'active'  ? palette.light
-                                    : '#C9CCD6',
+                                    : 'var(--stat-value-fg)',
         whiteSpace: 'nowrap',
         fontFamily: 'Manrope, system-ui, sans-serif',
       }}>{node.label}</div>
@@ -203,7 +203,7 @@ function Rocket({ size = 36, palette }) {
           transparent 0%,
           rgba(89,234,96,0) 6%,
           rgba(248,180,65,0.85) 60%,
-          rgba(255,255,255,1) 100%)`,
+          var(--rocket-flame-end) 100%)`,
         borderRadius: 2,
         filter: 'blur(1.2px)',
         pointerEvents: 'none',
@@ -290,7 +290,7 @@ export default function PipelineTrack({
               }}>
                 {submittedCount}
               </div>
-              <div style={{ fontSize: 7, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#5C6070' }}>
+              <div style={{ fontSize: 7, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--stat-label-fg)' }}>
                 SUBMITTED
               </div>
             </div>
@@ -299,7 +299,7 @@ export default function PipelineTrack({
         {/* Hairline divider */}
         <div style={{
           position: 'absolute', left: 0, right: 0, top: 20,
-          height: 1, background: 'rgba(255,255,255,0.06)',
+          height: 1, background: 'var(--pipeline-divider)',
         }}/>
         {/* Ticker + diamonds + rocket */}
         <div style={{ position: 'absolute', left: 0, right: 0, top: 22, bottom: 0 }}>

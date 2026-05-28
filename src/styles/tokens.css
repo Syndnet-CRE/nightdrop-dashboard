@@ -228,6 +228,21 @@
   --warn: var(--warning);
   --danger-hi: color-mix(in srgb, var(--destructive) 70%, white);
   --danger-tint: color-mix(in srgb, var(--destructive) 15%, transparent);
+
+  /* ── Pipeline timeline (TopHeader strip) ──────────────────────
+     Tokens for PipelineTrack.jsx + PipelineTimeline.jsx. Default
+     values here are the LIGHT-mode variants (since :root is the
+     light-theme baseline per the file convention at line 6).
+     The dark overrides live in the [data-theme="dark"] block below. */
+  --stat-label-fg: #6b7280;            /* zinc-500 — readable on white */
+  --stat-value-fg: #1f2937;            /* zinc-800 — strong on white */
+  --eq-pending-bar: rgba(0, 0, 0, 0.08);
+  --diamond-pending-bg: #d4d4d8;       /* zinc-300 — soft gray, not stark black */
+  --diamond-pending-border: #a1a1aa;   /* zinc-400 */
+  --diamond-shadow-bg: #ffffff;        /* matches header bg in light mode */
+  --diamond-label-pending: #6b7280;    /* matches stat label */
+  --rocket-flame-end: rgba(0, 0, 0, 0.6);
+  --pipeline-divider: rgba(0, 0, 0, 0.08);
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -275,6 +290,19 @@
 
   /* Dot grid background — visible dots on dark */
   --dot-grid-color: #2a2a2a;
+
+  /* Pipeline timeline — dark overrides for the tokens defined in :root.
+     These were the inline-hardcoded values in PipelineTrack.jsx /
+     PipelineTimeline.jsx before the 2026-05-28 light-theme migration. */
+  --stat-label-fg: #5C6070;
+  --stat-value-fg: #C9CCD6;
+  --eq-pending-bar: rgba(255, 255, 255, 0.10);
+  --diamond-pending-bg: #0D0D0D;
+  --diamond-pending-border: #3a3d48;
+  --diamond-shadow-bg: #0D0D0D;
+  --diamond-label-pending: #5C6070;
+  --rocket-flame-end: rgba(255, 255, 255, 1);
+  --pipeline-divider: rgba(255, 255, 255, 0.06);
 }
 
 /* ─────────────────────────────────────────────────────────────

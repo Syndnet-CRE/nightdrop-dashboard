@@ -96,7 +96,7 @@
   align-items: center;
   justify-content: center;
   padding-left: var(--s-4);
-  border-left: 1px solid rgba(91, 204, 72, 0.12);
+  border-left: 1px solid var(--pipeline-divider);
   flex-shrink: 0;
 }
 
