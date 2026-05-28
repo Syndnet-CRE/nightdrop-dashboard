@@ -66,15 +66,25 @@ export function createRrThrottle(ND, raf, caf) {
  * @param {Array}  args.buyBoxes           host useDeals().buyBoxes
  * @param {(id: string) => boolean} args.isRead host useReadState().isRead
  * @param {Date|string} [args.today]
+ * @param {string} [args.mapboxToken]      Mapbox public token. Stored on
+ *   ND.mapboxToken so feed.js's expanded-row satellite tile can build the
+ *   Mapbox Static-Image URL for each deal's coordinates.
  * @param {{ request: () => void }} args.requestRr from createRrThrottle
  */
-export function publishToBundle({ ND, deals, buyBoxes, isRead, today, requestRr }) {
+export function publishToBundle({ ND, deals, buyBoxes, isRead, today, mapboxToken, requestRr }) {
   if (!ND) return;
   const safeDeals = Array.isArray(deals) ? deals : [];
   const safeBoxes = Array.isArray(buyBoxes) ? buyBoxes : [];
 
   ND.deals = safeDeals.map((d) => toNDDeal(d, { isRead })).filter(Boolean);
   ND.boxes = safeBoxes.map(toNDBox).filter(Boolean);
+
+  // Mapbox token for the satellite-tile in feed.js's buildExpandedRow.
+  // Falls through to '' when absent so the URL helper bails cleanly and
+  // the tile falls back to the CSS placeholder.
+  if (typeof mapboxToken === 'string' && mapboxToken) {
+    ND.mapboxToken = mapboxToken;
+  }
 
   // The bundle's data.js defines ND.buildCalendar(), which produces the
   // Array<Month{ weeks: Array<Week{ days: Array<Day> }> }> shape that

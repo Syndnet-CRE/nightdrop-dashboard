@@ -298,14 +298,29 @@
   }
 
   // ----- expanded row -----
+  // Build a Mapbox Static-Image URL for the deal's coordinates. The Mapbox
+  // token is set on ND.mapboxToken by publishToBundle in sync.js. Returns
+  // null when either coords or token is missing — the caller falls back to
+  // the CSS-only placeholder (multi-layer gradient + pseudo-element roads).
+  function mapboxSatUrl(lat, lng, zoom = 18, w = 380, h = 240) {
+    const token = ND.mapboxToken;
+    if (!token || lat == null || lng == null) return null;
+    const z = Math.max(0, Math.min(22, Number(zoom) || 18));
+    return `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${lng},${lat},${z},0/${w}x${h}@2x?access_token=${token}&attribution=false&logo=false`;
+  }
+
   function buildExpandedRow(d) {
     const ex = d.ext;
     const dealRoomUrl = `#/deal-room/${d.id}`;
+    const initialZoom = 18;
+    const satUrl = mapboxSatUrl(d.lat, d.lng, initialZoom);
+    const hasImg = !!satUrl;
     return `<td colspan="${COLSPAN}"><div class="xi">
       <div class="xi-body">
         <div class="xi-img-wrap">
-          <div class="sat-tile" title="${d.addr}">
-            <div class="sat-meta"><i class="ti ti-map-pin"></i> Satellite · 18z</div>
+          <div class="sat-tile${hasImg ? ' has-img' : ''}" title="${d.addr}" data-lat="${d.lat ?? ''}" data-lng="${d.lng ?? ''}" data-zoom="${initialZoom}">
+            ${hasImg ? `<img class="sat-img" alt="Satellite view of ${d.addr}" src="${satUrl}" loading="lazy" onerror="this.parentElement.classList.remove('has-img'); this.remove();"/>` : ''}
+            <div class="sat-meta"><i class="ti ti-map-pin"></i> Satellite · <span class="sat-zoom-label">${initialZoom}z</span></div>
             <div class="sat-pulse"></div>
             <div class="sat-pin">
               <div class="sat-pin-mark"><i class="ti ti-map-pin"></i></div>
@@ -313,8 +328,8 @@
             </div>
             <div class="sat-foot"><span>${d.city.split(',')[0]}</span><b>${d.ext.parcel}</b></div>
             <div class="sat-zoom">
-              <button title="Zoom out"><i class="ti ti-minus"></i></button>
-              <button title="Zoom in"><i class="ti ti-plus"></i></button>
+              <button title="Zoom out" data-z="-1"><i class="ti ti-minus"></i></button>
+              <button title="Zoom in" data-z="+1"><i class="ti ti-plus"></i></button>
             </div>
           </div>
         </div>
@@ -494,6 +509,28 @@
               });
             });
             xtr.querySelector('.disc-open').addEventListener('click', e => { e.stopPropagation(); openChat(d); });
+            // Wire the satellite-tile zoom buttons. Clamp 14–20 (city block to
+            // close street). Swaps the <img src> in place; no remount.
+            xtr.querySelectorAll('.sat-zoom button[data-z]').forEach(btn => {
+              btn.addEventListener('click', e => {
+                e.stopPropagation();
+                const tile = xtr.querySelector('.sat-tile');
+                const img = tile?.querySelector('.sat-img');
+                const label = tile?.querySelector('.sat-zoom-label');
+                if (!tile || !img) return;
+                const lat = parseFloat(tile.dataset.lat);
+                const lng = parseFloat(tile.dataset.lng);
+                if (!isFinite(lat) || !isFinite(lng)) return;
+                const cur = parseInt(tile.dataset.zoom, 10) || 18;
+                const delta = parseInt(e.currentTarget.dataset.z, 10) || 0;
+                const next = Math.max(14, Math.min(20, cur + delta));
+                if (next === cur) return;
+                tile.dataset.zoom = String(next);
+                if (label) label.textContent = next + 'z';
+                const url = mapboxSatUrl(lat, lng, next);
+                if (url) img.src = url;
+              });
+            });
             // Agent briefing scroll indicator — hide the chevron once the user
             // reaches the bottom; show it again when they scroll back up.
             const scrollEl = xtr.querySelector('.narr-scroll');
