@@ -56,13 +56,27 @@ function SatelliteMapBox({ latitude, longitude }) {
 
     new mapboxgl.Marker({ element: marker }).setLngLat([longitude, latitude]).addTo(map.current);
 
+    // Mapbox reads the container's clientWidth/Height ONCE at init. The
+    // parent grid uses alignItems: 'stretch' so the column height can grow
+    // after mount when the right column (distress signals, owner data)
+    // arrives. Hook a ResizeObserver to call resize() on each container
+    // dimension change so the canvas always fills the stretched column.
+    let ro;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(() => map.current?.resize());
+      ro.observe(mapContainer.current);
+    }
+
     return () => {
+      ro?.disconnect();
       map.current?.remove();
       map.current = null;
     };
   }, [latitude, longitude]);
 
-  return <div ref={mapContainer} style={{ width: '100%', height: 480 }} />;
+  // height: '100%' fills the stretched parent. The parent's bumped
+  // minHeight (480) is the floor when the right column is short.
+  return <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />;
 }
 
 export function DealHero({ deal }) {
@@ -118,7 +132,9 @@ export function DealHero({ deal }) {
     <section style={{ margin: '0 24px', marginTop: 12 }}>
       {/* ── Row 1 ─────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 12, alignItems: 'stretch' }}>
-        {/* Image / Map container */}
+        {/* Image / Map container — height comes from the grid row's stretch
+            on tall right columns; minHeight gives a usable floor when the
+            right column is short. Inner divs use height: 100% to fill. */}
         <div
           data-testid="hero-map-container"
           style={{
@@ -127,7 +143,7 @@ export function DealHero({ deal }) {
             borderRadius: 10,
             overflow: 'hidden',
             position: 'relative',
-            minHeight: 280,
+            minHeight: 480,
             boxShadow: 'var(--card-shadow)',
           }}
         >
@@ -233,13 +249,13 @@ export function DealHero({ deal }) {
             <MapPin size={11} /> Google Maps
           </a>
 
-          {/* Photo placeholder */}
-          <div style={{ display: imgTab === 'photo' ? 'flex' : 'none', width: '100%', height: 480, alignItems: 'center', justifyContent: 'center', background: 'var(--secondary)' }}>
+          {/* Photo placeholder — fills the stretched parent (was hardcoded 480) */}
+          <div style={{ display: imgTab === 'photo' ? 'flex' : 'none', width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center', background: 'var(--secondary)' }}>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: 12, color: 'var(--muted-foreground)' }}>Drag aerial photo here</div>
           </div>
 
-          {/* Satellite map */}
-          <div style={{ display: imgTab === 'map' ? 'block' : 'none', width: '100%', height: 480 }}>
+          {/* Satellite map — fills the stretched parent (was hardcoded 480) */}
+          <div style={{ display: imgTab === 'map' ? 'block' : 'none', width: '100%', height: '100%' }}>
             <SatelliteMapBox latitude={deal.lat} longitude={deal.lng} />
           </div>
         </div>
