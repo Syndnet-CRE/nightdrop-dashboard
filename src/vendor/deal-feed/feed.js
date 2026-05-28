@@ -311,7 +311,10 @@
 
   function buildExpandedRow(d) {
     const ex = d.ext;
-    const dealRoomUrl = `#/deal-room/${d.id}`;
+    // React Router path (NOT the legacy bundle's hash-routing `#/deal-room/:id`
+    // — that was a single-page-bundle convention that never matched any host
+    // route after the React integration). Matches App.jsx's /deal/:id route.
+    const dealRoomUrl = `/deal/${d.id}`;
     const initialZoom = 18;
     const satUrl = mapboxSatUrl(d.lat, d.lng, initialZoom);
     const hasImg = !!satUrl;
