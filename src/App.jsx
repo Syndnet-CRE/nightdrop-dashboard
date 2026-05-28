@@ -7,7 +7,7 @@ import { ReadStateProvider } from './contexts/ReadStateContext';
 import { DealStateProvider } from './contexts/DealStateContext';
 import TopHeader from './components/TopHeader';
 import LeftPanel from './components/LeftPanel';
-import { DealDetail } from './components/DealDetail';
+import { DealShell } from './components/DealDetail/DealShell';
 import { ConfirmModal } from './components/ConfirmModal';
 import BuyBoxPage from './pages/BuyBoxPage';
 import { BuyBoxesView } from './views/BuyBoxesView';
@@ -67,7 +67,7 @@ function DealDetailPage({ dealId }) {
 
   return (
     <div className="dd-page-glass">
-      <DealDetail
+      <DealShell
         deal={deal}
         onClose={() => navigate(-1)}
         deals={deals}
@@ -99,7 +99,7 @@ function DealDetailModal({ dealId }) {
 
   return (
     <div className="deal-modal-overlay">
-      <DealDetail deal={deal} onClose={close}/>
+      <DealShell deal={deal} onClose={close} embedded/>
     </div>
   );
 }

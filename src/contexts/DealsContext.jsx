@@ -118,6 +118,20 @@ export function DealsProvider({ children }) {
     }
   }, []);
 
+  // V1 deal-detail save action — toggles the deal's `saved` flag with an
+  // optimistic update and a /save PATCH. Returns the resolved saved state.
+  // Distinct from updateStatus and patchStage; the deal-feed-excel bundle
+  // still calls patchStage and deleteDeal directly.
+  const toggleSave = useCallback(async (dealId) => {
+    setDeals(prev => prev.map(d => d.id === dealId ? { ...d, saved: !d.saved } : d));
+    try {
+      const res = await api.patch(`/api/dealfeed/deals/${dealId}/save`);
+      setDeals(prev => prev.map(d => d.id === dealId ? { ...d, saved: res.saved } : d));
+    } catch {
+      // optimistic update stays; saved status will resync on next load
+    }
+  }, []);
+
   const fetchContacts = useCallback(async (dealId) => {
     try {
       const res = await api.get(`/api/dealfeed/deals/${dealId}/contacts`);
@@ -176,7 +190,7 @@ export function DealsProvider({ children }) {
   }, []);
 
   return (
-    <DealsCtx.Provider value={{ deals, buyBoxes, contacts, dealNotes, portfolios, loading, error, refetch: fetchAll, postFeedback, saveNote, updateStatus, patchStage, deleteDeal, fetchContacts, logContact, patchBuyBox, deleteBuyBox, fetchDealNotes, createDealNote, fetchOwnerPortfolio }}>
+    <DealsCtx.Provider value={{ deals, buyBoxes, contacts, dealNotes, portfolios, loading, error, refetch: fetchAll, postFeedback, saveNote, updateStatus, patchStage, deleteDeal, toggleSave, fetchContacts, logContact, patchBuyBox, deleteBuyBox, fetchDealNotes, createDealNote, fetchOwnerPortfolio }}>
       {children}
     </DealsCtx.Provider>
   );
