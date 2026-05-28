@@ -182,4 +182,18 @@ test.describe('Inline expand row', () => {
     await expect(satTile).not.toHaveClass(/has-img/);
     await expect(satTile.locator('img.sat-img')).toHaveCount(0);
   });
+
+  test('expand row "Go to map" button (.aico.mp) navigates to /map?focus=:id', async ({ page }) => {
+    const deal = makeDeal();
+    await authAndOpenWithDeal(page, deal);
+
+    const shell = page.locator('.nd-excel-shell');
+    await shell.locator(`tr.dr[data-id="${deal.id}"] td.gutter`).dblclick();
+
+    const mapBtn = shell.locator('tr.xr .aico.mp[data-act="mp"]');
+    await expect(mapBtn).toBeVisible();
+    await mapBtn.click();
+
+    await expect(page).toHaveURL(new RegExp(`/map\\?focus=${deal.id}$`));
+  });
 });

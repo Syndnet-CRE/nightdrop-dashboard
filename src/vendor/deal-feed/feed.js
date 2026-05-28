@@ -375,7 +375,7 @@
         <button class="aico sv ${d.saved?'on':''}" data-act="sv" title="Save (S)"><i class="ti ti-star"></i></button>
         <button class="aico hot ${d.hot?'on':''}" data-act="hot" title="Mark hot"><i class="ti ti-flame"></i></button>
         <div class="act-divider"></div>
-        <button class="aico mp" title="Go to map"><i class="ti ti-map-pin"></i></button>
+        <button class="aico mp" data-act="mp" title="Go to map"><i class="ti ti-map-pin"></i></button>
         <button class="aico sh" title="Share brief"><i class="ti ti-share"></i></button>
         <div class="act-space"></div>
         <button class="act-btn secondary disc-open" title="Quick chat"><i class="ti ti-message-circle"></i> Discuss</button>
@@ -509,6 +509,7 @@
                 }
                 if (act === 'sv')  ND.actions?.toggleSave?.(d.id, d.saved);
                 if (act === 'hot') ND.actions?.toggleHot?.(d.id, cur);
+                if (act === 'mp')  ND.actions?.openMap?.(d.id);
               });
             });
             xtr.querySelector('.disc-open').addEventListener('click', e => { e.stopPropagation(); openChat(d); });
