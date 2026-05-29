@@ -1,28 +1,68 @@
 /* ============================================
    TABS: Excel sheet-tab strip + calendar popover
+
+   IMPORTANT: ND.calendar is mutable — sync.js publishToBundle() rebuilds it
+   every time the host pushes a new deals set. We MUST read it dynamically
+   on each access. Capturing `const cal = ND.calendar` at IIFE-time creates
+   a frozen view that ignores subsequent rebuilds, which was the
+   2026-05-27 production "Deal Sheet shows mock data" bug.
    ============================================ */
 
 (function() {
-  const cal = ND.calendar;
+  // Live getter — always reads the current ND.calendar. Returns an empty
+  // array (not undefined) so callers can safely iterate before the first
+  // publishToBundle.
+  function cal() { return Array.isArray(ND.calendar) ? ND.calendar : []; }
   const MONTH_NAMES_3 = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const DAY_NAMES_3 = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
   function findContaining(dayISO) {
-    for (const m of cal) for (const w of m.weeks) for (const d of w.days)
+    for (const m of cal()) for (const w of m.weeks) for (const d of w.days)
       if (d.key === dayISO) return { month: m, week: w, day: d };
     return null;
   }
 
-  // Initialize
-  const initial = findContaining(ND.todayISO);
+  // Re-derive ND.state.activeMonth/Week/Day from the CURRENT calendar +
+  // todayISO. Called once at IIFE-time AND at the top of every render() so
+  // the state migrates onto the latest calendar after a publishToBundle
+  // update. Idempotent: if the current activeDay still exists in the
+  // calendar, leaves state alone (preserves user navigation via day-tab
+  // clicks). Only re-pins to today when the current state is stale.
   ND.state = ND.state || {};
-  ND.state.activeMonth = initial?.month?.key || cal[cal.length - 1].key;
-  ND.state.activeWeek  = initial?.week?.key  || cal[cal.length - 1].weeks[0].key;
-  ND.state.activeDay   = initial?.day?.key   || ND.state.activeWeek;
+  function syncStateToCalendar() {
+    const c = cal();
+    if (c.length === 0) return;
+    // 1. If the user navigated to a day that still exists in the calendar,
+    //    keep that day. We only adopt new state when stale.
+    const stillValid = findContaining(ND.state.activeDay);
+    if (stillValid) {
+      ND.state.activeMonth = stillValid.month.key;
+      ND.state.activeWeek  = stillValid.week.key;
+      // activeDay is already correct
+      return;
+    }
+    // 2. Otherwise prefer today's calendar slot.
+    const todayInfo = findContaining(ND.todayISO);
+    if (todayInfo) {
+      ND.state.activeMonth = todayInfo.month.key;
+      ND.state.activeWeek  = todayInfo.week.key;
+      ND.state.activeDay   = todayInfo.day.key;
+      return;
+    }
+    // 3. Fall back to the last day in the calendar (calendar window ends
+    //    in the future, so this lands on the most recent calendar day).
+    const lastMonth = c[c.length - 1];
+    const lastWeek = lastMonth.weeks[lastMonth.weeks.length - 1];
+    const lastDay = lastWeek.days[lastWeek.days.length - 1];
+    ND.state.activeMonth = lastMonth.key;
+    ND.state.activeWeek  = lastWeek.key;
+    ND.state.activeDay   = lastDay?.key || lastWeek.key;
+  }
+  syncStateToCalendar();
   let popOpen = false;
 
   function activeRefs() {
-    const m = cal.find(x => x.key === ND.state.activeMonth);
+    const m = cal().find(x => x.key === ND.state.activeMonth);
     const w = m ? m.weeks.find(x => x.key === ND.state.activeWeek) : null;
     const d = w ? w.days.find(x => x.key === ND.state.activeDay) : null;
     return { month: m, week: w, day: d };
@@ -35,7 +75,7 @@
   }
 
   function setMonth(monthKey, opts = {}) {
-    const m = cal.find(x => x.key === monthKey);
+    const m = cal().find(x => x.key === monthKey);
     if (!m) return;
     ND.state.activeMonth = monthKey;
     const todayInfo = findContaining(ND.todayISO);
@@ -51,7 +91,7 @@
     const w = refs.month.weeks.find(x => x.key === weekKey);
     if (!w) {
       // weekKey might be in a different month — find it
-      for (const m of cal) {
+      for (const m of cal()) {
         const wk = m.weeks.find(x => x.key === weekKey);
         if (wk) { ND.state.activeMonth = m.key; break; }
       }
@@ -95,7 +135,7 @@
 
   function stepDay(delta) {
     const flat = [];
-    cal.forEach(m => m.weeks.forEach(w => w.days.forEach(d => flat.push({ m, w, d }))));
+    cal().forEach(m => m.weeks.forEach(w => w.days.forEach(d => flat.push({ m, w, d }))));
     const idx = flat.findIndex(x => x.d.key === ND.state.activeDay);
     if (idx < 0) return;
     const next = flat[idx + delta];
@@ -111,7 +151,7 @@
     if (!refs.month) return;
     // gather all weeks across cal
     const allWeeks = [];
-    cal.forEach(m => m.weeks.forEach(w => allWeeks.push({ m, w })));
+    cal().forEach(m => m.weeks.forEach(w => allWeeks.push({ m, w })));
     const idx = allWeeks.findIndex(x => x.w.key === ND.state.activeWeek);
     if (idx < 0) return;
     const next = allWeeks[idx + delta];
@@ -123,6 +163,9 @@
   }
 
   function render() {
+    // Re-sync state against the latest calendar BEFORE resolving refs.
+    // publishToBundle may have rebuilt ND.calendar since the last render.
+    syncStateToCalendar();
     const refs = activeRefs();
     if (!refs.month || !refs.week || !refs.day) return;
     const tb = document.getElementById('tabbar');
@@ -168,7 +211,7 @@
           <button class="cal-pop-close" id="cal-close" title="Close"><i class="ti ti-x"></i></button>
         </div>
         <div class="cal-months">
-          ${cal.map(m => `<button class="cal-month ${m.key===ND.state.activeMonth?'active':''}" data-mo="${m.key}">
+          ${cal().map(m => `<button class="cal-month ${m.key===ND.state.activeMonth?'active':''}" data-mo="${m.key}">
             <span>${m.labelFull}</span>
             <span class="cal-month-count">${m.total}</span>
           </button>`).join('')}

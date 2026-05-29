@@ -36,6 +36,27 @@ function fitDeals(mapRef, deals, padding = 80) {
   mapRef.current.fitBounds(result.bounds, { padding, duration: 0 });
 }
 
+// Test: are any of the deal coordinates inside the rectangle described by
+// the persisted viewport? Used to decide whether to honor a saved viewport
+// or auto-fit on first load when the saved viewport would leave every deal
+// off-screen (e.g., user previously zoomed Austin, deals are in Denver).
+function viewportContainsAnyDeal(viewport, deals) {
+  if (!viewport || !Array.isArray(deals) || deals.length === 0) return true;
+  const { latitude, longitude, zoom } = viewport;
+  if (typeof latitude !== 'number' || typeof longitude !== 'number') return true;
+  // Approximate the viewport bounds using a degrees-per-zoom-level heuristic.
+  // Mapbox's geographic width at z is ~360 / 2^z; height ~ width * 9 / 16 for
+  // a typical desktop aspect. Use a generous 2× expansion so the recovery
+  // only kicks in when deals are clearly outside the visible area.
+  const z = Math.max(1, zoom || 4);
+  const halfLng = (360 / Math.pow(2, z));
+  const halfLat = halfLng * 0.6;
+  const inView = (d) =>
+    Math.abs(d.lat - latitude) <= halfLat &&
+    Math.abs(d.lng - longitude) <= halfLng;
+  return deals.some(d => d.lat != null && d.lng != null && inView(d));
+}
+
 // Mapbox-native cluster source + 3 layers. Used when `enableClustering=true`
 // on real `deals` data. Tiers recalibrated for production scale:
 //   <10 green · 10-49 amber · 50+ red
@@ -120,15 +141,25 @@ export function DealMap({
   // the whole region).
   const fitTarget = (deals && deals.length > 0) ? deals : clusterData;
 
+  // Auto-fit on first load when (a) no viewport was persisted OR (b) the
+  // persisted viewport is far enough away that none of the current deals
+  // would be visible. The second case rescues users who saved an Austin
+  // viewport in a previous session and now have deals delivered in Denver.
   const handleMapLoad = useCallback(() => {
     setMapLoaded(true);
-    if (initialViewState) return;
-    if (fitTarget) fitDeals(mapRef, fitTarget, padding);
+    if (!fitTarget) return;
+    if (initialViewState && viewportContainsAnyDeal(initialViewState, fitTarget)) {
+      return;
+    }
+    fitDeals(mapRef, fitTarget, padding);
   }, [fitTarget, padding, initialViewState]);
 
   useEffect(() => {
-    if (!mapLoaded || initialViewState) return;
-    if (fitTarget) fitDeals(mapRef, fitTarget, padding);
+    if (!mapLoaded || !fitTarget) return;
+    if (initialViewState && viewportContainsAnyDeal(initialViewState, fitTarget)) {
+      return;
+    }
+    fitDeals(mapRef, fitTarget, padding);
   }, [fitTarget, padding, mapLoaded, initialViewState]);
 
   useEffect(() => {
@@ -212,7 +243,18 @@ export function DealMap({
       )}
 
       {!inAutoClusterMode && deals.map((d) => {
-        if (!d.lat || !d.lng) return null;
+        if (!d.lat || !d.lng) {
+          // Silent-drop: a deal made it into the host context but has no
+          // coordinates. Log once per render so the next "no pins" report
+          // surfaces in DevTools instead of guessing.
+          if (typeof console !== 'undefined' && console.warn) {
+            console.warn(
+              '[DealMap] dropped deal without coordinates:',
+              { id: d.id, addr: d.addr || d.address, lat: d.lat, lng: d.lng }
+            );
+          }
+          return null;
+        }
         const active = selectedId === d.id || hoverId === d.id || hoverDealId === d.id;
         return (
           <Marker

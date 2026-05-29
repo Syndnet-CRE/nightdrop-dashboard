@@ -148,19 +148,33 @@ export function toNDDeal(hostDeal, ctx = {}) {
   if (!hostDeal) return null;
   const isRead = typeof ctx.isRead === 'function' ? ctx.isRead : () => false;
 
+  // Backend `/api/dealfeed/deals` rebuilt 2026-05-20 returns camelCase + shorter
+  // field names (sentAt, buyBoxId, briefJson, addr, sf, entityType, yearBuilt,
+  // attomId). Older fixtures and tests use snake_case (sent_at, buy_box_id,
+  // brief_json, address, building_sf, owner_type, year_built). Read camelCase
+  // FIRST, then fall back to snake_case so the adapter is robust to both shapes.
   const id = hostDeal.id;
-  const bx = cleanNull(hostDeal.buy_box_id) ?? cleanNull(hostDeal.box) ?? null;
+  const briefJson = hostDeal.briefJson ?? hostDeal.brief_json ?? null;
+  const bx =
+    cleanNull(hostDeal.buyBoxId) ??
+    cleanNull(hostDeal.buy_box_id) ??
+    cleanNull(hostDeal.box) ??
+    null;
 
   const rawScore =
     cleanNull(hostDeal.score) ??
     (hasVal(hostDeal.match_score) ? Number(hostDeal.match_score) * 10 : null);
   const score = hasVal(rawScore) ? Number(rawScore) : 0;
 
-  const addr = cleanNull(hostDeal.address) ?? cleanNull(hostDeal.addr) ?? '';
+  const addr =
+    cleanNull(hostDeal.addr) ??
+    cleanNull(hostDeal.address) ??
+    cleanNull(briefJson?.address) ??
+    '';
 
-  const cityPart = cleanNull(hostDeal.property_city);
-  const statePart = cleanNull(hostDeal.property_state);
-  const zipPart = cleanNull(hostDeal.property_zip);
+  const cityPart = cleanNull(hostDeal.property_city) ?? cleanNull(briefJson?.city);
+  const statePart = cleanNull(hostDeal.property_state) ?? cleanNull(briefJson?.state);
+  const zipPart = cleanNull(hostDeal.property_zip) ?? cleanNull(briefJson?.zip);
   const cityStr = [
     cityPart ? `${cityPart},` : '',
     statePart || '',
@@ -171,26 +185,53 @@ export function toNDDeal(hostDeal, ctx = {}) {
     .trim();
 
   const brief =
-    cleanNull(hostDeal.brief_json?.bullets?.[0]?.body) ??
+    cleanNull(briefJson?.bullets?.[0]?.body) ??
     cleanNull(hostDeal.signals?.[0]?.description) ??
+    cleanNull(hostDeal.signals?.[0]?.tag) ??
+    cleanNull(hostDeal.headline) ??
     '';
 
-  const sentRaw = cleanNull(hostDeal.sent_at) ?? cleanNull(hostDeal.created_at);
+  const sentRaw =
+    cleanNull(hostDeal.sentAt) ??
+    cleanNull(hostDeal.sent_at) ??
+    cleanNull(hostDeal.created_at);
   const date = fmtDate(sentRaw, 'weekday');
   const deliveredOn = isoDate(sentRaw);
 
-  const assetSlug = cleanNull(hostDeal.asset) ?? cleanNull(hostDeal.asset_class);
-  const asset = assetClassLabel(assetSlug);
+  // Backend may return `asset` as either a slug ('self_storage') or a formatted
+  // label ('Self Storage / Mini-Warehouse'). assetClassLabel returns '' for
+  // anything that isn't a known slug — when that happens, fall through to the
+  // raw value so the label still displays.
+  const assetRaw =
+    cleanNull(hostDeal.asset_class) ??
+    cleanNull(hostDeal.asset) ??
+    cleanNull(briefJson?.asset_class) ??
+    cleanNull(briefJson?.resolved_asset_type);
+  const slugLabel = assetClassLabel(assetRaw);
+  const asset = slugLabel || (assetRaw ? String(assetRaw) : '');
 
-  const value = cleanNull(hostDeal.value);
-  const buildingSf = cleanNull(hostDeal.building_sf);
+  const value = cleanNull(hostDeal.value) ?? cleanNull(briefJson?.assessed_value);
+  const buildingSf =
+    cleanNull(hostDeal.sf) ??
+    cleanNull(hostDeal.building_sf) ??
+    cleanNull(briefJson?.sf) ??
+    cleanNull(briefJson?.building_sf);
   const psf =
     hasVal(value) && hasVal(buildingSf) && Number(buildingSf) > 0
       ? Math.round(Number(value) / Number(buildingSf))
       : null;
 
-  const owner = humanizeOwnerType(hostDeal.owner_type);
-  const hold = yearsSince(hostDeal.last_sale_date);
+  // Backend's `entityType` is already a human label ('LLC/Corp', 'Trust'); the
+  // legacy `owner_type` is a slug that humanizeOwnerType resolves. Prefer the
+  // labelled value when present.
+  const owner =
+    cleanNull(hostDeal.entityType) ??
+    humanizeOwnerType(hostDeal.owner_type) ??
+    '';
+  const lastSaleRaw =
+    cleanNull(hostDeal.last_sale_date) ??
+    cleanNull(briefJson?.last_sale_date);
+  const hold = yearsSince(lastSaleRaw);
 
   const sig =
     cleanNull(hostDeal.signals?.[0]?.tag) ??
@@ -201,8 +242,24 @@ export function toNDDeal(hostDeal, ctx = {}) {
   const stage = cleanNull(hostDeal.stage) ?? 'New';
   const notes = cleanNull(hostDeal.notes) ?? '';
 
-  const feedback = cleanNull(hostDeal.feedback);
+  const feedback = cleanNull(hostDeal.feedback) ?? cleanNull(hostDeal.fb);
   const hot = feedback === 'hot';
+
+  // `updated_at` isn't returned by the rebuilt backend; sent_at is the best
+  // proxy for "last activity" until a real updated_at column lands.
+  const updatedAtRaw =
+    cleanNull(hostDeal.updated_at) ??
+    cleanNull(hostDeal.sentAt) ??
+    cleanNull(hostDeal.sent_at);
+  const la = computeLA(updatedAtRaw);
+
+  // lat/lng are not used by the bundle's table renderer today, but the
+  // expanded-row view + the in-bundle detail handoff both need them, and
+  // future consumers shouldn't have to round-trip through useDeals() for
+  // coordinates. Pass through camelCase first (current backend), then
+  // legacy latitude/longitude.
+  const lat = cleanNull(hostDeal.lat) ?? cleanNull(hostDeal.latitude) ?? cleanNull(briefJson?.lat) ?? null;
+  const lng = cleanNull(hostDeal.lng) ?? cleanNull(hostDeal.longitude) ?? cleanNull(briefJson?.lng) ?? null;
 
   return {
     id,
@@ -216,6 +273,8 @@ export function toNDDeal(hostDeal, ctx = {}) {
     asset,
     psf,
     sf: hasVal(buildingSf) ? Number(buildingSf) : null,
+    lat: hasVal(lat) ? Number(lat) : null,
+    lng: hasVal(lng) ? Number(lng) : null,
     owner,
     hold,
     sig,
@@ -223,19 +282,46 @@ export function toNDDeal(hostDeal, ctx = {}) {
     stage,
     notes,
     unread: !isRead(id),
-    saved: !!cleanNull(hostDeal.saved),
+    saved:
+      !!cleanNull(hostDeal.saved) ||
+      !!cleanNull(hostDeal.saved_at),
     hot,
     up: hot,
-    la: computeLA(hostDeal.updated_at),
+    la,
     ext: {
-      parcel: cleanNull(hostDeal.parcel_id) ?? '—',
-      county: cleanNull(hostDeal.property_county) ?? '—',
-      zoning: cleanNull(hostDeal.zoning) ?? '—',
-      yearBuilt: cleanNull(hostDeal.year_built) ?? '—',
-      lotSF: cleanNull(hostDeal.lot_sf) ?? '—',
-      assessed: cleanNull(hostDeal.assessed_value) ?? '—',
-      lastSale: cleanNull(hostDeal.last_sale_date) ?? '—',
-      lastPrice: cleanNull(hostDeal.last_sale_price) ?? '—',
+      parcel:
+        cleanNull(hostDeal.parcel_id) ??
+        cleanNull(hostDeal.apn) ??
+        cleanNull(briefJson?.parcel_id) ??
+        cleanNull(briefJson?.apn) ??
+        '—',
+      county:
+        cleanNull(hostDeal.property_county) ??
+        cleanNull(hostDeal.county) ??
+        cleanNull(briefJson?.county) ??
+        '—',
+      zoning:
+        cleanNull(hostDeal.zoning) ??
+        cleanNull(briefJson?.zoning) ??
+        '—',
+      yearBuilt:
+        cleanNull(hostDeal.yearBuilt) ??
+        cleanNull(hostDeal.year_built) ??
+        cleanNull(briefJson?.year_built) ??
+        '—',
+      lotSF:
+        cleanNull(hostDeal.lot_sf) ??
+        cleanNull(briefJson?.lot_sf) ??
+        '—',
+      assessed:
+        cleanNull(hostDeal.assessed_value) ??
+        cleanNull(briefJson?.assessed_value) ??
+        '—',
+      lastSale: lastSaleRaw ?? '—',
+      lastPrice:
+        cleanNull(hostDeal.last_sale_price) ??
+        cleanNull(briefJson?.last_sale_price) ??
+        '—',
       landVal: '—',
       bldgVal: '—',
       deed: '—',
@@ -243,12 +329,11 @@ export function toNDDeal(hostDeal, ctx = {}) {
       mortLender: '—',
       mortDate: '—',
     },
-    bullets: Array.isArray(hostDeal.brief_json?.bullets)
-      ? hostDeal.brief_json.bullets
-      : [],
+    bullets: Array.isArray(briefJson?.bullets) ? briefJson.bullets : [],
     narr:
-      cleanNull(hostDeal.brief_json?.summary) ??
-      cleanNull(hostDeal.brief_json?.narrative) ??
+      cleanNull(briefJson?.summary) ??
+      cleanNull(briefJson?.narrative) ??
+      cleanNull(hostDeal.narrative) ??
       '',
   };
 }
@@ -297,7 +382,11 @@ export function buildCalendar(hostDeals, today = new Date()) {
   if (Array.isArray(hostDeals)) {
     for (const d of hostDeals) {
       if (!d) continue;
-      const sent = cleanNull(d.sent_at) ?? cleanNull(d.created_at);
+      // Match the toNDDeal date preference: backend uses camelCase `sentAt`.
+      const sent =
+        cleanNull(d.sentAt) ??
+        cleanNull(d.sent_at) ??
+        cleanNull(d.created_at);
       const key = isoDate(sent);
       if (!key) continue;
       counts.set(key, (counts.get(key) || 0) + 1);

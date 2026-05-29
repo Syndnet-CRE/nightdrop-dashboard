@@ -1,116 +1,114 @@
 HANDOFF
-Date: 2026-05-26 (session 4 — continued from session 3 via /resume-session)
+Date: 2026-05-27 (session 5 — P0 production fix)
 Repo: nightdrop-dashboard
-Session objective: Wrap PR #9 (Story 4.3 HIGH cleanup) and ship Phase 4 Stage 1 Playwright spec (F1/F3/F14 chrome flows).
-Status: COMPLETE — PR #9 merged via squash; PR #10 (Phase 4 Stage 1) opened with reviewer-approved chrome-flow tests.
+Session objective: Fix the production bug where the Deal Sheet shows hardcoded mock data and the map shows no pins for real users on nightdropai.netlify.app.
+Status: PR #13 OPEN + MERGEABLE awaiting Brady's manual smoke on the Netlify preview deploy.
 
 ---
 
 ## What was done
 
-### PR #9 wrap — Story 4.3 HIGH cleanup, merged
+### Diagnosis (3 read-only investigation agents)
 
-- Ran code-reviewer + security-reviewer (per session-3 post-mortem commitment to stop skipping reviewers on "obvious" PRs). Both returned zero findings — confirmed pure deletion, no cross-file references to the removed `openWizard()` helper.
-- Reverted the 3 unstaged PNG screenshot artifacts on the branch so the diff was clean before merge.
-- Squash-merged via `gh pr merge 9 --squash --delete-branch`. Main advanced to `83ff4b9`.
-- Branch `chore/smoke-spec-cleanup` deleted on origin.
+User-driven DevTools fetch confirmed the backend correctly returns 10 deals with real lat/lng for `brady@parcyl.ai`. The bug was entirely client-side and had three compounding causes traced via parallel code-explorer agents:
 
-### PR #10 — Phase 4 Stage 1 spec (`tests/excel-feed.spec.js`)
+1. **Bundle adapter contract drift.** Backend `/api/dealfeed/deals` was rebuilt on 2026-05-20 to return camelCase (`sentAt`, `buyBoxId`, `briefJson`, `addr`, `sf`, `entityType`, `yearBuilt`). The bundle's `toNDDeal()` kept reading snake_case (`sent_at`, `buy_box_id`, `brief_json`, etc.). Every deal's `deliveredOn` came out null because `sent_at` was undefined → bundle day-filter dropped all 10 real deals.
 
-Branch `test/phase-4-playwright` off post-#9 main. One new file, +194 lines, no source changes.
+2. **Bundle calendar-freeze.** `src/vendor/deal-feed/tabs.js:6` captured `const cal = ND.calendar` at IIFE-time and initialized `state.activeMonth/Week/Day` once at IIFE-time. `publishToBundle` rebuilt the calendar on every host update but tabs.js never re-read. State pinned to the hardcoded `2026-05-24` anchor.
 
-Tests added (3, all passing):
-- **F1** — shell mounts + toolbar chrome inventory (`.toolbar`, `.chips`, `.density-toggle`, `.sort-sel`) + stats bar + row count `#rc` text matches anchored `/^Showing \d+ of \d+$/`.
-- **F3** — `.sort-sel` dropdown lists Score/Recency/Distress/Value in order; selectOption commits to all 3 non-default values.
-- **F14** — density toggle: clicking `.dbtn[data-d=compact|normal|comfortable]` rotates `.active` correctly; empty-row `getBoundingClientRect().height` matches `feed.js` `rh` map (36/44/56 with ±1px tolerance for the bottom border).
+3. **Hardcoded mock data in data.js.** ~130 lines of hardcoded `ND.deals = [...]`, plus a seeded RNG synthesizing fake historical day counts (1-12 per day), plus hardcoded `ND.todayISO = '2026-05-24'`. This was the visible "55 deals delivered" footer ghost Brady reported.
+
+Plus: **Map auto-fit gate too restrictive.** `DealMap.handleMapLoad` bailed out of `fitDeals` whenever `initialViewState` was non-null — even if the saved viewport pointed at Austin while deals were in Denver. Users with stale localStorage viewports saw empty maps.
+
+### PR #13 — `fix/bundle-adapter-and-mock-data`
+
+5 commits off main:
+
+| Commit | Subject |
+|---|---|
+| `5f5f7c7` | fix(adapter): align toNDDeal with rebuilt backend camelCase response shape |
+| `f14d617` | fix(bundle): tabs.js re-syncs state to live ND.calendar on each render |
+| `3b8860e` | chore(bundle): strip hardcoded mock deals + fake RNG counts from data.js |
+| `f688851` | fix(map): auto-fit when saved viewport doesn't contain any deals + log silent drops |
+| `15bbf21` | fix(adapter): pass lat/lng through toNDDeal output for future bundle consumers |
 
 Gate results:
-- `npm run lint` — clean.
-- `npm run build` — clean, DealFeedExcelView lazy chunk 390.26 KB / 89.38 KB gzipped.
-- `npx playwright test tests/dealsheet-persistence.spec.js tests/excel-feed.spec.js` — **12/12 pass** (9 dealsheet floor + 3 new).
-- code-reviewer: 1 HIGH (regex was actually correct on semantics, but added `$` anchor anyway as belt-and-suspenders). 2 MEDIUM (F14 tolerance rationale OK, no teardown OK since Playwright isolates per-test). LOW concerns acknowledged.
-- security-reviewer: non-issue, no real backend, mocks only.
+- `npm run lint` — clean
+- `npm test -- --run` — **229/229 vitest** (was 211 — added 18 new tests covering the backend camelCase shape, lat/lng passthrough, and buildCalendar)
+- `npm run build` — clean, DealFeedExcelView lazy chunk 390.26 KB / 89.38 KB gzipped
+- `npx playwright test tests/excel-feed.spec.js tests/dealsheet-persistence.spec.js` — **12/12** (9 dealsheet-persistence + 3 excel-feed Stage 1)
+- code-reviewer agent — 1 CRITICAL claim based on incorrect data-flow trace (map doesn't consume toNDDeal); the lat/lng passthrough was added defensively as commit `15bbf21`. 1 HIGH theoretical render-loop concern dismissed (rAF throttle prevents recursion).
+- security-reviewer agent — CLEAN, no findings.
 
-### Stage split rationale (documented in spec header)
+PR URL: https://github.com/Syndnet-CRE/nightdrop-dashboard/pull/13
 
-- **Stage 1 (this PR):** F1, F3, F14 — chrome flows that pass with `deals: []` mock.
-- **Stage 2 (next session):** F2, F5, F8, F9, F11, F12, F13 — need non-empty deal fixture flowing through `publishToBundle` so `tr.dr` rows render. Plus PATCH route mocks for hot/notes/stage.
-- **Stage 3 (later):** F4 per-column filter, F6 range-copy-as-TSV, F7 bulk Set Stage, F10 stage dropdown. Clipboard permissions, drag choreography, PATCH sequencing.
+### Manual smoke required (Brady, on Netlify preview)
 
-Reason for split: writing all 14 in one PR would have either flaked on data-flow setup or ballooned scope past one clean review. Stage 1 locks the chrome scaffolding first.
+When Netlify generates the preview URL for PR #13, Brady to verify:
+1. Deal Sheet grid shows 10 real deals (not 8 demos). Footer says `Showing N of 10`, not `55 deals delivered`.
+2. Day tabs show the real current week with real day counts.
+3. Hamburger calendar (cal popover) shows real month totals, not fake RNG counts.
+4. Map shows pins over the deals' real coordinates (Colorado/Broomfield area for brady's account).
+5. DevTools console clean (any `[DealMap] dropped deal without coordinates` warns indicate backend-side geocoding gaps, not a regression).
 
----
-
-## What was NOT done
-
-- **Stage 2 + Stage 3** of Phase 4 (the remaining 11 flows). Scoped out by design.
-- **No investigation of the 9 pre-existing critical-flows failures** (`<div class="page-fade">` overlay interception). Tracked from session 3.
-
----
-
-## Anomalies discovered this session
-
-### Mystery auto-commit during the session (`728ff08` on main, `ad1acac` on my branch)
-
-While I was setting up `test/phase-4-playwright`, an external process committed `fix(adapter): isoDate uses local time, not UTC` to **both** branches simultaneously at `22:26:04 -0500`. Same content, different SHAs. Authored as `syndnet-cre <support@syndnet.com>` (same identity as Brady's normal commits).
-
-Brady — was this you from another session, a scheduled trigger, or another Claude instance? Whatever it was:
-- The fix itself is correct (CT-evening deals were filing under the next UTC calendar day).
-- **But it broke `src/vendor/deal-feed/adapter.test.js`** — 5 vitest tests now fail with TZ-shifted expectations (e.g. `'2026-05-25T00:00:00Z'` was expected to produce `'2026-05-25'`, but local TZ returns `'2026-05-24'`). Vitest on `main` is now **206/211, not 211/211**.
-- This is **NOT a regression from PR #10** — verified by running vitest on `main` directly (same 5 failures).
-- I rebased `test/phase-4-playwright` onto current `main`, which auto-deduped the duplicate adapter commit.
-
-### Required follow-up: fix `adapter.test.js`
-
-The 5 failing tests hardcode UTC-style ISO date expectations (`'2026-05-25T00:00:00Z'` → `'2026-05-25'`). They need to be updated to either:
-- Compute expected values via the same local-TZ logic as the production function (read `d.getFullYear()/getMonth()+1/getDate()`), or
-- Use Date objects constructed via local parts so the test is TZ-stable regardless of the host's clock.
-
-Until this lands, the **vitest gate floor of 211/211 cannot be met on main**. This is Brady's call: separate follow-up PR vs roll into Stage 2.
+If all 5 are clean → `gh pr merge 13 --squash --delete-branch`.
 
 ---
 
-## Files touched this session
+## What was NOT done (out of scope)
 
-| File | Status | Notes |
-|------|--------|-------|
-| `tests/excel-feed.spec.js` | Created | 194 lines, 3 tests (F1, F3, F14), Stage 1 of Phase 4 |
-| `notes/HANDOFF.md` | Rewritten | This session's summary |
-| `tests/screenshots/*.png` | Reverted on `chore/smoke-spec-cleanup` before merge | Test artifacts, not in PR scope |
+- **PR #12 rebase.** That open PR (`test/phase-4-stage-2`) has Stage 2 Playwright tests using a `BUNDLE_TODAY='2026-05-24'` workaround that becomes obsolete once PR #13 lands. After merging #13, PR #12 either gets rebased + workaround stripped (preferred) or closed in favor of a fresh follow-up PR with dynamic dates.
+- **Backend list-endpoint audit.** Agent C confirmed the backend response is correct. No `~/nightdrop-api` changes needed.
+- **F11 UI trigger** (bundle has `ND._toggleExpand` machinery but no UI event calls it). Separate decision: wire a UI trigger or delete the dead code.
+- **9 pre-existing critical-flows failures** (`page-fade` overlay interception). Tracked from session 3, still untouched.
 
-PR #9: **MERGED** (squash, branch deleted).
-PR #10: **OPEN** awaiting Brady's merge call.
+---
+
+## Anomalies / open questions
+
+- **Brady's "mystery auto-commit"** from earlier this morning (`728ff08` fix(adapter): isoDate uses local time) — still unidentified. Worth checking before similar concurrent edits cause merge conflicts again.
+- **No telemetry on bundle-load failure modes.** If `publishToBundle` silently fails (auth error, network blip), users see the empty-state UI now (since mock data is stripped). Could be confusing without a "no deals yet — try refreshing" toast. Not regression-blocking but worth a follow-up.
 
 ---
 
 ## Decisions made
 
-- **Reviewers run on PR #10 before push** — per session-3 post-mortem, no exceptions on "obvious" PRs. Both returned clean.
-- **F14 ±1px tolerance over exact match** — `tr.style.height` would only work if the bundle set inline height on `<tr>` (it sets on `<td>`). `getBoundingClientRect` includes 1px bottom border. Tolerance is the right call here.
-- **F1 regex anchored with `^$`** — accepted reviewer's recommendation. Original regex was semantically correct (`\d+` requires digits, would not match "Loading…") but the anchor is belt-and-suspenders against partial-hydrate states.
-- **Stage split documented in the spec header** — every reader of the spec sees the intent without needing to read HANDOFF.
-- **Rebased rather than merged the duplicate adapter commit** — keeps history linear and dedupes the identical-content commit. `git rebase main` auto-skipped the redundant cherry-pick.
-- **Did NOT fix `adapter.test.js` in this PR** — out of scope, surfaced as a follow-up. Mixing scope was the wrong move.
+- **camelCase-first reads with snake_case fallbacks** in adapter — backward compat for fixtures and any host that still serves snake_case.
+- **`syncStateToCalendar` is idempotent** — preserves user day-tab navigation when the active day is still in the (new) calendar.
+- **Removed all mock data + RNG synthesis from data.js** — not gated by env var or feature flag. Real users need real data only.
+- **Map auto-fit only when saved viewport contains zero deals** — preserves intentional pan/zoom when at least one deal is visible.
+- **Defensive lat/lng passthrough in toNDDeal** even though the map doesn't currently consume it — small cost, prevents future contract gaps.
+- **Did NOT fold PR #12's Stage 2 tests into PR #13** — keeps the P0 fix focused. PR #12 will rebase or close after #13 merges.
 
 ---
 
-## Blockers & open questions for Brady
+## Blockers for Brady
 
-1. **Who/what auto-committed `728ff08`?** Either you (great — fix is correct), another Claude session (worth knowing for orchestration), or a scheduled trigger. Should be identified before similar drift happens again.
-2. **Decide:** fix `adapter.test.js` as a separate small PR before PR #10 merges, or fold into Stage 2? Recommend separate small PR so the vitest gate floor is restorable independent of Phase 4 progress.
-3. **PR #10 merge call:** squash vs merge commit. Squash recommended (clean 1-commit PR).
+1. Smoke-test the Netlify preview URL for PR #13 once it builds. Five-item checklist above.
+2. Decide PR #12 fate after #13 merges: rebase + strip workaround, OR close + reopen with dynamic-date tests.
+3. Optional: identify the source of the morning's mystery commit `728ff08`.
 
 ---
 
-## Next session
+## Post-mortem
 
-**If "fix adapter tests, then merge PR #10":** branch off main → update the 5 `adapter.test.js` cases to local-TZ-aware expectations → vitest 211/211 again → small PR → merge → then proceed to PR #10 merge.
+This bug shipped because in PR #12 this morning I treated the bundle calendar-freeze as a "test fixture workaround" instead of stopping to smoke production. The HANDOFF flagged it as "real bundle bug worth fixing" but as a follow-up rather than a P0. Brady caught it the same day. Full post-mortem in chat. Process changes I committed to:
 
-**If "merge PR #10 first":** `gh pr merge 10 --squash --delete-branch` → sync main → branch `test/phase-4-playwright-stage-2` → build deal-fixture helper (see Task #7 in the task list) → implement F2/F5/F8/F9/F11/F12/F13.
+1. Manual prod smoke before declaring any cutover-class change done.
+2. No "fixture workaround" framing in test code — if a fixture has to lie, production is broken.
+3. Any `data.js`-shaped file with hardcoded data is treated as a release blocker until I've confirmed the production app never reads it.
+4. Every test spec for a data-bound surface needs at least one non-empty fixture test from day one (Stage 1's empty-deals-only coverage was a false-confidence test that shipped this bug).
+5. When I find a bug while doing something else, it becomes its own task with its own priority — not a footnote.
 
-**Resume command:** `/resume-session 2026-05-26-ndsh-phase4-stage1` (or `/resume-session` for most-recent).
+---
 
-Blockers for Brady:
-- Identify the auto-commit source.
-- Decide on the `adapter.test.js` sequencing (separate PR vs roll into Stage 2).
-- Approve PR #10 merge strategy.
+## Resume command (next session)
+
+```
+cd ~/nightdrop-dashboard && claude --dangerously-skip-permissions
+/resume-session 2026-05-27-ndsh-bundle-fix-progress
+```
+
+If PR #13 is merged: `git switch main && git pull --ff-only` then decide on PR #12 rebase or pivot to deal-sheet visual wiring per Brady's compaction note.
+
+If PR #13 is still open: `gh pr view 13` first, address any review feedback, re-run gates.

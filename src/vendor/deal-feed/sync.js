@@ -85,6 +85,14 @@ export function publishToBundle({ ND, deals, buyBoxes, isRead, today, requestRr 
   ND.todayISO = todayKey;
   ND.calendar = typeof ND.buildCalendar === 'function' ? ND.buildCalendar() : [];
 
+  // Tabbar must re-render whenever ND.calendar changes — otherwise users see
+  // stale day-tab counts after the first publishToBundle. tabs.js's render()
+  // calls syncStateToCalendar internally so it picks up the new activeDay if
+  // todayISO changed. Skip when renderTabs hasn't loaded yet (vitest harness).
+  if (typeof ND.renderTabs === 'function') {
+    ND.renderTabs();
+  }
+
   if (requestRr && typeof requestRr.request === 'function') {
     requestRr.request();
   }
