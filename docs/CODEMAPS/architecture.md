@@ -1,19 +1,23 @@
-<!-- Generated: 2026-05-26 (session 4 refresh: test counts only) | Files scanned: ~125 | Token estimate: ~900 -->
+<!-- Generated: 2026-05-28 (session 7: V1 deal-detail migration + PR #13/#14 merged) | Files scanned: ~125 | Token estimate: ~950 -->
 # Architecture — nightdrop-dashboard
 
-React 19 + Vite 8 SPA. JSX, no TypeScript. Plain CSS with tokens.
+React 19 + Vite 8 SPA. JSX, no TypeScript. Plain CSS with dual-theme tokens.
 Production: Netlify auto-deploys from `main` → https://nightdropai.netlify.app
 
 Deal Feed Excel cutover (2026-05-26): `/dealsheet` is now the primary
 post-auth landing surface alongside `/map`. Legacy `/dashboard` and
 `/calendar` redirect to `/dealsheet`.
 
+V1 deal-detail migration (2026-05-28): `/deal/:id` route now renders DealShell
+(design package rebuild). Old deal-detail.css removed; V1 styling scoped to
+.deal-shell via v1-deal-tokens.css + deal-shell.css.
+
 ## Boundaries
 ```
 Browser
   └─ React SPA (this repo)
        ├─ /api/dealfeed/*  → nightdrop-api (Render)
-       └─ Mapbox GL JS     → Mapbox tiles
+       └─ Mapbox GL JS     → Mapbox tiles + Static API
 ```
 
 ## Provider hierarchy (src/App.jsx)
@@ -36,7 +40,7 @@ BrowserRouter
 - Landing paths (`LANDING_PATHS` in App.jsx): `/map`, `/dealsheet`. Bare `/`
   and `/login` URLs normalize to `/map`. `/dashboard` and `/calendar` redirect
   to `/dealsheet`.
-- Admin/invites gated to `subscriber.email === 'brady@parcyl.ai'`.
+- Admin/invites gated to `subscriber.email === 'brady@syndnet.com'`.
 
 ## Top-level dirs
 ```
@@ -48,14 +52,15 @@ src/
 ├── views/                  ← page-level components (Dashboard, Map, BuyBoxes,
 │                              Admin, DealFeedExcelView, …)
 ├── pages/                  ← URL-routed pages (BuyBoxPage)
-├── components/             ← shared UI atoms + composites
+├── components/
+│   ├── DealDetail/         ← V1 design package (DealShell + 8 subcomponents)
 │   ├── feed/               ← deal feed cards, chat thread
 │   └── kanban/             ← (placeholder, currently empty)
 ├── vendor/deal-feed/       ← vanilla-JS spreadsheet bundle (~7,500 lines
 │                              .js + .css; ported from prior product;
 │                              wrapped by DealFeedExcelView)
-├── styles/                 ← tokens.css + per-surface CSS files
-├── assets/                 ← logo PNG, static images
+├── styles/                 ← tokens.css + v1-deal-tokens.css + per-surface CSS
+├── assets/                 ← propcloud logo [theme-aware], static images
 └── data/mockData.js        ← fallback data when API empty
 ```
 
@@ -79,8 +84,27 @@ DealsContext.fetchAll() (on mount)
   → GET /api/dealfeed/deals       → deals[]
   → GET /api/dealfeed/buy-boxes   → buyBoxes[]
   → GET /api/dealfeed/contacts    → contacts[]
-  → exposes via useDeals(): {deals, buyBoxes, contacts, refetch, postFeedback, …}
+  → exposes via useDeals(): {deals, buyBoxes, contacts, refetch, postFeedback, toggleSave, …}
 ```
+
+New in PR #14: `useDeals()` extended with `toggleSave` (V1 deal-detail feature).
+
+## Data flow — deal detail
+```
+/deal/:id → DealDetailPage OR DealDetailModal
+  → reads deal from DealsContext.deals[]
+  → passes to DealShell
+    ├─ DealHero (address + KPI cards + satellite map + distress signals)
+    ├─ DealNarrative (brief text)
+    ├─ DealIntel (3-tab data: properties / mortgage / permits)
+    ├─ DealTimeline (chain-of-title events [placeholder])
+    ├─ DealOwnerGraph (D3 force graph + table [placeholder])
+    ├─ DealCalculator (deal math)
+    └─ DealActivityRail (right edge: scroll-spy nav dots + activity [stub])
+```
+
+Keyboard nav (non-embedded mode): J/K/←/→ to move between deals in list.
+Escape key closes the page or modal.
 
 ## Vendor bundle integration — `/dealsheet`
 ```
@@ -89,7 +113,7 @@ DealFeedExcelView (src/views/, lazy-loaded)
   ├─ host overrides via DealFeedExcelView.css (loaded AFTER vendor)
   ├─ bundleLoadPromise (module-scoped) ensures the 8 bundle JS modules
   │  load exactly once per page lifetime:
-  │     data → tabs → selection → context-menu → row-resize
+  │     data → adapter → tabs → selection → context-menu → row-resize
   │       → filter-popover → sidebar → feed
   ├─ publishToBundle(state)         host  → bundle data push (deals, buyBoxes,
   │                                  readState, etc.) — rAF-throttled by
@@ -100,6 +124,28 @@ DealFeedExcelView (src/views/, lazy-loaded)
 AppShell keeps a single `DealFeedExcelView` instance mounted across view
 switches (toggled via `display:none`) so element-scoped listeners
 attached by the bundle survive navigate-away-and-back.
+
+New in PR #13 + #14:
+- `adapter.js` now reads camelCase fields from backend briefJson (mortAmt, mortLender, mortDate wired)
+- `feed.js` expand row now wires `.sat-tile` element with Mapbox Static satellite image at deal coords
+
+## Design tokens — dual-theme (light/dark)
+```
+localStorage['nightdrop-theme'] (default 'dark')
+  ↓
+document.documentElement[data-theme]
+  ↓ matches :root, [data-theme="light"], [data-theme="dark"]
+  ├─ src/styles/tokens.css
+  │  (shadcn-style light/dark palettes; global tokens)
+  │
+  └─ src/styles/v1-deal-tokens.css
+     (scoped to .deal-shell; overrides light/dark for V1 design)
+```
+
+Light theme softening pass (2026-05-28): desaturated greens, warm off-white BG,
+softer typography contrast to reduce eye fatigue.
+
+Dark theme: shipped as-is from V1 design package (2026-05-22).
 
 ## Cross-repo lockstep (DO NOT BREAK)
 The asset class taxonomy must stay identical across 4 files:
@@ -129,3 +175,4 @@ Test floor: 211 vitest + 12 Playwright = 223 total.
 - Backend MVP filter contract: `~/nightdrop-api/docs/taxonomy/mvp-buy-box-taxonomy.md`
 - Cross-repo audit: `notes/audit/CROSS-REPO-AUDIT-BUY-BOX-MVP-2026-05-20.md`
 - Deal Feed Excel cutover plan: `notes/bmad/deal-feed-excel/` (PRD, stories, qa-plan)
+- V1 deal-detail design package: `notes/bmad/deal-detail-v1/` (architecture, component breakdown)
