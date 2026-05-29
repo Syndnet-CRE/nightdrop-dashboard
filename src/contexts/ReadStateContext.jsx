@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { getRecentKey, readRecent, recordRecent } from './readState.recency';
 
 const ReadStateCtx = createContext(null);
 
@@ -17,6 +18,12 @@ export function ReadStateProvider({ children }) {
     );
   });
 
+  const [recentIds, setRecentIds] = useState(() => {
+    if (!subId) return [];
+    const key = getRecentKey(subId);
+    return readRecent(localStorage, key);
+  });
+
   const isRead = useCallback((dealId) => readIds.has(String(dealId)), [readIds]);
 
   const markRead = useCallback((dealId) => {
@@ -25,10 +32,15 @@ export function ReadStateProvider({ children }) {
     if (localStorage.getItem(key) === 'true') return;
     localStorage.setItem(key, 'true');
     setReadIds(prev => new Set([...prev, String(dealId)]));
+
+    // Also record in recently reviewed
+    const recentKey = getRecentKey(subId);
+    const updated = recordRecent(localStorage, recentKey, dealId, Date.now());
+    setRecentIds(updated);
   }, [subId]);
 
   return (
-    <ReadStateCtx.Provider value={{ isRead, markRead }}>
+    <ReadStateCtx.Provider value={{ isRead, markRead, recentIds }}>
       {children}
     </ReadStateCtx.Provider>
   );

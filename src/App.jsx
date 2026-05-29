@@ -222,6 +222,7 @@ function AppShell() {
     navigate('/deal/' + deal.id, state ? { state } : {});
   }, [navigate, view]);
 
+
   useEffect(() => {
     if (!loading && !subscriber) {
       try {

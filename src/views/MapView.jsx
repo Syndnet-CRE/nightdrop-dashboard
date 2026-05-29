@@ -6,6 +6,7 @@ import { DEMO_PROPERTIES, CLUSTER_CITIES } from '../data/demoProperties';
 import { DealMap } from '../components/DealMap';
 import { DealPanel } from '../components/DealPanel';
 import MapLegend from '../components/MapLegend';
+import HeaderSearch from '../components/HeaderSearch';
 import { I } from '../components/Icons';
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -110,6 +111,34 @@ export function MapView({ onOpenDeal }) {
     next.delete('focus');
     setSearchParams(next, { replace: true });
   }, [searchParams, setSearchParams]);
+
+  // Honor ?lat=<number>&lng=<number>&z=<zoom> to fly to arbitrary coords.
+  // Clears params after applying, same pattern as ?focus.
+  // Does NOT call fitDeals; coords-driven flyTo takes precedence over auto-fit.
+  useEffect(() => {
+    const latParam = searchParams.get('lat');
+    const lngParam = searchParams.get('lng');
+    const zoomParam = searchParams.get('z');
+
+    if (!latParam || !lngParam) return;
+
+    const lat = parseFloat(latParam);
+    const lng = parseFloat(lngParam);
+    const zoom = zoomParam ? parseFloat(zoomParam) : 15;
+
+    // Validate parsed numbers
+    if (isNaN(lat) || isNaN(lng) || isNaN(zoom)) return;
+
+    // Update viewport state directly, which will trigger the map to fly
+    setViewport({ latitude: lat, longitude: lng, zoom });
+
+    // Clear the params
+    const next = new URLSearchParams(searchParams);
+    next.delete('lat');
+    next.delete('lng');
+    next.delete('z');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   // Pin click on map: expand card in panel, auto-open panel; no flyTo (user is already viewing pin)
@@ -170,6 +199,24 @@ export function MapView({ onOpenDeal }) {
       />
 
       <MapLegend />
+
+      {/* Smart search floats top-center of the map viewport. Centered within
+          .map-view-wrap (which equals .app-content), so it re-centers when the
+          left sidebar collapses. Deal -> open modal; address -> flyTo. */}
+      <div
+        className="map-search-float"
+        onWheel={(e) => e.stopPropagation()}
+      >
+        <HeaderSearch
+          onSearchDeal={(id) => {
+            const d = apiDeals.find((x) => String(x.id) === String(id));
+            if (d) onOpenDeal?.(d);
+          }}
+          onSearchCoords={(lat, lng) =>
+            setViewport((prev) => ({ ...prev, latitude: lat, longitude: lng, zoom: 15 }))
+          }
+        />
+      </div>
 
       <div className="map-toolbar" ref={toolbarRef}>
         <div className="mt-slot">
