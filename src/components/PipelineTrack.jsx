@@ -59,33 +59,6 @@ function activeIndex(progress, nodes) {
   return ai;
 }
 
-// ── Telemetry stat ──────────────────────────────────────────────────────────
-function StatBlock({ k, v, accent, palette, align = 'left' }) {
-  const alignItems = align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start';
-  return (
-    <div style={{
-      display: 'flex', flexDirection: 'column',
-      alignItems,
-      lineHeight: 1,
-      fontFamily: 'Manrope, system-ui, sans-serif',
-      gap: 1,
-    }}>
-      <div style={{
-        fontSize: 7, fontWeight: 700,
-        letterSpacing: '0.14em', textTransform: 'uppercase',
-        color: 'var(--stat-label-fg)',
-      }}>{k}</div>
-      <div style={{
-        fontSize: 9, fontWeight: 700,
-        letterSpacing: '0.02em',
-        color: accent ? palette.light : 'var(--stat-value-fg)',
-        fontVariantNumeric: 'tabular-nums',
-        whiteSpace: 'nowrap',
-      }}>{v}</div>
-    </div>
-  );
-}
-
 // ── EQ ticker — the EQ-style bars under the rocket ─────────────────────────
 function EQTicker({ progress, palette }) {
   const ref = React.useRef(null);
@@ -139,11 +112,23 @@ function EQTicker({ progress, palette }) {
   );
 }
 
-// ── Diamond gate (Submit · Agents · Briefs · Delivered) ────────────────────
-function DiamondGate({ node, state, palette }) {
+// ── Diamond gate (Boxes · Queue · Briefs · Delivered) ──────────────────────
+// Label sits below the diamond and now carries the telemetry value INLINE
+// beside the station name (e.g. "BOXES 01"), which lets the old top number
+// row be removed and the header slimmed.
+function DiamondGate({ node, state, palette, value, align = 'center' }) {
   const SIZE_NORMAL = 8;
   const SIZE_ACTIVE = 10;
-  const LABEL_TOP   = 16;
+  const LABEL_TOP   = 13;
+  const nameColor = state === 'pending' ? 'var(--diamond-label-pending)'
+                  : state === 'active'  ? palette.light
+                                        : 'var(--stat-value-fg)';
+  // Center the label under most nodes; right-align the last one (at 100%) so
+  // the wider "DELIVERED 6:00 CT" does not overflow the track's right edge.
+  const labelAnchor = align === 'right'
+    ? { left: '50%', transform: 'translateX(-100%)' }
+    : { left: '50%', transform: 'translateX(-50%)' };
+  const hasValue = value != null && value !== '' && value !== '—';
   return (
     <div style={{
       position: 'absolute', left: `${node.pos * 100}%`, top: '50%',
@@ -171,16 +156,23 @@ function DiamondGate({ node, state, palette }) {
         )}
       </div>
       <div style={{
-        position: 'absolute', top: LABEL_TOP, left: '50%',
-        transform: 'translateX(-50%)',
-        fontSize: 8.5, fontWeight: 700, textTransform: 'uppercase',
-        letterSpacing: '0.1em',
-        color: state === 'pending' ? 'var(--diamond-label-pending)'
-             : state === 'active'  ? palette.light
-                                    : 'var(--stat-value-fg)',
+        position: 'absolute', top: LABEL_TOP, ...labelAnchor,
+        display: 'flex', alignItems: 'baseline', gap: 4,
         whiteSpace: 'nowrap',
         fontFamily: 'Manrope, system-ui, sans-serif',
-      }}>{node.label}</div>
+      }}>
+        <span style={{
+          fontSize: 8.5, fontWeight: 700, textTransform: 'uppercase',
+          letterSpacing: '0.1em', color: nameColor,
+        }}>{node.label}</span>
+        {hasValue && (
+          <span style={{
+            fontSize: 9, fontWeight: 700, letterSpacing: '0.02em',
+            color: state === 'active' ? palette.light : 'var(--stat-value-fg)',
+            fontVariantNumeric: 'tabular-nums',
+          }}>{value}</span>
+        )}
+      </div>
     </div>
   );
 }
@@ -244,85 +236,82 @@ export default function PipelineTrack({
     eta:    { k: 'ETA',    v: t.eta || '—' },
   };
 
+  // Telemetry value shown inline beside each station name below its diamond.
+  const valByNode = {
+    boxes:     display.boxes.v,
+    queue:     display.queue.v,
+    briefs:    display.briefs.v,
+    delivered: display.eta.v,
+  };
+
   return (
     <div className="pt-track" style={{
       position: 'relative',
       width: '100%',
-      height: 48,
+      height: 40,
       paddingLeft: 28,
       paddingRight: 28,
       boxSizing: 'border-box',
     }}>
       <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-        {/* Telemetry strip — stats aligned to gate positions, derived from nodes */}
-        <div style={{ position: 'absolute', left: 0, right: 0, top: 0, height: 18 }}>
-          {(() => {
-            const statMap = { boxes: display.boxes, queue: display.queue, briefs: display.briefs, delivered: display.eta };
-            return nodes.map((n, i) => {
+        {/* Track band: EQ ticker + diamonds + rocket. Anchored near the top so
+            the inline "NAME value" labels have room to hang below within the
+            slimmed track (no more top number row / divider). */}
+        <div style={{ position: 'absolute', left: 0, right: 0, top: 0, height: 26 }}>
+          <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+            <EQTicker progress={progress} palette={palette}/>
+            {nodes.map((n, i) => {
+              const state = i < ai ? 'done' : i === ai ? 'active' : 'pending';
               const isLast = i === nodes.length - 1;
-              const xform  = isLast ? 'translateX(-100%)' : 'translateX(-50%)';
-              const align  = isLast ? 'right' : 'center';
-              const data   = statMap[n.id] || { k: n.label.toUpperCase(), v: '—' };
               return (
-                <div key={n.id} style={{ position: 'absolute', left: `${n.pos * 100}%`, top: 0, transform: xform }}>
-                  <StatBlock {...data} palette={palette} accent={isLast} align={align}/>
-                </div>
+                <DiamondGate
+                  key={n.id}
+                  node={n}
+                  state={state}
+                  palette={palette}
+                  value={valByNode[n.id]}
+                  align={isLast ? 'right' : 'center'}
+                />
               );
-            });
-          })()}
-          {/* Dead zone buy-box submission counter — single line: "221 SUBMITTED" */}
-          {submittedCount != null && submittedCount > 0 && (
+            })}
             <div style={{
-              position: 'absolute',
-              left: `${nodes[0].pos * 50}%`,
-              top: 0,
-              transform: 'translateX(-50%)',
-              display: 'flex',
-              alignItems: 'baseline',
-              gap: 4,
-              fontFamily: 'Manrope, system-ui, sans-serif',
+              position: 'absolute', left: `${progress * 100}%`, top: '50%',
+              transform: 'translate(-50%, -50%)',
+              zIndex: 4,
+              filter: `drop-shadow(0 0 8px ${palette.primary}aa)`,
+              transition: 'left 0.25s linear',
+              willChange: 'left',
             }}>
-              <div key={submittedCount} style={{
-                fontSize: 9, fontWeight: 700, letterSpacing: '0.02em',
-                color: palette.light,
-                fontVariantNumeric: 'tabular-nums',
-                animation: 'pt-count-pulse 0.6s cubic-bezier(0.2, 0, 0, 1)',
-              }}>
-                {submittedCount}
-              </div>
-              <div style={{ fontSize: 7, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--stat-label-fg)' }}>
-                SUBMITTED
-              </div>
-            </div>
-          )}
-        </div>
-        {/* Hairline divider */}
-        <div style={{
-          position: 'absolute', left: 0, right: 0, top: 20,
-          height: 1, background: 'var(--pipeline-divider)',
-        }}/>
-        {/* Ticker + diamonds + rocket */}
-        <div style={{ position: 'absolute', left: 0, right: 0, top: 22, bottom: 0 }}>
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center' }}>
-            <div style={{ position: 'relative', flex: 1, height: 26 }}>
-              <EQTicker progress={progress} palette={palette}/>
-              {nodes.map((n, i) => {
-                const state = i < ai ? 'done' : i === ai ? 'active' : 'pending';
-                return <DiamondGate key={n.id} node={n} state={state} palette={palette}/>;
-              })}
-              <div style={{
-                position: 'absolute', left: `${progress * 100}%`, top: '50%',
-                transform: 'translate(-50%, -50%)',
-                zIndex: 4,
-                filter: `drop-shadow(0 0 8px ${palette.primary}aa)`,
-                transition: 'left 0.25s linear',
-                willChange: 'left',
-              }}>
-                <Rocket size={36} palette={palette}/>
-              </div>
+              <Rocket size={36} palette={palette}/>
             </div>
           </div>
         </div>
+        {/* Dead-zone buy-box submission counter — small caption in the empty
+            left-half gap (below the band, clear of the Boxes node label). */}
+        {submittedCount != null && submittedCount > 0 && (
+          <div style={{
+            position: 'absolute',
+            left: `${nodes[0].pos * 50}%`,
+            top: 26,
+            transform: 'translateX(-50%)',
+            display: 'flex',
+            alignItems: 'baseline',
+            gap: 4,
+            fontFamily: 'Manrope, system-ui, sans-serif',
+          }}>
+            <span key={submittedCount} style={{
+              fontSize: 9, fontWeight: 700, letterSpacing: '0.02em',
+              color: palette.light,
+              fontVariantNumeric: 'tabular-nums',
+              animation: 'pt-count-pulse 0.6s cubic-bezier(0.2, 0, 0, 1)',
+            }}>
+              {submittedCount}
+            </span>
+            <span style={{ fontSize: 7, fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--stat-label-fg)' }}>
+              SUBMITTED
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );
