@@ -7,20 +7,23 @@
    ============================================ */
 
 .nd-excel-shell .sheet-light {
-  /* Surfaces */
-  --app-bg:      #ffffff;
-  --panel-bg:    #f8f9fa;  /* statsbar */
-  --panel-bg-2:  #f1f3f4;  /* toolbar + column headers */
+  /* Surfaces — 2026-05-28 eye-fatigue softening: app-bg softens from
+     pure white to match the main app's new --background. The cell
+     surface stays white so deal rows still read as foreground. */
+  --app-bg:      #F5F7FA;
+  --panel-bg:    #F0F2F5;  /* statsbar */
+  --panel-bg-2:  #E9ECF1;  /* toolbar + column headers */
   --surf:        #ffffff;  /* cell background */
-  --surf-hi:     #f6f8fa;  /* hover */
+  --surf-hi:     #F1F3F6;  /* hover (slightly cooler than before) */
   --surf-hi-2:   #ffffff;  /* popovers / modals */
 
-  /* Borders + gridlines */
-  --border:        #d6d9de;
-  --border-faint:  #e6e8eb;
-  --border-strong: #b0b4ba;
-  --gridline:      #e3e5e8;
-  --gridline-hi:   #c8ccd2;
+  /* Borders + gridlines — softer to reduce the "graph paper" effect
+     when the spreadsheet has many columns + rows visible at once. */
+  --border:        #DCE0E6;
+  --border-faint:  #EEF0F3;
+  --border-strong: #B0B4BA;
+  --gridline:      #EEF0F3;
+  --gridline-hi:   #D4D8DE;
 
   /* Text */
   --fg:        #1f1f1f;

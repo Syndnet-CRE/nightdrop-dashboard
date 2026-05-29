@@ -1,0 +1,448 @@
+/* ── DealShell and DealTopbar CSS ───────────────────────────────── */
+/* Scoped to .deal-shell to prevent leakage to app */
+
+.deal-shell {
+  display: grid;
+  grid-template-rows: 48px 1fr;
+  height: 100vh;
+  background: var(--bg);
+  transition: background-color var(--t-base) var(--ease-fast);
+}
+
+/* ── Embedded mode: hide topbar, use single row ─────────────────── */
+.deal-shell--embedded {
+  grid-template-rows: 1fr;
+}
+
+.deal-shell--embedded .deal-topbar {
+  display: none;
+}
+
+/* ── Top bar ───────────────────────────────────────────────────── */
+.deal-topbar {
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: var(--bg);
+  backdrop-filter: blur(16px) saturate(160%);
+  border-bottom: 1px solid var(--border);
+  padding: 0 14px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  flex-shrink: 0;
+  transition: background-color var(--t-base) var(--ease-fast), border-color var(--t-base) var(--ease-fast);
+}
+
+[data-theme="dark"] .deal-topbar {
+  background: rgba(23, 23, 23, 0.94);
+}
+
+[data-theme="light"] .deal-topbar {
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.deal-shell .tb-brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font: 700 14px var(--font-ui);
+  letter-spacing: -0.025em;
+  color: var(--fg);
+  padding-right: 14px;
+  border-right: 1px solid var(--border);
+  margin-right: 10px;
+  flex-shrink: 0;
+}
+
+.deal-shell .tb-brand-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.deal-shell .tb-back {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font: 500 12px var(--font-ui);
+  color: var(--accent);
+  cursor: pointer;
+  padding: 0 8px 0 0;
+  margin-right: 6px;
+  border: none;
+  background: transparent;
+  transition: color var(--t-fast) var(--ease-fast);
+  flex-shrink: 0;
+}
+
+.deal-shell .tb-back:hover {
+  color: var(--accent-hi);
+}
+
+.deal-shell .tb-counter {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+
+.deal-shell .tb-nav-btn {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--secondary);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  cursor: pointer;
+  color: var(--muted-foreground);
+  transition: background-color var(--t-fast) var(--ease-fast), border-color var(--t-fast) var(--ease-fast), color var(--t-fast) var(--ease-fast);
+}
+
+.deal-shell .tb-nav-btn:hover:not(:disabled) {
+  background: var(--secondary);
+  color: var(--fg);
+  border-color: var(--border-strong);
+}
+
+.deal-shell .tb-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.deal-shell .tb-count-label {
+  font: 500 11px var(--font-secondary);
+  color: var(--muted-foreground);
+  padding: 0 5px;
+  font-feature-settings: 'tnum', 'zero';
+  letter-spacing: 0.04em;
+}
+
+.deal-shell .tb-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  margin: 0 10px;
+  flex-shrink: 0;
+}
+
+.deal-shell .tb-address-block {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.deal-shell .tb-address {
+  font: 700 13px var(--font-ui);
+  color: var(--fg);
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.deal-shell .tb-city {
+  font: 400 11px var(--font-secondary);
+  color: var(--muted-foreground);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  font-feature-settings: 'tnum', 'zero';
+}
+
+.deal-shell .tb-deal-id {
+  font: 600 10px var(--font-secondary);
+  color: var(--muted-foreground);
+  background: var(--secondary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 7px;
+  margin-left: 3px;
+  white-space: nowrap;
+  font-feature-settings: 'tnum', 'zero';
+}
+
+.deal-shell .tb-stage {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font: 500 11px var(--font-ui);
+  color: var(--warning);
+  padding: 0 10px;
+  flex-shrink: 0;
+}
+
+.deal-shell .tb-stage-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--warning);
+  box-shadow: 0 0 0 3px var(--warn-tint);
+}
+
+.deal-shell .tb-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.deal-shell .tb-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font: 500 11px var(--font-ui);
+  height: 27px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 1px solid var(--btn-border);
+  background: var(--btn-rest);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color var(--t-fast) var(--ease-fast), border-color var(--t-fast) var(--ease-fast), color var(--t-fast) var(--ease-fast);
+}
+
+.deal-shell .tb-btn:hover {
+  background: var(--btn-rest-hover);
+  color: var(--fg);
+  border-color: var(--btn-border-hover);
+}
+
+.deal-shell .tb-btn.primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+  font-weight: 600;
+}
+
+.deal-shell .tb-btn.primary:hover {
+  opacity: 0.9;
+}
+
+.deal-shell .tb-btn.danger {
+  border-color: var(--danger-tint);
+  color: var(--destructive);
+  background: var(--btn-rest);
+}
+
+.deal-shell .tb-btn.danger:hover {
+  background: var(--danger-tint);
+  border-color: var(--destructive);
+}
+
+.deal-shell .tb-btn-icon {
+  width: 27px;
+  height: 27px;
+  border-radius: 6px;
+  border: 1px solid var(--btn-border);
+  background: var(--btn-rest);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color var(--t-fast) var(--ease-fast), border-color var(--t-fast) var(--ease-fast), color var(--t-fast) var(--ease-fast);
+}
+
+.deal-shell .tb-btn-icon:hover {
+  background: var(--btn-rest-hover);
+  color: var(--fg);
+  border-color: var(--btn-border-hover);
+}
+
+.deal-shell .tb-deal-nav {
+  display: flex;
+  align-items: center;
+  margin-left: 8px;
+  border: 1px solid var(--btn-border);
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+  background: var(--btn-rest);
+  transition: border-color var(--t-fast) var(--ease-fast);
+}
+
+.deal-shell .tb-deal-nav:hover {
+  border-color: var(--btn-border-hover);
+}
+
+.deal-shell .tb-deal-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font: 500 11px var(--font-ui);
+  height: 27px;
+  padding: 0 9px;
+  background: transparent;
+  border: none;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition: background-color var(--t-fast) var(--ease-fast), color var(--t-fast) var(--ease-fast);
+  white-space: nowrap;
+}
+
+.deal-shell .tb-deal-nav-btn:hover {
+  background: var(--btn-rest-hover);
+  color: var(--fg);
+}
+
+.deal-shell .tb-deal-nav-btn + .tb-deal-nav-btn {
+  border-left: 1px solid var(--btn-border);
+}
+
+/* ── Body ─────────────────────────────────────────────────────── */
+.deal-shell .deal-body {
+  display: grid;
+  min-height: 0;
+  height: 100%;
+}
+
+.deal-shell .deal-main {
+  overflow-y: auto;
+  padding-bottom: 64px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.deal-shell .deal-rail {
+  border-left: 1px solid var(--border);
+  overflow: hidden;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+}
+
+/* ── Section eyebrows ────────────────────────────────────────── */
+.deal-shell .section-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 16px 24px 5px;
+  font: 700 10px var(--font-ui);
+  color: var(--muted-foreground);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.deal-shell .section-eyebrow::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-faint);
+}
+
+/* ── Pipeline bar ────────────────────────────────────────────── */
+.deal-shell .pipeline-bar {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 10px 24px 0;
+  padding: 9px 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+/* ── Deal queue dropdown ─────────────────────────────────────── */
+.deal-shell .queue-dropdown {
+  position: absolute;
+  top: 31px;
+  right: 0;
+  width: 320px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.5);
+  z-index: 200;
+  overflow: hidden;
+  animation: fadeDown var(--t-fast) var(--ease-fast);
+}
+
+@keyframes fadeDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.deal-shell .queue-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 13px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-faint);
+  transition: background-color var(--t-fast) var(--ease-fast);
+}
+
+.deal-shell .queue-row:hover {
+  background: var(--secondary);
+}
+
+.deal-shell .queue-row.active {
+  background: var(--accent-tint);
+}
+
+.deal-shell .queue-row:last-child {
+  border-bottom: none;
+}
+
+/* ── More menu dropdown ──────────────────────────────────────── */
+.deal-shell .tb-more-menu {
+  position: absolute;
+  top: 31px;
+  right: 0;
+  width: 200px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.5);
+  z-index: 200;
+  overflow: hidden;
+  animation: fadeDown var(--t-fast) var(--ease-fast);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Scrollbar ────────────────────────────────────────────────── */
+.deal-shell ::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.deal-shell ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.deal-shell ::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 99px;
+}
+
+.deal-shell ::-webkit-scrollbar-thumb:hover {
+  background: var(--border-strong);
+}
+
+/* ── WCAG 2.1 AA — visible focus ring ────────────────────────── */
+.deal-shell button:focus-visible,
+.deal-shell a:focus-visible,
+.deal-shell input:focus-visible,
+.deal-shell textarea:focus-visible,
+.deal-shell select:focus-visible,
+.deal-shell [role="button"]:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}

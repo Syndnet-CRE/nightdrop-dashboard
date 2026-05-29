@@ -160,7 +160,7 @@ export function PipelineTimeline({ mode = 'full', size = 'xl', showLabels = fals
       fontVariantNumeric: 'tabular-nums', lineHeight: 0.95,
     },
     cdFoot: {
-      fontSize: 10, color: isLight ? '#40424D' : 'var(--muted-foreground)', fontWeight: 600,
+      fontSize: 10, color: 'var(--text-muted-neutral)', fontWeight: 600,
       textTransform: 'uppercase', letterSpacing: '0.07em',
       fontFamily: 'Manrope, system-ui, sans-serif',
     },
@@ -213,7 +213,7 @@ export function PipelineTimeline({ mode = 'full', size = 'xl', showLabels = fals
           </div>
           <Timer size={13} color="var(--primary)" />
         </div>
-        <div style={{ width: 1, alignSelf: 'stretch', background: 'rgba(91,204,72,0.18)', flexShrink: 0 }} />
+        <div style={{ width: 1, alignSelf: 'stretch', background: 'var(--pipeline-divider)', flexShrink: 0 }} />
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
           <div style={s.cdClock} className="pipeline-cd-clock">
             <span className="pipeline-cd-num" style={{ fontSize: numSz, lineHeight: 0.95 }} ref={cdHRef}>00</span>

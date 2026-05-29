@@ -80,6 +80,12 @@ export function installActionAdapters(ND, hostActions = {}) {
     openDetail(id) {
       if (typeof navigate === 'function') navigate(`/deal/${id}`);
     },
+    openMap(id) {
+      // MapView reads the ?focus= query param on mount (MapView.jsx) and
+      // flies the camera to that deal's pin. Used by the expand row's
+      // .aico.mp "Go to map" button.
+      if (typeof navigate === 'function') navigate(`/map?focus=${id}`);
+    },
   };
 
   return function cleanup() {

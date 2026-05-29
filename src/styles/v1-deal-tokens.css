@@ -1,0 +1,199 @@
+/*
+ * v1-deal-tokens.css
+ *
+ * V1 design tokens scoped to .deal-shell so the rest of the app's tokens
+ * (from tokens.css) are untouched.
+ *
+ * Two Brady overrides from V1's published palette:
+ *   - page bg     #171717   (V1 was #08090b)
+ *   - card border #404040   (V1 was #5e5e5e dark)
+ * Everything else ships verbatim from the V1 design package.
+ *
+ * DM Sans + Inter are already loaded by src/styles/tokens.css.
+ */
+
+.deal-shell {
+  /* Font families */
+  --font-ui:        'DM Sans', system-ui, sans-serif;
+  --font-secondary: 'Inter', system-ui, sans-serif;
+  --font-display:   'DM Sans', Georgia, serif;
+  --font-mono:      'DM Sans', ui-sans-serif, -apple-system, sans-serif;
+  --font-sans:      var(--font-ui);
+
+  /* Motion */
+  --ease-fast: cubic-bezier(.22, 1, .36, 1);
+  --t-fast:    120ms;
+  --t-base:    200ms;
+}
+
+/* ── Dark theme (default) ─────────────────────────────────────────── */
+.deal-shell,
+[data-theme="dark"] .deal-shell {
+  --background:           #171717;          /* OVERRIDE — V1 was #08090b */
+  --card:                 #1f1f1f;
+  --foreground:           #f0f0ef;
+  --primary:              #2da200;
+  --primary-foreground:   #ffffff;
+  --secondary:            #2e2e2e;
+  --secondary-foreground: #e0e0de;
+  --muted-foreground:     #888888;
+  --accent-bg:            #191818;
+  --accent-foreground:    #f0f0ef;
+  --destructive:          #ef4444;
+  --border:               #404040;          /* OVERRIDE — V1 was #2f2f2f */
+  --ring:                 #2da200;
+  --chart-1:              #7af74d;
+  --chart-2:              #2da200;
+  --warning:              #F4B73E;
+  --info:                 #3E7BFA;
+
+  /* V1 alias overrides */
+  --bg:              var(--background);
+  --bg-sunken:       #050507;
+  --surface:         var(--card);
+  --surface-hi:      #303030;
+  --surface-hi-2:    #3a3a3a;
+  --overlay:         rgba(0,0,0,0.65);
+
+  --fg:              #f0f0ef;
+  --fg-muted:        #888888;
+  --fg-dim:          #5a5a5a;
+  --fg-inverse:      #0d0d0d;
+
+  --border-strong:   #525252;
+  --border-faint:    #2a2a2a;
+
+  /* Accent / semantic */
+  --accent:          var(--primary);
+  --accent-hi:       #3ac400;
+  --accent-lo:       #228000;
+  --accent-tint:     rgba(45,162,0,0.12);
+  --accent-ring:     rgba(45,162,0,0.35);
+
+  --warn:            var(--warning);
+  --warn-tint:       rgba(244,183,62,0.14);
+  --danger:          var(--destructive);
+  --danger-hi:       #f87171;
+  --danger-tint:     rgba(239,68,68,0.14);
+  --info-color:      var(--info);
+  --info-tint:       rgba(62,123,250,0.14);
+
+  /* Button hierarchy */
+  --btn-rest:         #3a3a3a;
+  --btn-rest-hover:   #444444;
+  --btn-rest-active:  #4d4d4d;
+  --btn-border:       #4a4a4a;
+  --btn-border-hover: var(--accent);
+  --btn-fg:           var(--fg);
+  --btn-fg-muted:     var(--fg-muted);
+
+  /* Card border — Brady override */
+  --card-border:      #404040;              /* OVERRIDE — V1 was #5e5e5e */
+
+  /* Shadows */
+  --card-shadow:
+    0 2px 8px rgba(0,0,0,0.5),
+    0 1px 2px rgba(0,0,0,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.055);
+
+  --page-bg: var(--background);
+}
+
+/* ── Light theme ──────────────────────────────────────────────────── */
+[data-theme="light"] .deal-shell {
+  --background:           #eceef2;
+  --card:                 #ffffff;
+  --foreground:           #111111;
+  --primary:              #2a9900;
+  --primary-foreground:   #ffffff;
+  --secondary:            #f3f4f6;
+  --secondary-foreground: #222222;
+  --muted-foreground:     #505050;
+  --accent-bg:            #ddfadd;
+  --accent-foreground:    #1a4d0a;
+  --destructive:          #dc2626;
+  --border:               #e5e7eb;
+  --ring:                 #2a9900;
+  --chart-1:              #2a9900;
+  --chart-2:              #16a34a;
+  --warning:              #d97706;
+  --info:                 #2563eb;
+
+  --bg:              #eceef2;
+  --bg-sunken:       #dfe2e7;
+  --surface:         #ffffff;
+  --surface-hi:      #f5f6f8;
+  --surface-hi-2:    #ebebed;
+  --overlay:         rgba(0,0,0,0.4);
+
+  --fg:              #111111;
+  --fg-muted:        #505050;
+  --fg-dim:          #909090;
+  --fg-inverse:      #ffffff;
+
+  --border-strong:   #d1d5db;
+  --border-faint:    #f3f4f6;
+
+  --accent:          var(--primary);
+  --accent-hi:       #3ab800;
+  --accent-lo:       #1f7a00;
+  --accent-tint:     rgba(42,153,0,0.1);
+  --accent-ring:     rgba(42,153,0,0.3);
+
+  --warn:            var(--warning);
+  --warn-tint:       rgba(217,119,6,0.12);
+  --danger:          var(--destructive);
+  --danger-hi:       #ef4444;
+  --danger-tint:     rgba(220,38,38,0.12);
+  --info-color:      var(--info);
+  --info-tint:       rgba(37,99,235,0.1);
+
+  --btn-rest:         #eef0f3;
+  --btn-rest-hover:   #e6e8ec;
+  --btn-rest-active:  #dfe1e6;
+  --btn-border:       #d8dbe1;
+  --btn-border-hover: var(--accent);
+  --btn-fg:           var(--fg);
+  --btn-fg-muted:     var(--fg-muted);
+
+  --card-border:      #b8bcc2;
+
+  --card-shadow:
+    0 1px 3px rgba(0,0,0,0.10),
+    0 4px 16px rgba(0,0,0,0.06);
+
+  --page-bg: var(--background);
+}
+
+/* ── Base shell styles ────────────────────────────────────────────── */
+.deal-shell {
+  background:  var(--bg);
+  color:       var(--fg);
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  transition: background-color var(--t-base) var(--ease-fast),
+              color            var(--t-base) var(--ease-fast);
+}
+
+.deal-shell *,
+.deal-shell *::before,
+.deal-shell *::after {
+  box-sizing: border-box;
+}
+
+/* Inter numeric utility */
+.deal-shell .num-inter {
+  font-family: var(--font-secondary);
+  font-feature-settings: 'tnum','zero';
+  font-variant-numeric: tabular-nums;
+}
+
+/* Scrollbar styling inside the shell only */
+.deal-shell ::-webkit-scrollbar             { width: 5px; height: 5px; }
+.deal-shell ::-webkit-scrollbar-track       { background: transparent; }
+.deal-shell ::-webkit-scrollbar-thumb       { background: var(--border); border-radius: 99px; }
+.deal-shell ::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
+
+/* Color-scheme so native form controls + scrollbars match the theme */
+[data-theme="dark"]  .deal-shell { color-scheme: dark; }
+[data-theme="light"] .deal-shell { color-scheme: light; }

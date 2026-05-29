@@ -126,6 +126,23 @@ describe('installActionAdapters', () => {
     expect(() => ND.actions.openDetail('uuid-abc')).not.toThrow();
   });
 
+  it('attaches openMap verb on ND.actions', () => {
+    installActionAdapters(ND, makeHost());
+    expect(typeof ND.actions.openMap).toBe('function');
+  });
+
+  it('openMap routes via navigate(`/map?focus=${id}`) so the host can deep-link a pin', () => {
+    const host = makeHost();
+    installActionAdapters(ND, host);
+    ND.actions.openMap('uuid-xyz');
+    expect(host.navigate).toHaveBeenCalledWith('/map?focus=uuid-xyz');
+  });
+
+  it('openMap no-ops when navigate is not provided', () => {
+    installActionAdapters(ND, {});
+    expect(() => ND.actions.openMap('uuid-xyz')).not.toThrow();
+  });
+
   it('returns a cleanup that restores a prior ND.actions value', () => {
     const sentinel = { sentinel: 'prior' };
     ND.actions = sentinel;

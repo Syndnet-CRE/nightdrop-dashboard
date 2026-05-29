@@ -104,6 +104,7 @@ export default function DealFeedExcelView() {
         deals,
         buyBoxes,
         isRead,
+        mapboxToken: import.meta.env.VITE_MAPBOX_TOKEN,
         requestRr: throttleRef.current,
       });
     });

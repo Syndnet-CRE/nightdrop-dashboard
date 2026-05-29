@@ -325,9 +325,23 @@ export function toNDDeal(hostDeal, ctx = {}) {
       landVal: '—',
       bldgVal: '—',
       deed: '—',
-      mortAmt: '—',
-      mortLender: '—',
-      mortDate: '—',
+      // Mortgage principal — backend's normalizeDeal returns this as
+      // `original_loan_amount` (confirmed in the 2026-05-27 ALL_KEYS dump
+      // for brady@parcyl.ai). briefJson.mortgage_amount is a legacy fallback.
+      mortAmt:
+        cleanNull(hostDeal.original_loan_amount) ??
+        cleanNull(briefJson?.mortgage_amount) ??
+        '—',
+      // Standardized lender name from backend; briefJson.lender_name is the
+      // pre-normalization free-text field.
+      mortLender:
+        cleanNull(hostDeal.lender_name_standardized) ??
+        cleanNull(briefJson?.lender_name) ??
+        '—',
+      mortDate:
+        cleanNull(hostDeal.foreclosure_recording_date) ??
+        cleanNull(briefJson?.mortgage_date) ??
+        '—',
     },
     bullets: Array.isArray(briefJson?.bullets) ? briefJson.bullets : [],
     narr:
