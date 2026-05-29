@@ -26,3 +26,6 @@ audit-runtime*.js
 # Loose screenshot dumps at repo root (Playwright debug runs etc.)
 /*.png
 
+# Local theme/visual audit artifact dumps (screenshots, not code)
+/.light-theme-audit/
+

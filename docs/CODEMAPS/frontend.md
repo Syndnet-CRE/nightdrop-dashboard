@@ -1,4 +1,4 @@
-<!-- Generated: 2026-05-26 (session 4 refresh: + excel-feed.spec.js Stage 1) | Files scanned: ~100 | Token estimate: ~1150 -->
+<!-- Generated: 2026-05-28 (session 7: V1 deal-detail migration + PR #13/#14 merged) | Files scanned: ~130 | Token estimate: ~1300 -->
 # Frontend — nightdrop-dashboard
 
 ## Routes (src/App.jsx)
@@ -10,10 +10,10 @@
 /buy-boxes/new                  → BuyBoxPage mode="new"  → BuyBoxWizard
 /buy-boxes/:id/edit             → BuyBoxPage mode="edit" → BuyBoxWizard
 /dealsheet                      → AppShell  → view='dealsheet' → DealFeedExcelView
+/deal/:id                       → DealDetailPage (full-screen) OR DealDetailModal (overlay)
+                                  (overlay mode triggered by state.fromMap from MapView)
 /*  (catch-all auth)            → AppShell  → views switched by `view` state
-                                              (most non-deal views are URL-less;
-                                               `/map` is the default landing path)
-/deal/:id                       → DealDetailPage  (state.fromMap → DealDetailModal)
+                                  (most non-deal views are URL-less; `/map` is the default landing path)
 ```
 
 Post-auth flow:
@@ -22,6 +22,7 @@ Post-auth flow:
 - Legacy `/dashboard` and `/calendar` URLs redirect to `/dealsheet`
 - `InitialRouteGate` (mounted inside DealsProvider, fires once on load): if the
   subscriber has zero buy boxes, redirects from any landing path to `/buy-boxes/new`
+- New: `/deal/:id` route renders V1 DealShell (design package rebuild, 2026-05-28)
 
 ## View map (state-driven inside AppShell)
 
@@ -32,8 +33,8 @@ Post-auth flow:
 | `boxes`          | Buy Boxes        | views/BuyBoxesView.jsx          | Kanban (pending / active / paused / gap)     |
 | `accounts`       | Account          | views/AccountsView.jsx          | Owner roll-up (subscriber-level)             |
 | `settings`       | Settings         | views/SettingsView.jsx          | Profile + password                           |
-| `invites`        | —                | views/InviteView.jsx            | Admin invite queue (brady@parcyl.ai)         |
-| `admin`          | —                | views/AdminView.jsx             | Admin dashboard (brady@parcyl.ai)            |
+| `invites`        | —                | views/InviteView.jsx            | Admin invite queue (brady@syndnet.com)       |
+| `admin`          | —                | views/AdminView.jsx             | Admin dashboard (brady@syndnet.com)          |
 
 The Deal Feed Excel cutover (2026-05-26) replaced the legacy `DashboardView`
 card feed with `DealFeedExcelView` at `/dealsheet`. The DashboardView source
@@ -43,7 +44,7 @@ file has been removed from the tree — rollback would be a git revert.
 
 ### Top-level chrome
 ```
-TopHeader (logo + countdown + pipeline track)
+TopHeader (propcloud logo [theme-aware] + countdown + pipeline track)
 LeftPanel (global nav + KPI MetricTiles + Buy Box list + Last 7 Nights chart)
 RightRail (DashboardView-only: mini DealMap + Buy Box Health + Recent Activity)
 ChatFab → DealChatThread (agent chat)
@@ -102,13 +103,14 @@ views/DealFeedExcelView.jsx           (~400 lines — React wrapper)
   │                                      via createRrThrottle)
   └─ loadBundleOnce() — promise-cached side-effect imports of:
        vendor/deal-feed/data.js          (~260 lines — sample/seed)
+       vendor/deal-feed/adapter.js       (~270 lines — host Deal → bundle shape; wired camelCase reads)
        vendor/deal-feed/tabs.js          (~220 lines — sheet tab strip)
        vendor/deal-feed/selection.js     (~810 lines — cell select + edit caret)
        vendor/deal-feed/context-menu.js  (~355 lines — right-click menu)
        vendor/deal-feed/row-resize.js    (~130 lines — row height drag)
        vendor/deal-feed/filter-popover.js(~315 lines — column filter UI)
        vendor/deal-feed/sidebar.js       (~40 lines — hidden, locked decision 4)
-       vendor/deal-feed/feed.js          (~820 lines — main render orchestrator)
+       vendor/deal-feed/feed.js          (~820 lines — main render orchestrator + .sat-tile + expand buttons)
 ```
 
 AppShell mounts a single `DealFeedExcelView` instance once the user first
@@ -132,58 +134,42 @@ re-renders heights. Stages 2/3 add data-bound flows F2/F4-F13.):
 - Vendor bundle file structure under `src/vendor/deal-feed/` is treated as
   porting territory: tests cover behavior, not exact selectors.
 
-### Deal detail (rebuilt 2026-05-22)
+New in PR #14: `.sat-tile` wrapper now loads Mapbox satellite image (Static API)
+at deal coordinates (read from adapter) with zoom toggle (14-20); falls back to
+CSS gradient placeholder on missing lat/lng or HTTP error.
 
-Single scrolling document. No tab strip. Right-edge SectionNav handles
-in-page navigation via IntersectionObserver scroll-spy. Sticky header
-collapses past 120px scroll.
+### Deal detail — V1 design package (migrated 2026-05-28)
+
+V1 ground-up rebuild shipped in PR #14. Route `/deal/:id` now renders DealShell
+with full-screen or modal mode (detected by `location.state?.fromMap`).
 
 ```
-DealDetail.jsx (~680 lines — orchestrator)
-  ├─ DealDetail/SectionNav.jsx       (right-edge dots, hover→labels, arrow-key nav)
-  ├─ DealDetail/ScoreScale.jsx       (score number + 0-100 horizontal track)
-  ├─ DealDetail/StageIndicator.jsx   (New → Researching → Contacted → Negotiating → Closed)
-  ├─ DealDetail/BriefBlock.jsx       (3-col grid; FactCard | Narrative | ImagesStack)
-  │    ├─ BriefFactCard              (asset chip + key numbers + owner)
-  │    ├─ BriefNarrative             (regex-bold $/SF/year/geo tokens)
-  │    └─ BriefImagesStack           (Mapbox satellite + Google Street View Static)
-  ├─ DealDetail/SignalSeverityTable  (3px left tier stripe: urgent/pressure/flag)
-  ├─ ContactLogModal.jsx
-  ├─ OwnerPortfolio.jsx              (D3 force graph — see below)
-  └─ DealDetail/OwnerPortfolioTable  (clickable rows → /map?focus=:dealId)
-hooks/useStickyCollapse.js — rAF-throttled scroll listener for header collapse
+components/DealDetail/
+  ├─ DealShell.jsx         (202 lines — orchestrator, keyboard nav J/K/←/→)
+  ├─ DealTopbar.jsx        (331 lines — deal nav + actions + prev/next + close)
+  ├─ DealHero.jsx          (453 lines — address + KPI cards + satellite map + distress signals)
+  ├─ DealNarrative.jsx     (130 lines — brief text narrative)
+  ├─ DealIntel.jsx         (526 lines — 3-tab intel: properties / mortgage / permits)
+  ├─ DealTimeline.jsx      (384 lines — chain of title event timeline [placeholder: awaiting backend])
+  ├─ DealOwnerGraph.jsx    (541 lines — D3 force-directed graph + table [placeholder: awaiting backend])
+  ├─ DealCalculator.jsx    (274 lines — deal math: CAP / cash flow / ROI)
+  ├─ DealActivityRail.jsx  (280 lines — right-edge sticky rail: nav dots + activity stub)
+  └─ deal-shell.css        (styles — 2-column grid main/rail + all V1 components)
 ```
 
-Header actions (full → compact):
-- ScoreScale (compact in collapsed mode)
-- Mark as Hot (`dd-action-primary`, dominant green)
-- Not Relevant (`dd-action-secondary`, outline)
-- Contact (icon button → ContactLogModal)
-- Share (icon button → clipboard + toast)
+Old deal-detail.css deleted (PR #14). V1 styling isolated to:
+- `src/styles/v1-deal-tokens.css` (design tokens scoped to .deal-shell)
+- `src/components/DealDetail/deal-shell.css` (component layout + typography)
 
-Pipeline stages map to backend status enum: Researching=due_diligence,
-Closed=offer_made (label aliasing, zero backend changes).
+Both themes (light/dark) supported via `[data-theme]` attribute on document root.
+Token overrides in v1-deal-tokens.css from Brady's design review (2026-05-28):
+- Dark BG: #171717 (V1 spec was #08090b)
+- Card border: #404040 (V1 spec was #2f2f2f)
 
-Signal severity (frontend keyword match on tag+category):
-- urgent: foreclos / tax / delinq / lien / auction / maturity / default
-- pressure: absentee / investor / long_term / hold / arm / high_ltv / free_clear / deed
-- flag: everything else
-
-Street view requires `VITE_GOOGLE_MAPS_API_KEY`. Metadata pre-check
-prevents charging on ZERO_RESULTS coverage; graceful placeholder otherwise.
-
-### Owner portfolio
-```
-OwnerPortfolio.jsx
-  ├─ d3-force simulation (scaleSqrt → node radius 10-32 by assessed_value)
-  ├─ getAssetClassColor (buyBoxTaxonomy.js, 10-class palette)
-  ├─ Floating React tooltip (mouse-coord positioned)
-  └─ OwnerPortfolioTable (Address | Class | Assessed | Bldg SF | Lot | Match)
-```
-Caps at 50 visible nodes; surplus surfaces a note + still appears in table.
-Graph clicks + table-row clicks both route to `/map?focus=:dealId`; MapView
-reads the search param on mount, flies to the parcel, and clears the param.
-Rows without `deal_id` (not in user's feed) render disabled with a tooltip.
+Data field mapping:
+- `mortAmt`, `mortLender`, `mortDate` — now read from briefJson (PR #13 adapter)
+- `landVal`, `bldgVal`, `deed` — still hardcoded as '—' (QUEUED: wire in next session)
+- `deal.timeline[]`, `deal.ownerPortfolio[]`, `deal.narrative.briefing` — empty-state placeholders waiting for backend
 
 ### Buy boxes kanban
 ```
@@ -199,14 +185,14 @@ views/BuyBoxesView.jsx
 views/MapView.jsx
   ├─ DealMap.jsx (Mapbox, fitDeals in onLoad + useEffect)
   ├─ DealPanel.jsx (collapsible sidebar)
-  └─ DealPanelCard.jsx (expandable preview)
+  └─ DealPanelCard.jsx (expandable preview with .sat-tile satellite image)
 ```
 
 ## State management
 
 ### React context
 | Context                          | Hook                  | Scope                                       |
-|----------------------------------|-----------------------|---------------------------------------------|
+|----------------------------------|-----------------------|----------------------------------------------|
 | `DealsContext.jsx`               | `useDeals()`          | deals, buyBoxes, contacts, portfolios + CRUD|
 | `ToastContext.jsx`               | `useToast()`          | toast queue                                 |
 | `ReadStateContext.jsx`           | `useReadState()`      | localStorage read/unread per subscriber     |
@@ -218,6 +204,7 @@ views/MapView.jsx
 | Key                            | Storage        | Owner                                  | Purpose                            |
 |--------------------------------|----------------|----------------------------------------|------------------------------------|
 | `nd_return_url`                | sessionStorage | LoginView                              | Post-login redirect target         |
+| `nightdrop-theme`              | localStorage   | App.jsx                                | Light/dark theme toggle            |
 | `nd:sidebar-collapsed:v1`      | localStorage   | vendor/deal-feed/sidebar.js            | Excel sidebar collapsed state      |
 | `nd:rowheights:v1`             | localStorage   | vendor/deal-feed/row-resize.js         | Per-row height overrides           |
 | `nd:sidebar-tweaks:v2`         | localStorage   | vendor/deal-feed/sidebar-tweaks.js     | Loaded only when sidebar tweaks are enabled (currently not imported) |
@@ -230,15 +217,23 @@ Single deep object held in `useState`. Mutations always immutable
 preview effect. `wizardFormState.js` exports the canonical shape.
 
 ## Styling
-- Plain CSS, no Tailwind. Tokens in `src/styles/tokens.css`.
-- Font tokens: `--font-ui` (Manrope global, DM Sans inside `.buy-box-wizard`),
-  `--font-secondary` (Inter inside wizard), `--font-mono` (legacy, unused in wizard).
+
+### Design tokens — dual-theme (light/dark)
+- `src/styles/tokens.css` — global tokens (shadcn-style light + dark palettes)
+- `src/styles/v1-deal-tokens.css` — V1-scoped tokens (override light/dark at .deal-shell)
+- Theme toggle via `localStorage['nightdrop-theme']` → `data-theme` on `document.documentElement`
+
+### Per-surface CSS
+- Plain CSS, no Tailwind
+- Font stack: Manrope (global), DM Sans (inside wizard + deal-shell), Inter (accents)
 - Wizard CSS scoped to `.buy-box-wizard` root class. Two files:
-  `buy-box-wizard.css` (chrome) + `buy-box-wizard-pages.css` (page content).
-- Heavy global CSS in `styles.css` (~3900 lines) and `feed-layout.css` (~2550).
-- Feed card image: fixed 205×205 desktop, full-width 180px tall <=640px.
+  `buy-box-wizard.css` (chrome) + `buy-box-wizard-pages.css` (page content)
+- Deal Feed — vendor CSS + host overrides: `vendor/deal-feed/styles.css` + `vendor/deal-feed/light-theme.css` + `DealFeedExcelView.css`
+- Deal Shell — component scoped + v1 tokens: `components/DealDetail/deal-shell.css` + `styles/v1-deal-tokens.css`
+- Heavy global CSS: `styles.css` (~3900 lines) + `feed-layout.css` (~2550 lines)
+- Feed card image: fixed 205×205 desktop, full-width 180px tall <=640px
+- Logo rebrand (nightdrop → propcloud): theme-aware dual assets at `src/assets/propcloud-logo-*.png`
 
 ## Mock fallback
-`src/data/mockData.js` is auto-used by `DashboardView` and `MapView` when the
-API returns zero deals. Subscribers with truly empty feeds see fake data.
-Documented landmine in CLAUDE.md.
+`src/data/mockData.js` is auto-used by `MapView` when the API returns zero deals.
+Subscribers with truly empty feeds see fake data. Documented landmine in CLAUDE.md.

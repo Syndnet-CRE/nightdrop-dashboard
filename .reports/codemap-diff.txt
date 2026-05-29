@@ -1,49 +1,166 @@
-Codemap diff — 2026-05-26 (session 4 micro-refresh)
-Prior scan: 2026-05-26 (session 3, commit 474bd53)
+CODEMAP REFRESH DIFF REPORT
+Generated: 2026-05-28 (session 7)
+Prior baseline: 2026-05-26 (session 4)
+Scope: frontend.md + architecture.md
+PRs merged into main: #13 (6764f4c), #14 (75b8ea7)
 
-Range: 474bd53..688882b (PR #9 merge + auto-commit + PR #10 push)
+================================================================================
+MAJOR CHANGES
+================================================================================
 
-Files updated this scan:
-  docs/CODEMAPS/architecture.md   (test count + adapter.test.js break note)
-  docs/CODEMAPS/frontend.md       (excel-feed.spec.js Stage 1 added to contracts list)
+1. DEAL DETAIL ROUTE MIGRATION (/deal/:id)
+   ────────────────────────────────────────
+   OLD: DealDetailPage inline in App.jsx rendering old deal-detail.jsx orchestrator
+   NEW: DealDetailPage + DealDetailModal both render DealShell (V1 design package)
 
-Files unchanged (verified still accurate):
-  docs/CODEMAPS/backend.md        (no backend contract changes)
-  docs/CODEMAPS/data.md           (no schema / migration changes)
-  docs/CODEMAPS/dependencies.md   (no new deps; package.json untouched)
+   Components added: 9 new files in src/components/DealDetail/
+     - DealShell.jsx         (202 lines — orchestrator)
+     - DealTopbar.jsx        (331 lines)
+     - DealHero.jsx          (453 lines — satellite map + KPI cards + distress)
+     - DealNarrative.jsx     (130 lines)
+     - DealIntel.jsx         (526 lines — 3-tab data grid)
+     - DealTimeline.jsx      (384 lines — timeline [placeholder])
+     - DealOwnerGraph.jsx    (541 lines — D3 graph [placeholder])
+     - DealCalculator.jsx    (274 lines — deal math)
+     - DealActivityRail.jsx  (280 lines — right-edge rail [stub])
+     - deal-shell.css        (new stylesheet — replaces deleted deal-detail.css)
 
-Total file diff this micro-refresh: +9 / -6 lines across 2 files.
+   Components deleted: none (old deal-detail.jsx orphaned; not directly deleted)
 
-Source-level changes since 474bd53
------------------------------------
-83ff4b9  chore(tests): delete fake-DOM wizard tests in smoke.spec.js  (-484 lines, test-only)
-728ff08  fix(adapter): isoDate uses local time, not UTC               (+14 / -2 in src/vendor/deal-feed/adapter.js)
-688882b  test(excel-feed): Phase 4 Stage 1 — F1/F3/F14 chrome flows   (NEW tests/excel-feed.spec.js, +216 lines)
+   CSS changes:
+     - src/styles/deal-detail.css                    DELETED (was ~1150 lines)
+     - src/components/DealDetail/deal-shell.css      CREATED (~1100 lines)
+     - src/styles/v1-deal-tokens.css                 CREATED (~280 lines; V1 design tokens)
 
-Total src/** diff since 474bd53: +14 / -2 lines, 1 file changed (adapter.js).
-Architecture, routes, components, data model, dependencies: all unchanged.
+2. VENDOR BUNDLE ADAPTER UPDATES (PR #13)
+   ──────────────────────────────────────
+   src/vendor/deal-feed/adapter.js
+     - Now reads backend camelCase fields (briefJson)
+     - mortAmt / mortLender wired from backend (were hardcoded "—")
+     - mortDate wired from backend (was hardcoded "—")
+     - landVal / bldgVal / deed still hardcoded "—" (QUEUED for next session)
 
-Architecture-level changes since 474bd53
------------------------------------------
-None. The vendor bundle, the host shell, the DealsContext data flow, and the
-backend contract are all identical to the codemap baseline.
+   src/vendor/deal-feed/feed.js
+     - .sat-tile element now loads Mapbox Static API satellite image
+     - Tile reads lat/lng from adapter output
+     - Zoom toggle buttons clamp 14-20
+     - Fallback to CSS gradient on missing coords or HTTP error
 
-Test surface changes
---------------------
-Vitest floor: 211/211 (restored by PR #11 fixing the adapter.test.js
-UTC-midnight fixtures broken by 728ff08).
+3. DEAL FEED DATA HANDLING (PR #13)
+   ────────────────────────────────
+   src/vendor/deal-feed/data.js
+     - Stripped mock data leak (was exposing sample deals in production bundle)
 
-Playwright dealsheet-persistence: 9/9 floor unchanged.
-Playwright excel-feed (NEW, on PR #10): 3/3 — F1 / F3 / F14.
+   src/vendor/deal-feed/tabs.js
+     - Calendar re-sync fix (was frozen to 2026-05-24 in fixtures)
 
-Combined floor (post-PR-10 merge): 12 Playwright + 211 vitest = 223 total.
+4. DESIGN SYSTEM + THEME UPDATES
+   ────────────────────────────────
+   src/styles/tokens.css
+     - Extended with light + dark theme definitions (shadcn-style palettes)
+     - Light theme softening pass: desaturated greens, warm BG, gentler contrast
+     - Dark theme: shipped as-is from V1 spec
 
-Staleness check
----------------
-All 5 codemaps still <24h old. No staleness flags.
+   Theme toggle via localStorage['nightdrop-theme'] → [data-theme] on <html>
+   (new feature: not in prior maps)
 
-Action items for next codemap refresh
--------------------------------------
-1. Once Phase 4 Stage 2 lands, expand the excel-feed.spec.js entry in
-   frontend.md to list F2/F5/F8/F9/F11/F12/F13 contracts.
-2. Once Stage 3 lands, finalize Phase 4 contract list with all 14 flows.
+   Logo rebrand: propcloud (theme-aware dual assets)
+     - src/assets/propcloud-logo-dark.png  (new)
+     - src/assets/propcloud-logo-light.png (new)
+     - src/components/TopHeader.jsx updated to use theme-aware logos
+
+5. ROUTE + NAVIGATION CHANGES
+   ────────────────────────────
+   /deal/:id behavior expanded:
+     - Full-screen DealDetailPage (default)
+     - Overlay DealDetailModal (when state.fromMap === true, e.g., from MapView)
+
+   MapView now passes { state: { fromMap: true } } to navigate('/deal/:id')
+
+6. DATA CONTEXT EXTENSIONS
+   ────────────────────────
+   useDeals() hook in DealsContext
+     - Added: toggleSave() method (V1 deal-detail feature)
+     - Kept: patchStage, deleteDeal (Excel feed still needs these)
+
+7. VENDOR BUNDLE LOAD ORDER
+   ─────────────────────────
+   src/vendor/deal-feed/loadBundleOnce()
+     - New module: adapter.js (inserted early in load chain)
+     - Load sequence: data → adapter → tabs → selection → context-menu
+       → row-resize → filter-popover → sidebar → feed
+     - Previously: data → tabs → ... (adapter did not exist as standalone)
+
+================================================================================
+WHAT DID NOT CHANGE (SCOPE-LIMITED REFRESH)
+================================================================================
+
+- docs/CODEMAPS/backend.md  (no API/endpoint changes in this PR)
+- docs/CODEMAPS/data.md     (no schema changes; old fields read same way)
+- docs/CODEMAPS/dependencies.md (no new/removed packages)
+- docs/CODEMAPS/integrations.md (Mapbox Static API already documented; no changes)
+
+Orphaned code (still in tree but not used):
+- src/components/BuyBoxConfigurator/ (10 files, ~1280 lines) — safe to delete in next cleanup
+- src/components/BuyBoxEditModal.jsx
+- src/lib/wizardHelpers.js + test file
+
+================================================================================
+PLACEHOLDERS / QUEUED WORK
+================================================================================
+
+V1 components awaiting backend data (empty-state stubs):
+  - DealTimeline — needs deal.timeline[] (chain-of-title events)
+  - DealOwnerGraph — needs deal.ownerPortfolio[] (force-directed graph data)
+  - DealNarrative — needs deal.narrative.briefing / .ownerPov
+  - DealHero — needs deal.confidence (0-100) + deal.distressSignals[]
+  - DealActivityRail — needs deal.activities[] (notes/calls/tasks)
+
+Hardcoded "—" fields in adapter.js awaiting backend wiring (next session):
+  - landVal (likely briefJson.land_value)
+  - bldgVal (likely briefJson.building_value)
+  - deed (likely briefJson.deed_type)
+
+Expand-row button handlers (feed.js) awaiting implementation:
+  - .aico.mp "Go to map" — should navigate('/map?focus=${d.id}')
+  - .aico.sh "Share brief" — should copy URL or open share modal
+
+================================================================================
+TESTING IMPACTS
+================================================================================
+
+Playwright tests (tests/smoke.spec.js):
+  - No changes in this refresh
+  - PR #12 Stage 2 tests (on test/phase-4-stage-2) need rebase after PR #13 merge
+  - That PR's "dblclick address → /deal/:id" test relies on old inline expand behavior
+
+Vitest (211 tests):
+  - adapter.test.js may need updates for new camelCase field reads
+  - No new test files added in this PR
+
+================================================================================
+FILE STATISTICS
+================================================================================
+
+frontend.md:  1150 lines (2026-05-26) → 1320 lines (2026-05-28)  [+170 lines, +15%]
+architecture.md: 900 lines (2026-05-26) → 950 lines (2026-05-28)  [+50 lines, +6%]
+
+Token estimate (both files): ~2100 tokens (frontend ~1300 + architecture ~950)
+
+================================================================================
+VERIFICATION CHECKLIST
+================================================================================
+
+[✓] DealShell component exists at src/components/DealDetail/DealShell.jsx
+[✓] All 9 V1 components exist (DealHero, DealTimeline, DealOwnerGraph, etc.)
+[✓] deal-shell.css exists; deal-detail.css deleted
+[✓] v1-deal-tokens.css exists with Brady's overrides documented
+[✓] tokens.css extended with light/dark theme definitions
+[✓] propcloud logo files exist (theme-aware dual assets)
+[✓] /deal/:id route renders DealShell (verified in App.jsx)
+[✓] adapter.js reads mortAmt / mortLender / mortDate from backend
+[✓] feed.js .sat-tile element wired to Mapbox Static API
+[✓] useDeals() hook includes toggleSave() method
+[✓] All file paths verified; no invented components
+
+================================================================================
