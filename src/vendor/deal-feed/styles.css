@@ -1082,11 +1082,13 @@
   z-index: 2;
   background: rgba(8,8,8,.7);
   backdrop-filter: blur(4px);
-  border: 1px solid var(--border);
+  /* Overlay sits on always-dark satellite imagery — use fixed light colors,
+     not theme tokens (which flip to near-black in light mode and vanish). */
+  border: 1px solid rgba(255,255,255,.16);
   border-radius: 4px;
   padding: 3px 7px;
   font-size: 9px;
-  color: var(--fg-dim);
+  color: rgba(255,255,255,.85);
   font-family: var(--font-mono);
   letter-spacing: .04em;
   text-transform: uppercase;
@@ -1100,23 +1102,27 @@
   position: absolute;
   bottom: 8px; right: 8px;
   display: flex;
-  background: rgba(8,8,8,.75);
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  background: rgba(8,8,8,.78);
+  backdrop-filter: blur(4px);
+  /* Fixed light border — overlay is always on dark imagery (see .sat-meta). */
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 5px;
   overflow: hidden;
 }
 .nd-excel-shell .sat-zoom button {
-  width: 22px; height: 22px;
+  width: 26px; height: 26px;
   background: transparent;
   border: none;
-  color: var(--fg-dim);
+  /* Fixed near-white so the +/- read on any satellite imagery in both themes. */
+  color: rgba(255,255,255,.92);
   cursor: pointer;
-  border-right: 1px solid var(--border);
+  border-right: 1px solid rgba(255,255,255,.16);
   font-size: 12px;
   display: inline-flex; align-items: center; justify-content: center;
 }
 .nd-excel-shell .sat-zoom button:last-child { border-right: none; }
-.nd-excel-shell .sat-zoom button:hover { color: var(--fg); background: rgba(255,255,255,.06); }
+.nd-excel-shell .sat-zoom button:hover { color: #fff; background: rgba(255,255,255,.12); }
+.nd-excel-shell .sat-zoom button svg.lucide { width: 15px; height: 15px; stroke-width: 2.25; }
 .nd-excel-shell .sat-pin {
   position: absolute;
   top: 50%; left: 50%;
@@ -1159,15 +1165,17 @@
 .nd-excel-shell .sat-foot {
   position: absolute;
   bottom: 8px; left: 8px;
-  background: rgba(8,8,8,.75);
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  background: rgba(8,8,8,.78);
+  backdrop-filter: blur(4px);
+  /* Fixed light colors — overlay is always on dark imagery (see .sat-meta). */
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 5px;
   padding: 4px 8px;
   font-size: 9px;
-  color: var(--fg-dim);
+  color: rgba(255,255,255,.85);
   display: flex; align-items: center; gap: 5px;
 }
-.nd-excel-shell .sat-foot b { color: var(--fg); font-weight: 600; font-family: var(--font-mono); }
+.nd-excel-shell .sat-foot b { color: #fff; font-weight: 600; font-family: var(--font-mono); }
 
 .nd-excel-shell .xi-data {
   padding: 14px 16px;
