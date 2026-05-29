@@ -94,3 +94,37 @@ V1 transitions `background-color` (longhand) on theme swap. Without a one-frame 
 Wiring contract §13 currently restricts `lucide-react` imports to `TopHeader.jsx` and `AdminView.jsx`. This work adds `src/components/DealDetail/*` as a third exception. V1 design uses ~40 lucide icons not present in app's hand-rolled `Icons.jsx`. Adding them to `Icons.jsx` would duplicate work that the already-installed `lucide-react@^1.14.0` does natively.
 
 Wiring contract update in Phase 6: append "and `src/components/DealDetail/*`" to the icon exception list.
+
+## Cosmetic audit — session 7 (2026-05-28)
+
+Full real/static/placeholder categorization of the V1 deal-detail components,
+prompted by the prior `.sat-tile` post-mortem (placeholder shipped as final).
+Verified against live code, not docs.
+
+### Verdict: well-wired overall. Two genuine cosmetic bugs found + fixed; the
+rest are intentional MVP stubs or product decisions for Brady.
+
+**Fixed this session (PR — fix/deal-detail-v1-cosmetics):**
+- `DealOwnerGraph.jsx:179` — owner node hardcoded the badge text `'LLC'` for
+  every owner regardless of entity type. Now derives a real badge via the new
+  pure helper `ownerGraph.helpers.js#ownerEntityBadge(deal)` (LLC / CORP /
+  TRUST / LP / IND / EST / GOV / OWN), unit-tested.
+- `DealIntel.jsx:498-509` — removed a dead "Placeholder KPI cells" grid that
+  rendered four `&nbsp;`-only cells as an empty gray band above the data grid.
+
+**Intentional stubs — left as-is (NOT bugs; roadmap features):**
+- `DealActivityRail` "Generate Deal Packet" (no-op, "PDF generation coming
+  soon") and "Add to List" (`inert: true`, disabled). Deliberate disabled CTAs.
+- `DealHero` Photo tab "Drag aerial photo here" — upload not yet built.
+- `DealTimeline` "Title history coming soon" / "No events" — feature-incomplete
+  MVP messages.
+- `DealNarrative` "AI narrative not yet generated" — correct empty-state fallback.
+- `DealCalculator` seeded defaults (cap rates, sample purchase prices) — by
+  design; users adjust them. Calculator is client-side math only.
+
+**Product decisions for Brady (deferred — not changed unilaterally):**
+- Whether disabled CTAs (Generate Packet / Add to List) should be hidden vs.
+  shown-with-"Coming Soon" labels.
+- Whether DealCalculator's seeded estimates should be visually marked as
+  estimates (muted/italic) vs. looking like real prefilled answers.
+- Whether the Photo tab should be hidden until upload is implemented.
