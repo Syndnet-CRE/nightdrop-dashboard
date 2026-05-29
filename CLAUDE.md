@@ -5,8 +5,9 @@ Inherits all rules from ~/.claude/CLAUDE.md. This file adds project context only
 ## REPO
 
 Path: ~/nightdrop-dashboard
-Deploy: Netlify — auto-deploys from main (`npm run build` → `dist/`)
-Production URL: https://nightdropai.netlify.app
+Deploy: Netlify — auto-deploys from main (`npm run build` → `dist/`). Netlify site: `nightdropaidashboard` (id `ff6c2656-f26d-4f07-a403-c7d253e175f7`).
+Production URL: https://dashboard.propcloud.ai (Netlify subdomain: nightdropaidashboard.netlify.app)
+> Drift note (2026-05-29): docs previously listed `nightdropai.netlify.app` as production. That URL is the SEPARATE landing site (repo `nightdrop-landing`, a Next.js app at propcloud.ai). This dashboard deploys to dashboard.propcloud.ai. Do not confuse the two.
 Start: `cd ~/nightdrop-dashboard && claude --dangerously-skip-permissions`
 
 ## PURPOSE
