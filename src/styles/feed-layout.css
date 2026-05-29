@@ -44,33 +44,25 @@
 }
 
 /* ── Header zones ──────────────────────────────────────────── */
-/* Logo zone: matches the collapsed left-panel width so the mark reads as
-   centered over the rail. Mark only, no wordmark. */
 .top-header-left {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: center;
-  width: var(--left-panel-collapsed-w);
-  min-width: var(--left-panel-collapsed-w);
+  align-items: flex-start;
+  padding-right: var(--s-3);
   flex-shrink: 0;
+  min-width: 220px;
 }
 
-.top-header-logo-mark {
-  width: 32px;
-  height: 32px;
+.top-header-logo {
+  height: 42px;
+  width: auto;
   object-fit: contain;
   display: block;
 }
 
-/* Smart search occupies the space the wordmark used to take. */
-.top-header-search-zone {
-  width: clamp(220px, 24vw, 380px);
-  flex-shrink: 1;
-  display: flex;
-  align-items: center;
-  padding: 0 var(--s-3);
-}
-
+/* Smart search styles — the bar now floats on the map (see .map-search-float
+   in MapView), not in the header. These styles are shared by that overlay. */
 .hdr-search { position: relative; width: 100%; }
 .hdr-search-icon {
   position: absolute; left: 10px; top: 50%; transform: translateY(-50%);

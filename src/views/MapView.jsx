@@ -6,6 +6,7 @@ import { DEMO_PROPERTIES, CLUSTER_CITIES } from '../data/demoProperties';
 import { DealMap } from '../components/DealMap';
 import { DealPanel } from '../components/DealPanel';
 import MapLegend from '../components/MapLegend';
+import HeaderSearch from '../components/HeaderSearch';
 import { I } from '../components/Icons';
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -198,6 +199,24 @@ export function MapView({ onOpenDeal }) {
       />
 
       <MapLegend />
+
+      {/* Smart search floats top-center of the map viewport. Centered within
+          .map-view-wrap (which equals .app-content), so it re-centers when the
+          left sidebar collapses. Deal -> open modal; address -> flyTo. */}
+      <div
+        className="map-search-float"
+        onWheel={(e) => e.stopPropagation()}
+      >
+        <HeaderSearch
+          onSearchDeal={(id) => {
+            const d = apiDeals.find((x) => String(x.id) === String(id));
+            if (d) onOpenDeal?.(d);
+          }}
+          onSearchCoords={(lat, lng) =>
+            setViewport((prev) => ({ ...prev, latitude: lat, longitude: lng, zoom: 15 }))
+          }
+        />
+      </div>
 
       <div className="map-toolbar" ref={toolbarRef}>
         <div className="mt-slot">

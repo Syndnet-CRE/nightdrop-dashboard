@@ -2728,6 +2728,18 @@ button { font-family: inherit; }
   overflow: hidden;
 }
 
+/* Smart search floating over the map, top-center. Centered within
+   .map-view-wrap (= .app-content), so it re-centers when the left sidebar
+   collapses. Above the map + left-edge toolbar (z-index 10). */
+.map-search-float {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: clamp(280px, 36vw, 460px);
+  z-index: 30;
+}
+
 /* ── Map Legend (demo overlay, bottom-left) ─────────────── */
 .map-legend {
   position: absolute;

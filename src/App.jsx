@@ -222,17 +222,6 @@ function AppShell() {
     navigate('/deal/' + deal.id, state ? { state } : {});
   }, [navigate, view]);
 
-  // Header search nav contract (AppShell owns the hybrid view/route logic).
-  const handleSearchDeal = useCallback((dealId) => {
-    navigate('/deal/' + dealId);
-  }, [navigate]);
-
-  const handleSearchCoords = useCallback((lat, lng) => {
-    // Show the map view and fly to the geocoded coordinates. MapView reads
-    // ?lat&lng&z reactively (see its coords-focus effect).
-    setView('map');
-    navigate(`/?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}&z=15`);
-  }, [navigate]);
 
   useEffect(() => {
     if (!loading && !subscriber) {
@@ -291,7 +280,7 @@ function AppShell() {
     <DealsProvider>
       <InitialRouteGate />
       <div className="app has-sidebar">
-        <TopHeader onSearchDeal={handleSearchDeal} onSearchCoords={handleSearchCoords} />
+        <TopHeader />
 
         <div className="app-body">
           <LeftPanel
