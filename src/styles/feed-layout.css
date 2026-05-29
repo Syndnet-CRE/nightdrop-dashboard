@@ -324,6 +324,16 @@
 }
 .left-panel.collapsed .left-panel-nav-label { opacity: 0; pointer-events: none; }
 
+/* Collapsed icon-rail: only the nav + bottom icons remain. The data-heavy
+   sections (metrics, buy boxes, run history) and their dividers/labels do not
+   fit at 60px, so hide them entirely rather than let them overflow. */
+.left-panel.collapsed .left-panel-nav-label,
+.left-panel.collapsed .left-panel-badge { display: none; }
+.left-panel.collapsed .left-panel-metric-grid,
+.left-panel.collapsed .left-panel-buy-boxes,
+.left-panel.collapsed .left-panel-run-history,
+.left-panel.collapsed .left-panel-divider { display: none; }
+
 .left-panel-divider {
   height: 1px;
   background: var(--border-1);
