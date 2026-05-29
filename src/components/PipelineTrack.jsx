@@ -116,18 +116,17 @@ function EQTicker({ progress, palette }) {
 // Label sits below the diamond and now carries the telemetry value INLINE
 // beside the station name (e.g. "BOXES 01"), which lets the old top number
 // row be removed and the header slimmed.
-function DiamondGate({ node, state, palette, value, align = 'center' }) {
+function DiamondGate({ node, state, palette, value }) {
   const SIZE_NORMAL = 8;
   const SIZE_ACTIVE = 10;
   const LABEL_TOP   = 13;
   const nameColor = state === 'pending' ? 'var(--diamond-label-pending)'
                   : state === 'active'  ? palette.light
                                         : 'var(--stat-value-fg)';
-  // Center the label under most nodes; right-align the last one (at 100%) so
-  // the wider "DELIVERED 6:00 CT" does not overflow the track's right edge.
-  const labelAnchor = align === 'right'
-    ? { left: '50%', transform: 'translateX(-100%)' }
-    : { left: '50%', transform: 'translateX(-50%)' };
+  // Every label centers under its diamond, including the last (Delivered).
+  // The track's right padding insets the Delivered node enough that its wider
+  // "DELIVERED 06:00 CT" centers without overflowing toward the countdown.
+  const labelAnchor = { left: '50%', transform: 'translateX(-50%)' };
   const hasValue = value != null && value !== '' && value !== '—';
   return (
     <div style={{
@@ -250,7 +249,10 @@ export default function PipelineTrack({
       width: '100%',
       height: 40,
       paddingLeft: 28,
-      paddingRight: 28,
+      // Extra right padding insets the Delivered node from the extreme edge so
+      // its centered "DELIVERED 06:00 CT" label has room and never crowds the
+      // countdown.
+      paddingRight: 52,
       boxSizing: 'border-box',
     }}>
       <div style={{ position: 'relative', width: '100%', height: '100%' }}>
@@ -262,7 +264,6 @@ export default function PipelineTrack({
             <EQTicker progress={progress} palette={palette}/>
             {nodes.map((n, i) => {
               const state = i < ai ? 'done' : i === ai ? 'active' : 'pending';
-              const isLast = i === nodes.length - 1;
               return (
                 <DiamondGate
                   key={n.id}
@@ -270,7 +271,6 @@ export default function PipelineTrack({
                   state={state}
                   palette={palette}
                   value={valByNode[n.id]}
-                  align={isLast ? 'right' : 'center'}
                 />
               );
             })}
