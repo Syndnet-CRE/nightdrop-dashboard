@@ -251,7 +251,7 @@ export default function DealFeedExcelView() {
             <aside className="chat-drawer" id="drawer">
               <div className="dh2">
                 <div className="dh2-info">
-                  <div className="dtitle">Ask Nightdrop</div>
+                  <div className="dtitle">Ask PropCloud</div>
                   <div className="ddeal" id="ddeal">—</div>
                 </div>
                 <button className="dclose" id="dclose" title="Close chat"><i className="ti ti-x"></i></button>

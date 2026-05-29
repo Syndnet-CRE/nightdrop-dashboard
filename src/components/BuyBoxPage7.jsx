@@ -21,7 +21,7 @@ export function BuyBoxPage7({ form, setForm, matchCount, previewState = 'resolve
           <span>Review & activate</span>
         </div>
         <h1 className="page-title">Last look before it goes live.</h1>
-        <p className="page-sub">Name the buy box, confirm your filters, and pick how often Nightdrop should send matches. You can pause or revise from the dashboard anytime.</p>
+        <p className="page-sub">Name the buy box, confirm your filters, and pick how often PropCloud should send matches. You can pause or revise from the dashboard anytime.</p>
       </header>
 
       <div className="review-hero">
