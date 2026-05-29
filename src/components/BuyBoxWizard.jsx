@@ -331,7 +331,7 @@ export function BuyBoxWizard({ mode, initialData, onSuccess, onCancel }) {
       <div className="app">
         <header className="topbar">
           <div className="brand">
-            <span className="brand-logo-mark" aria-label="Nightdrop" />
+            <span className="brand-logo-mark" aria-label="PropCloud" />
             <span className="brand-sep">›</span>
             <span className="brand-context">{mode === 'edit' ? 'Edit buy box' : 'New buy box'}</span>
           </div>
