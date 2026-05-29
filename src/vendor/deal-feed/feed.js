@@ -2,6 +2,8 @@
    FEED: table, expand, chat, keyboard, columns
    ============================================ */
 
+import { shareDeal } from './share.js';
+
 (function() {
   // ----- Icons: Tabler class names → Lucide -----
   const ICON_MAP = {
@@ -376,7 +378,7 @@
         <button class="aico hot ${d.hot?'on':''}" data-act="hot" title="Mark hot"><i class="ti ti-flame"></i></button>
         <div class="act-divider"></div>
         <button class="aico mp" data-act="mp" title="Go to map"><i class="ti ti-map-pin"></i></button>
-        <button class="aico sh" title="Share brief"><i class="ti ti-share"></i></button>
+        <button class="aico sh" data-act="sh" title="Share brief"><i class="ti ti-share"></i></button>
         <div class="act-space"></div>
         <button class="act-btn secondary disc-open" title="Quick chat"><i class="ti ti-message-circle"></i> Discuss</button>
         <a class="act-btn primary" href="${dealRoomUrl}" title="Open the full deal room (D)"><i class="ti ti-external-link"></i> Open Deal Room</a>
@@ -510,6 +512,7 @@
                 if (act === 'sv')  ND.actions?.toggleSave?.(d.id, d.saved);
                 if (act === 'hot') ND.actions?.toggleHot?.(d.id, cur);
                 if (act === 'mp')  ND.actions?.openMap?.(d.id);
+                if (act === 'sh')  shareDeal(d, { toast: ND.toast });
               });
             });
             xtr.querySelector('.disc-open').addEventListener('click', e => { e.stopPropagation(); openChat(d); });
