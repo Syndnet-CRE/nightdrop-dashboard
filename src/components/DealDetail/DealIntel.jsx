@@ -495,19 +495,6 @@ export function DealIntel({ deal }) {
               })}
             </div>
 
-            {/* Tab highlight summary — only if tab has data */}
-            {tabHasData && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 0, borderBottom: '1px solid var(--border)', background: 'var(--secondary)' }}>
-                {/* Placeholder KPI cells — could be enhanced with real data */}
-                {[0, 1, 2, 3].map((i) => (
-                  <div key={i} style={{ padding: '10px 16px', borderLeft: i > 0 ? '1px solid var(--border-faint)' : 'none' }}>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: 9, fontWeight: 700, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 4 }}>&nbsp;</div>
-                    <div style={{ fontFamily: 'var(--font-secondary)', fontSize: 16, fontWeight: 700, color: 'var(--fg)', fontFeatureSettings: "'tnum','zero'", letterSpacing: '-0.01em' }}>&nbsp;</div>
-                  </div>
-                ))}
-              </div>
-            )}
-
             {/* Data grid or empty state */}
             {tabHasData ? (
               <div style={{ padding: '14px 12px 16px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 20px' }}>

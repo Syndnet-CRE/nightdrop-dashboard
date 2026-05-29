@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useDeals } from '../../contexts/DealsContext';
 import { getAssetClassColor } from '../../lib/buyBoxTaxonomy';
+import { ownerEntityBadge } from './ownerGraph.helpers.js';
 
 function fmt(n) { return '$' + (n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : (n / 1e3).toFixed(0) + 'K'); }
 function fmtSF(n) { return n.toLocaleString() + ' SF'; }
@@ -87,6 +88,7 @@ function PortfolioGraph({ onSelect, selected, portfolio, deal }) {
       id: 'owner',
       label: ownerName,
       sub: 'Owner Entity',
+      entityBadge: ownerEntityBadge(deal),
       x: W / 2, y: H / 2,
       r: 22,
       type: 'owner',
@@ -176,7 +178,7 @@ function PortfolioGraph({ onSelect, selected, portfolio, deal }) {
           ctx.font = '700 9px "DM Sans", sans-serif';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText('LLC', n.x, n.y);
+          ctx.fillText(n.entityBadge || 'OWN', n.x, n.y);
           ctx.fillStyle = fgColor;
           ctx.font = '600 10px "DM Sans", sans-serif';
           ctx.textBaseline = 'top';
