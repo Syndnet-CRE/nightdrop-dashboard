@@ -322,8 +322,26 @@ export function toNDDeal(hostDeal, ctx = {}) {
         cleanNull(hostDeal.last_sale_price) ??
         cleanNull(briefJson?.last_sale_price) ??
         '—',
-      landVal: '—',
-      bldgVal: '—',
+      // Land vs. building (improvement) assessment split. Backend
+      // deal_writer.py writes both spellings into brief_json: `land_value`
+      // (= assessed_value_land) and `improvement_value`
+      // (= assessed_value_improvements). normalizeDeal does NOT surface
+      // either as a top-level field, so these read from briefJson only.
+      landVal:
+        cleanNull(hostDeal.land_value) ??
+        cleanNull(briefJson?.land_value) ??
+        cleanNull(briefJson?.assessed_value_land) ??
+        '—',
+      // "Building value" in CRE == improvement value.
+      bldgVal:
+        cleanNull(hostDeal.improvement_value) ??
+        cleanNull(briefJson?.improvement_value) ??
+        cleanNull(briefJson?.assessed_value_improvements) ??
+        '—',
+      // No backend source: deed/document_type lives only on the
+      // sales-transaction table (st.document_type), never written to
+      // brief_json nor surfaced by normalizeDeal. Stays "—" until the
+      // backend adds it to the deal contract.
       deed: '—',
       // Mortgage principal — backend's normalizeDeal returns this as
       // `original_loan_amount` (confirmed in the 2026-05-27 ALL_KEYS dump
