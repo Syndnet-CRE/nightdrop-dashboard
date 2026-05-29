@@ -24,31 +24,50 @@ function boundsFromDeals(deals) {
   return { pts, bounds: [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]] };
 }
 
-function fitDeals(mapRef, deals, padding = 80) {
+// The <Map> is controlled via {...viewState}. An imperative fitBounds/flyTo is
+// snapped back by the next render of the controlled viewState, so we compute
+// the target camera and push it into viewState via `apply` (setViewState).
+function fitDeals(mapRef, deals, padding = 80, apply) {
   const result = boundsFromDeals(deals);
   if (!mapRef.current || !result) return;
   const map = mapRef.current.getMap ? mapRef.current.getMap() : mapRef.current;
   if (!map.loaded()) return;
   if (result.pts.length === 1) {
-    mapRef.current.flyTo({ center: [result.pts[0].lng, result.pts[0].lat], zoom: 13, duration: 0 });
+    const { lng, lat } = { lng: result.pts[0].lng, lat: result.pts[0].lat };
+    if (apply) apply(vs => ({ ...vs, longitude: lng, latitude: lat, zoom: 13 }));
+    else mapRef.current.flyTo({ center: [lng, lat], zoom: 13, duration: 0 });
     return;
   }
-  mapRef.current.fitBounds(result.bounds, { padding, duration: 0 });
+  const cam = map.cameraForBounds(result.bounds, { padding });
+  if (cam && apply) {
+    apply(vs => ({ ...vs, longitude: cam.center.lng, latitude: cam.center.lat, zoom: cam.zoom }));
+  } else {
+    mapRef.current.fitBounds(result.bounds, { padding, duration: 0 });
+  }
 }
 
 // Test: are any of the deal coordinates inside the rectangle described by
 // the persisted viewport? Used to decide whether to honor a saved viewport
 // or auto-fit on first load when the saved viewport would leave every deal
 // off-screen (e.g., user previously zoomed Austin, deals are in Denver).
+// Min zoom at which a viewport counts as "deliberately framed on a deal".
+// Below this the view is a zoomed-out overview (e.g. the default z4 covering
+// the whole region) where a deal can be technically on-screen yet a tiny
+// off-center speck. In that case we always want to auto-fit so the deals are
+// actually framed, not just barely visible.
+const FRAMED_MIN_ZOOM = 7;
+
 function viewportContainsAnyDeal(viewport, deals) {
   if (!viewport || !Array.isArray(deals) || deals.length === 0) return true;
   const { latitude, longitude, zoom } = viewport;
   if (typeof latitude !== 'number' || typeof longitude !== 'number') return true;
-  // Approximate the viewport bounds using a degrees-per-zoom-level heuristic.
-  // Mapbox's geographic width at z is ~360 / 2^z; height ~ width * 9 / 16 for
-  // a typical desktop aspect. Use a generous 2× expansion so the recovery
-  // only kicks in when deals are clearly outside the visible area.
+  // Zoomed-out overview: never treat as framed — let auto-fit frame the deals.
+  // This is the case that left Denver deals as a speck at the top of a default
+  // Austin/z4 view (the map auto-persists that default before deals load).
   const z = Math.max(1, zoom || 4);
+  if (z < FRAMED_MIN_ZOOM) return false;
+  // Otherwise approximate the visible bounds with a degrees-per-zoom heuristic
+  // and honor the viewport only if a deal actually sits inside it.
   const halfLng = (360 / Math.pow(2, z));
   const halfLat = halfLng * 0.6;
   const inView = (d) =>
@@ -151,7 +170,7 @@ export function DealMap({
     if (initialViewState && viewportContainsAnyDeal(initialViewState, fitTarget)) {
       return;
     }
-    fitDeals(mapRef, fitTarget, padding);
+    fitDeals(mapRef, fitTarget, padding, setViewState);
   }, [fitTarget, padding, initialViewState]);
 
   useEffect(() => {
@@ -159,7 +178,7 @@ export function DealMap({
     if (initialViewState && viewportContainsAnyDeal(initialViewState, fitTarget)) {
       return;
     }
-    fitDeals(mapRef, fitTarget, padding);
+    fitDeals(mapRef, fitTarget, padding, setViewState);
   }, [fitTarget, padding, mapLoaded, initialViewState]);
 
   useEffect(() => {
