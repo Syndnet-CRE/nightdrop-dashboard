@@ -1,10 +1,12 @@
+import { useState, useEffect } from 'react';
 import {
   LayoutDashboard, Map, Layers, Settings,
   UserCircle, Plus, Users, Bookmark, Sparkles, Database,
-  TrendingUp, Flame, Target, Clock,
+  TrendingUp, Flame, Target, Clock, PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { useDeals } from '../contexts/DealsContext';
+import { readPanelCollapsed, writePanelCollapsed } from './leftPanel.collapse.js';
 
 function MetricTile({ Icon, label, value, accent, active, disabled, onClick, title }) {
   const className = [
@@ -70,6 +72,21 @@ function MiniBarChart({ data }) {
 export default function LeftPanel({ view, setView, kpis, onCreateBuyBox, unreadCount, feedFilter, setFeedFilter }) {
   const { buyBoxes } = useDeals();
 
+  // Collapsible icon-rail. Persists across sessions; toggled via the chevron
+  // button or Cmd/Ctrl+\ (the original deal-sheet bundle's convention).
+  const [collapsed, setCollapsed] = useState(readPanelCollapsed);
+  useEffect(() => { writePanelCollapsed(collapsed); }, [collapsed]);
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === '\\') {
+        e.preventDefault();
+        setCollapsed((c) => !c);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   const navItems = [
     { id: 'dealsheet', label: 'Deal Sheet',     Icon: LayoutDashboard },
     { id: 'map',       label: 'Map',            Icon: Map },
@@ -90,7 +107,17 @@ export default function LeftPanel({ view, setView, kpis, onCreateBuyBox, unreadC
     : '—';
 
   return (
-    <aside className="left-panel">
+    <aside className={`left-panel${collapsed ? ' collapsed' : ''}`}>
+      <button
+        type="button"
+        className="left-panel-collapse-btn"
+        onClick={() => setCollapsed((c) => !c)}
+        title={collapsed ? 'Expand sidebar (Cmd/Ctrl + \\)' : 'Collapse sidebar (Cmd/Ctrl + \\)'}
+        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        aria-pressed={collapsed}
+      >
+        {collapsed ? <PanelLeftOpen size={13} /> : <PanelLeftClose size={13} />}
+      </button>
       <div className="left-panel-inner">
 
         <nav className="left-panel-nav">
@@ -99,6 +126,7 @@ export default function LeftPanel({ view, setView, kpis, onCreateBuyBox, unreadC
               key={id}
               className={`left-panel-nav-item ${view === id ? 'active' : ''}`}
               onClick={() => setView(id)}
+              title={collapsed ? label : undefined}
             >
               <span className="left-panel-nav-icon">
                 <Icon size={18} />
@@ -186,6 +214,7 @@ export default function LeftPanel({ view, setView, kpis, onCreateBuyBox, unreadC
           <button
             className={`left-panel-nav-item ${view === 'accounts' ? 'active' : ''}`}
             onClick={() => setView('accounts')}
+            title={collapsed ? 'Account' : undefined}
           >
             <UserCircle size={18} />
             <span className="left-panel-nav-label">Account</span>
@@ -193,6 +222,7 @@ export default function LeftPanel({ view, setView, kpis, onCreateBuyBox, unreadC
           <button
             className={`left-panel-nav-item ${view === 'settings' ? 'active' : ''}`}
             onClick={() => setView('settings')}
+            title={collapsed ? 'Settings' : undefined}
           >
             <Settings size={18} />
             <span className="left-panel-nav-label">Settings</span>
