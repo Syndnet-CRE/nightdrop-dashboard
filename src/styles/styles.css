@@ -2745,6 +2745,15 @@ button { font-family: inherit; }
   font-family: var(--font-ui, system-ui, sans-serif);
 }
 
+/* Light theme: invert the legend's chrome so the panel doesn't become
+   a stark dark island in the otherwise light layout. The map itself
+   stays untouched (Brady's explicit scope constraint on 2026-05-28). */
+[data-theme="light"] .map-legend {
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(15, 23, 42, 0.10);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.10);
+}
+
 .map-legend-title {
   font-size: 10px;
   font-weight: 700;
@@ -2753,6 +2762,7 @@ button { font-family: inherit; }
   color: rgba(255, 255, 255, 0.55);
   margin-bottom: 8px;
 }
+[data-theme="light"] .map-legend-title { color: rgba(15, 23, 42, 0.55); }
 
 .map-legend-list {
   display: flex;
@@ -2768,6 +2778,7 @@ button { font-family: inherit; }
   color: rgba(255, 255, 255, 0.92);
   line-height: 1.2;
 }
+[data-theme="light"] .map-legend-row { color: rgba(15, 23, 42, 0.85); }
 
 .map-legend-swatch {
   width: 12px;
@@ -2776,6 +2787,7 @@ button { font-family: inherit; }
   border: 1.5px solid #0D0D0D;
   flex-shrink: 0;
 }
+[data-theme="light"] .map-legend-swatch { border-color: #ffffff; }
 
 .map-legend-label {
   white-space: nowrap;
