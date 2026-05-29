@@ -1,10 +1,23 @@
 /* ── DealShell and DealTopbar CSS ───────────────────────────────── */
 /* Scoped to .deal-shell to prevent leakage to app */
 
+/* Page wrapper (DealDetailPage) must pass a definite height down so the
+   shell's height:100% resolves. Without this the chain breaks and the shell
+   grows to content height, pushing the rail's Deal Actions off-screen. */
+.dd-page-glass {
+  height: 100%;
+  min-height: 0;
+}
+
 .deal-shell {
   display: grid;
   grid-template-rows: 48px 1fr;
-  height: 100vh;
+  /* 100% (not 100vh) so the shell fills its slot. On the page it sits inside
+     .app-content (below the TopHeader); 100vh overflowed that slot and pushed
+     the rail's bottom (Deal Actions) past the viewport. In the modal it fills
+     the fixed inset:0 overlay. Both parents have a definite height. */
+  height: 100%;
+  min-height: 0;
   background: var(--bg);
   transition: background-color var(--t-base) var(--ease-fast);
 }
@@ -313,7 +326,9 @@
 
 .deal-shell .deal-rail {
   border-left: 1px solid var(--border);
-  overflow: hidden;
+  /* auto (not hidden) so the pinned bottom "Deal Actions" stay reachable even
+     if the rail's fixed sections exceed its height on a short viewport. */
+  overflow-y: auto;
   min-height: 0;
   display: flex;
   flex-direction: column;
