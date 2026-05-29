@@ -535,6 +535,58 @@ describe('toNDDeal — backend camelCase shape', () => {
     expect(out.ext.mortLender).toBe('—');
   });
 
+  it('reads briefJson.land_value into ext.landVal (formerly hardcoded "—")', () => {
+    // Backend deal_writer.py writes brief_json.land_value from the source
+    // financial field `assessed_value_land`. normalizeDeal does NOT surface
+    // it as a top-level field, so the adapter reads it from briefJson.
+    const out = toNDDeal(backendDeal({
+      briefJson: { ...backendDeal().briefJson, land_value: 1_250_000 },
+    }));
+    expect(out.ext.landVal).toBe(1_250_000);
+  });
+
+  it('falls back to briefJson.assessed_value_land for ext.landVal', () => {
+    // deal_writer.py writes both `land_value` and the alt spelling
+    // `assessed_value_land`; the adapter accepts either.
+    const out = toNDDeal(backendDeal({
+      briefJson: { ...backendDeal().briefJson, assessed_value_land: 980_000 },
+    }));
+    expect(out.ext.landVal).toBe(980_000);
+  });
+
+  it('reads briefJson.improvement_value into ext.bldgVal (formerly hardcoded "—")', () => {
+    // In CRE, "building value" == improvement value. deal_writer.py writes
+    // brief_json.improvement_value from `assessed_value_improvements`.
+    const out = toNDDeal(backendDeal({
+      briefJson: { ...backendDeal().briefJson, improvement_value: 4_920_000 },
+    }));
+    expect(out.ext.bldgVal).toBe(4_920_000);
+  });
+
+  it('falls back to briefJson.assessed_value_improvements for ext.bldgVal', () => {
+    const out = toNDDeal(backendDeal({
+      briefJson: { ...backendDeal().briefJson, assessed_value_improvements: 3_100_000 },
+    }));
+    expect(out.ext.bldgVal).toBe(3_100_000);
+  });
+
+  it('keeps ext.landVal / bldgVal as "—" placeholder when no assessment split is available', () => {
+    const out = toNDDeal(backendDeal());
+    // Default backendDeal fixture has no land/improvement split.
+    expect(out.ext.landVal).toBe('—');
+    expect(out.ext.bldgVal).toBe('—');
+  });
+
+  it('keeps ext.deed as "—" — no backend source exists in brief_json or normalizeDeal', () => {
+    // `deed`/document_type lives only on the sales-transaction table in the
+    // backend (st.document_type); it is never written to brief_json nor
+    // surfaced by normalizeDeal. Until the backend adds it, deed stays "—".
+    const out = toNDDeal(backendDeal({
+      briefJson: { ...backendDeal().briefJson, deed_type: 'Warranty Deed' },
+    }));
+    expect(out.ext.deed).toBe('—');
+  });
+
   it('reads first signal tag and category into sig + sc', () => {
     const out = toNDDeal(backendDeal());
     expect(out.sig).toBe('LLC Absentee Owner — Potential Liquidity Event');
