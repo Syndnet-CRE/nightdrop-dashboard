@@ -110,6 +110,34 @@ export function MapView({ onOpenDeal }) {
     next.delete('focus');
     setSearchParams(next, { replace: true });
   }, [searchParams, setSearchParams]);
+
+  // Honor ?lat=<number>&lng=<number>&z=<zoom> to fly to arbitrary coords.
+  // Clears params after applying, same pattern as ?focus.
+  // Does NOT call fitDeals; coords-driven flyTo takes precedence over auto-fit.
+  useEffect(() => {
+    const latParam = searchParams.get('lat');
+    const lngParam = searchParams.get('lng');
+    const zoomParam = searchParams.get('z');
+
+    if (!latParam || !lngParam) return;
+
+    const lat = parseFloat(latParam);
+    const lng = parseFloat(lngParam);
+    const zoom = zoomParam ? parseFloat(zoomParam) : 15;
+
+    // Validate parsed numbers
+    if (isNaN(lat) || isNaN(lng) || isNaN(zoom)) return;
+
+    // Update viewport state directly, which will trigger the map to fly
+    setViewport({ latitude: lat, longitude: lng, zoom });
+
+    // Clear the params
+    const next = new URLSearchParams(searchParams);
+    next.delete('lat');
+    next.delete('lng');
+    next.delete('z');
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   // Pin click on map: expand card in panel, auto-open panel; no flyTo (user is already viewing pin)

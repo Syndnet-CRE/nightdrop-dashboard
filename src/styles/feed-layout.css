@@ -44,22 +44,95 @@
 }
 
 /* ── Header zones ──────────────────────────────────────────── */
+/* Logo zone: matches the collapsed left-panel width so the mark reads as
+   centered over the rail. Mark only, no wordmark. */
 .top-header-left {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  align-items: flex-start;
-  padding-right: var(--s-3);
+  width: var(--left-panel-collapsed-w);
+  min-width: var(--left-panel-collapsed-w);
   flex-shrink: 0;
-  min-width: 220px;
 }
 
-.top-header-logo {
-  height: 42px;
-  width: auto;
+.top-header-logo-mark {
+  width: 32px;
+  height: 32px;
   object-fit: contain;
   display: block;
 }
+
+/* Smart search occupies the space the wordmark used to take. */
+.top-header-search-zone {
+  width: clamp(220px, 24vw, 380px);
+  flex-shrink: 1;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--s-3);
+}
+
+.hdr-search { position: relative; width: 100%; }
+.hdr-search-icon {
+  position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+  color: var(--fg-4); display: flex; pointer-events: none;
+}
+.hdr-search-input {
+  width: 100%; height: 34px; padding: 0 30px 0 32px;
+  border-radius: var(--r-md, 8px);
+  border: 1px solid var(--border-1);
+  background: var(--bg-card);
+  color: var(--fg-1);
+  font-family: var(--font-sans); font-size: 13px;
+  outline: none;
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+.hdr-search-input::placeholder { color: var(--fg-4); }
+.hdr-search-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+.hdr-search-clear {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: var(--fg-4); cursor: pointer;
+  display: flex; padding: 2px; border-radius: 4px;
+}
+.hdr-search-clear:hover { color: var(--fg-1); }
+.hdr-search-panel {
+  position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-md, 10px);
+  box-shadow: 0 16px 40px rgba(13, 13, 13, 0.28);
+  padding: 6px; z-index: 200;
+  max-height: 64vh; overflow-y: auto;
+}
+.hdr-search-section + .hdr-search-section {
+  margin-top: 4px; border-top: 1px solid var(--border-1); padding-top: 4px;
+}
+.hdr-search-section-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--fg-4); padding: 6px 8px 4px;
+}
+.hdr-search-row {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 7px 8px; border: none; background: none;
+  border-radius: var(--r-sm, 6px); cursor: pointer; text-align: left;
+  color: var(--fg-1);
+}
+.hdr-search-row.active, .hdr-search-row:hover {
+  background: color-mix(in srgb, var(--fg-1) 8%, transparent);
+}
+.hdr-search-row-ico { color: var(--fg-3); display: flex; flex-shrink: 0; }
+.hdr-search-row-text { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
+.hdr-search-row-title {
+  font-size: 13px; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.hdr-search-row-sub {
+  font-size: 11px; color: var(--fg-4);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.hdr-search-empty { padding: 14px 10px; font-size: 12px; color: var(--fg-4); text-align: center; }
 
 .top-header-left .pipeline-phase-only {
   display: flex;
