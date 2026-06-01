@@ -14,6 +14,26 @@ function fmtDateTime(ts) {
   return new Date(ts).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
+// The admin invite/resend endpoints return 200 once the invite record exists,
+// which does NOT guarantee the email was actually dispatched (see post-mortem
+// notes/audit/POSTMORTEM-ADMIN-INVITE-DELIVERY-2026-06-01.md). Read whatever
+// delivery signal the backend provides and report honestly: confirmed send,
+// confirmed failure, or unknown — but never a blanket "sent".
+function inviteDelivery(res) {
+  const v = res?.email_sent ?? res?.delivered;
+  if (v === true)  return 'sent';
+  if (v === false) return 'failed';
+  return 'unknown';
+}
+
+function inviteResultMsg(res, email) {
+  switch (inviteDelivery(res)) {
+    case 'sent':   return { ok: true,  text: `Invite emailed to ${email}` };
+    case 'failed': return { ok: false, text: `Invite recorded but email failed to send to ${email} — check Resend/backend.` };
+    default:       return { ok: true,  text: `Invite created for ${email}. Confirm they received it — the server didn't report delivery.` };
+  }
+}
+
 function inviteState(sub) {
   if (sub.status === 'active' && !sub.invited_at) return 'direct';
   if (sub.status === 'active') return 'accepted';
@@ -57,13 +77,16 @@ function InvitePanel({ onSent, onClose }) {
     setMsg(null);
     const fullName = [firstName.trim(), lastName.trim()].filter(Boolean).join(' ') || null;
     try {
-      await api.post('/api/dealfeed/admin/subscribers/invite', {
+      const res = await api.post('/api/dealfeed/admin/subscribers/invite', {
         email:      clean,
         first_name: firstName.trim() || null,
         last_name:  lastName.trim()  || null,
         full_name:  fullName,
       });
-      setMsg({ ok: true, text: `Invite sent to ${clean}` });
+      // A 200 here only means the invite record was created — it does NOT prove
+      // the email was dispatched. Only claim delivery if the backend confirms it.
+      // See notes/audit/POSTMORTEM-ADMIN-INVITE-DELIVERY-2026-06-01.md.
+      setMsg(inviteResultMsg(res, clean));
       setEmail('');
       setFirstName('');
       setLastName('');
@@ -230,8 +253,15 @@ export function AccountsView() {
         await api.delete(`/api/dealfeed/admin/subscribers/${sub.id}/purge`);
         addToast(`${sub.email} deleted`, 'success');
       } else {
-        await api.post(`/api/dealfeed/admin/subscribers/${sub.id}/resend-invite`, {});
-        addToast(`Invite sent to ${sub.email}`, 'success');
+        const res = await api.post(`/api/dealfeed/admin/subscribers/${sub.id}/resend-invite`, {});
+        const delivery = inviteDelivery(res);
+        if (delivery === 'failed') {
+          addToast(`Resend recorded but email failed to send to ${sub.email} — check Resend/backend.`, 'error');
+        } else if (delivery === 'sent') {
+          addToast(`Invite emailed to ${sub.email}`, 'success');
+        } else {
+          addToast(`Invite re-created for ${sub.email} — confirm delivery (server didn't report send status).`, 'success');
+        }
       }
       await load();
     } catch {
