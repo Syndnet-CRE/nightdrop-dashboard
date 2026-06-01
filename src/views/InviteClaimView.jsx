@@ -137,7 +137,7 @@ export function InviteClaimView() {
                 value={form.password}
                 onChange={e => update('password', e.target.value)}
                 required
-                placeholder="12+ chars, 1 uppercase, 1 number"
+                placeholder="8+ chars, 1 uppercase, 1 number, 1 special"
                 style={inputStyle}
               />
             </div>
