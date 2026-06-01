@@ -35,7 +35,10 @@ export function SettingsView({ onConfirmDanger }) {
 
   async function handleChangePassword(e) {
     e.preventDefault();
-    if (pwNew.length < 12) { setPwToast({ ok: false, msg: 'New password must be at least 12 characters.' }); return; }
+    if (pwNew.length < 8) { setPwToast({ ok: false, msg: 'New password must be at least 8 characters.' }); return; }
+    if (!/[A-Z]/.test(pwNew)) { setPwToast({ ok: false, msg: 'Include at least one uppercase letter.' }); return; }
+    if (!/\d/.test(pwNew)) { setPwToast({ ok: false, msg: 'Include at least one number.' }); return; }
+    if (!/[^A-Za-z0-9]/.test(pwNew)) { setPwToast({ ok: false, msg: 'Include at least one special character.' }); return; }
     if (pwNew !== pwConfirm) { setPwToast({ ok: false, msg: 'Passwords do not match.' }); return; }
     setPwSaving(true);
     setPwToast(null);
@@ -101,7 +104,7 @@ export function SettingsView({ onConfirmDanger }) {
           <form onSubmit={handleChangePassword}>
           <div className="field"><label>Current Password</label><input className="input" type="password" value={pwCurrent} onChange={e => setPwCurrent(e.target.value)} required/></div>
           <div className="field-row">
-            <div className="field"><label>New Password</label><input className="input" type="password" value={pwNew} onChange={e => setPwNew(e.target.value)} placeholder="At least 12 characters" required/></div>
+            <div className="field"><label>New Password</label><input className="input" type="password" value={pwNew} onChange={e => setPwNew(e.target.value)} placeholder="8+ chars, 1 uppercase, 1 number, 1 special" required/></div>
             <div className="field"><label>Confirm Password</label><input className="input" type="password" value={pwConfirm} onChange={e => setPwConfirm(e.target.value)} required/></div>
           </div>
           <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 12 }}>

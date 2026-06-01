@@ -68,7 +68,7 @@ export function ResetPasswordView() {
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Min 12 chars, 1 uppercase, 1 number"
+                placeholder="Min 8 chars, 1 uppercase, 1 number, 1 special"
                 required
                 autoFocus
               />
