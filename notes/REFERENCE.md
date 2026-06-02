@@ -114,7 +114,7 @@ Last updated: 2026-05-20 (taxonomy + endpoint sweep after backend MVP rebuild)
 - `GET /api/dealfeed/invites` → `{ invites: Invite[] }`
 - `POST /api/dealfeed/invites` → body `{ invites: [{email, full_name}] }` → `{ added, skipped }`
 - `POST /api/dealfeed/invites/send` → bulk send the queue. HTTP `200` even with partial failures: `{ sent, failed, results: [{ email, ok, statusCode, error, token }] }`. **A 200 does NOT mean every invite sent** — read `failed` / per-result `ok`.
-- `POST /api/dealfeed/invites/resend/:id` → resend a single queued invite. `200` `{ ok, statusCode, error, email }` on success / **`502`** (same body) on delivery failure. *(Not currently called from the dashboard — no UI entry point.)*
+- `POST /api/dealfeed/invites/resend/:id` → resend a single queued invite. `200` `{ ok, statusCode, error, email }` on success / **`502`** (same body) on delivery failure. *(Wired in `InviteView` — "Resend" button on already-sent queue rows.)*
 - `DELETE /api/dealfeed/invites/:id`
 
 ### Admin

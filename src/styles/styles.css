@@ -3358,6 +3358,22 @@ button { font-family: inherit; }
   transition: color 120ms, background 120ms;
 }
 .iv-remove-btn:hover { color: var(--red); background: rgba(229,72,77,0.1); }
+.iv-row-actions { display: inline-flex; align-items: center; gap: 8px; }
+.iv-resend-btn {
+  background: none;
+  border: 1px solid var(--hairline);
+  cursor: pointer;
+  color: var(--ink-2);
+  padding: 4px 8px;
+  border-radius: 5px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: color 120ms, background 120ms, border-color 120ms;
+}
+.iv-resend-btn:hover:not(:disabled) { color: var(--green); border-color: var(--green); background: rgba(91,204,72,0.08); }
+.iv-resend-btn:disabled { opacity: 0.6; cursor: default; }
 
 .iv-error { background: rgba(229,72,77,0.08); border: 1px solid rgba(229,72,77,0.25); color: var(--red); border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 12px; }
 .iv-send-result { background: rgba(29,175,41,0.08); border: 1px solid rgba(29,175,41,0.25); color: var(--green); border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 12px; }

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
-import { parseInvitesFromText, validateInvite, dedupeByEmail, summarizeBulkSend } from '../lib/inviteHelpers';
+import { parseInvitesFromText, validateInvite, dedupeByEmail, summarizeBulkSend, isSendOk, inviteErrorMessage } from '../lib/inviteHelpers';
+import { useToast } from '../contexts/ToastContext';
 import { I } from '../components/Icons';
 
 function fmtDate(val) {
@@ -9,12 +10,14 @@ function fmtDate(val) {
 }
 
 export function InviteView() {
+  const addToast = useToast();
   const [text, setText] = useState('');
   const [preview, setPreview] = useState([]);
   const [queue, setQueue] = useState([]);
   const [loadingQueue, setLoadingQueue] = useState(true);
   const [sending, setSending] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [resendingId, setResendingId] = useState(null);
   const [sendResult, setSendResult] = useState(null);
   const [error, setError] = useState(null);
 
@@ -73,6 +76,24 @@ export function InviteView() {
       setError('Failed to send invites.');
     } finally {
       setSending(false);
+    }
+  }
+
+  async function handleResend(row) {
+    setResendingId(row.id);
+    try {
+      // A 2xx no longer guarantees delivery — verify ok, surface the real error.
+      const res = await api.post(`/api/dealfeed/invites/resend/${row.id}`, {});
+      if (!isSendOk(res)) {
+        addToast(inviteErrorMessage({ body: res }, `Failed to resend to ${row.email}`), 'error');
+        return;
+      }
+      addToast(`Invite resent to ${row.email}`, 'success');
+      await loadQueue();
+    } catch (err) {
+      addToast(inviteErrorMessage(err, `Failed to resend to ${row.email}`), 'error');
+    } finally {
+      setResendingId(null);
     }
   }
 
@@ -209,7 +230,18 @@ export function InviteView() {
                       ? <span className="iv-badge iv-badge-sent">Sent {fmtDate(row.invited_at)}</span>
                       : <span className="iv-muted">Not sent</span>}
                   </td>
-                  <td>
+                  <td className="iv-row-actions">
+                    {row.invited_at && (
+                      <button
+                        className="iv-resend-btn"
+                        onClick={() => handleResend(row)}
+                        disabled={resendingId === row.id}
+                        title="Resend invite"
+                      >
+                        <I.Mail size={13}/>
+                        {resendingId === row.id ? 'Resending…' : 'Resend'}
+                      </button>
+                    )}
                     <button className="iv-remove-btn" onClick={() => handleRemove(row.id)} title="Remove">
                       <I.Close size={13}/>
                     </button>
