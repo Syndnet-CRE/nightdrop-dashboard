@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Mail, MoreHorizontal, Plus, RotateCcw, Trash2, X } from 'lucide-react';
 import { api } from '../lib/api';
 import { useToast } from '../contexts/ToastContext';
+import { inviteErrorMessage, isSendOk, inviteTimeline } from '../lib/inviteHelpers';
 import '../styles/accounts.css';
 
 function fmtDate(ts) {
@@ -57,19 +58,24 @@ function InvitePanel({ onSent, onClose }) {
     setMsg(null);
     const fullName = [firstName.trim(), lastName.trim()].filter(Boolean).join(' ') || null;
     try {
-      await api.post('/api/dealfeed/admin/subscribers/invite', {
+      const res = await api.post('/api/dealfeed/admin/subscribers/invite', {
         email:      clean,
         first_name: firstName.trim() || null,
         last_name:  lastName.trim()  || null,
         full_name:  fullName,
       });
+      // A 2xx no longer guarantees delivery — the body must say ok:true.
+      if (!isSendOk(res)) {
+        setMsg({ ok: false, text: inviteErrorMessage({ body: res }) });
+        return;
+      }
       setMsg({ ok: true, text: `Invite sent to ${clean}` });
       setEmail('');
       setFirstName('');
       setLastName('');
       onSent();
     } catch (err) {
-      setMsg({ ok: false, text: err?.message || 'Failed to send invite' });
+      setMsg({ ok: false, text: inviteErrorMessage(err) });
     } finally {
       setBusy(false);
     }
@@ -230,12 +236,18 @@ export function AccountsView() {
         await api.delete(`/api/dealfeed/admin/subscribers/${sub.id}/purge`);
         addToast(`${sub.email} deleted`, 'success');
       } else {
-        await api.post(`/api/dealfeed/admin/subscribers/${sub.id}/resend-invite`, {});
+        // Resend: a 2xx no longer guarantees delivery — verify ok, surface error.
+        const res = await api.post(`/api/dealfeed/admin/subscribers/${sub.id}/resend-invite`, {});
+        if (!isSendOk(res)) {
+          addToast(inviteErrorMessage({ body: res }, `Failed to send invite to ${sub.email}`), 'error');
+          return;
+        }
         addToast(`Invite sent to ${sub.email}`, 'success');
       }
       await load();
-    } catch {
-      addToast('Action failed', 'error');
+    } catch (err) {
+      const fallback = action === 'resend' ? `Failed to send invite to ${sub.email}` : 'Action failed';
+      addToast(inviteErrorMessage(err, fallback), 'error');
     } finally {
       if (mountedRef.current) {
         setBusyIds(s => { const n = new Set(s); n.delete(sub.id); return n; });
@@ -329,7 +341,12 @@ export function AccountsView() {
                   <td><span className="acc-muted">{sub.company || '—'}</span></td>
                   <td><Badge map={STATUS_BADGE} value={sub.status} /></td>
                   <td><Badge map={INVITE_BADGE} value={sub._state} /></td>
-                  <td className="acc-muted acc-num">{fmtDate(sub.invited_at) || '—'}</td>
+                  <td className="acc-muted acc-num">
+                    {(() => {
+                      const tl = inviteTimeline(sub);
+                      return tl.label ? `${tl.label} ${fmtDate(tl.date) || ''}`.trim() : '—';
+                    })()}
+                  </td>
                   <td className="acc-muted acc-num">{fmtDate(sub.created_at) || '—'}</td>
                   <td className="acc-muted acc-num">{fmtDateTime(sub.last_login_at) || '—'}</td>
                   <td className="acc-muted acc-num">{sub.buy_box_count ?? 0}</td>

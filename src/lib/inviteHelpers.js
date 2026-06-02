@@ -45,3 +45,63 @@ export function dedupeByEmail(invites) {
     return true;
   });
 }
+
+/**
+ * Best human-readable error from a thrown api error. The api layer attaches the
+ * parsed response body (which carries the backend `error` string on a 502) to
+ * `err.body`, falling back to `err.message`.
+ * @param {unknown} err
+ * @param {string} [fallback]
+ * @returns {string}
+ */
+export function inviteErrorMessage(err, fallback = 'Failed to send invite') {
+  return err?.body?.error || err?.message || fallback;
+}
+
+/**
+ * A single-send response is only a success when `ok === true`. A body that omits
+ * `ok` entirely is treated as success (legacy shape); an explicit `ok:false`
+ * (a 2xx that still failed) is a failure.
+ * @param {{ ok?: boolean } | null | undefined} body
+ * @returns {boolean}
+ */
+export function isSendOk(body) {
+  return body?.ok !== false;
+}
+
+/**
+ * Normalize the bulk-send payload. A 200 here does NOT mean every invite sent —
+ * derive counts and surface each failed row's error.
+ * @param {{ sent?: number, failed?: number, results?: Array<{ email: string, ok: boolean, error: string|null }> }} data
+ * @returns {{ sent: number, failed: number, failures: Array<{ email: string, error: string }> }}
+ */
+export function summarizeBulkSend(data) {
+  const results = Array.isArray(data?.results) ? data.results : [];
+  const failures = results
+    .filter(r => r.ok === false)
+    .map(r => ({ email: r.email, error: r.error || 'Delivery failed' }));
+  const sent = typeof data?.sent === 'number'
+    ? data.sent
+    : results.filter(r => r.ok === true).length;
+  const failed = typeof data?.failed === 'number'
+    ? data.failed
+    : failures.length;
+  return { sent, failed, failures };
+}
+
+/**
+ * Describe where an invite is in its lifecycle for display. Claimed wins over
+ * pending; pending shows the issued time; otherwise the timeline is empty.
+ * @param {{ token_status?: string|null, token_issued_at?: string|null, token_claimed_at?: string|null, invited_at?: string|null }} sub
+ * @returns {{ label: 'Activated' | 'Invited' | null, date: string|null }}
+ */
+export function inviteTimeline(sub) {
+  if (!sub) return { label: null, date: null };
+  if (sub.token_claimed_at || sub.token_status === 'claimed') {
+    return { label: 'Activated', date: sub.token_claimed_at || null };
+  }
+  if (sub.token_status === 'pending') {
+    return { label: 'Invited', date: sub.token_issued_at || sub.invited_at || null };
+  }
+  return { label: null, date: null };
+}

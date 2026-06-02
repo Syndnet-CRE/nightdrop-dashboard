@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
-import { parseInvitesFromText, validateInvite, dedupeByEmail } from '../lib/inviteHelpers';
+import { parseInvitesFromText, validateInvite, dedupeByEmail, summarizeBulkSend } from '../lib/inviteHelpers';
 import { I } from '../components/Icons';
 
 function fmtDate(val) {
@@ -66,7 +66,8 @@ export function InviteView() {
     setError(null);
     try {
       const data = await api.post('/api/dealfeed/invites/send', {});
-      setSendResult(data);
+      // A 200 here does NOT mean every invite sent — read per-result ok/error.
+      setSendResult(summarizeBulkSend(data));
       await loadQueue();
     } catch {
       setError('Failed to send invites.');
@@ -159,9 +160,18 @@ export function InviteView() {
 
       {error && <div className="iv-error">{error}</div>}
       {sendResult && (
-        <div className="iv-send-result">
-          Sent {sendResult.sent} invite{sendResult.sent !== 1 ? 's' : ''}.
-          {sendResult.failed > 0 && ` ${sendResult.failed} failed — check Resend logs.`}
+        <div className={`iv-send-result${sendResult.failed > 0 ? ' iv-send-result-warn' : ''}`}>
+          <div>
+            Sent {sendResult.sent} invite{sendResult.sent !== 1 ? 's' : ''}.
+            {sendResult.failed > 0 && ` ${sendResult.failed} failed:`}
+          </div>
+          {sendResult.failures.length > 0 && (
+            <ul className="iv-send-failures">
+              {sendResult.failures.map((f, i) => (
+                <li key={i}><strong>{f.email}</strong> — {f.error}</li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
 

@@ -3361,6 +3361,9 @@ button { font-family: inherit; }
 
 .iv-error { background: rgba(229,72,77,0.08); border: 1px solid rgba(229,72,77,0.25); color: var(--red); border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 12px; }
 .iv-send-result { background: rgba(29,175,41,0.08); border: 1px solid rgba(29,175,41,0.25); color: var(--green); border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 12px; }
+.iv-send-result-warn { background: rgba(244,183,62,0.10); border-color: rgba(244,183,62,0.35); color: var(--warning); }
+.iv-send-failures { margin: 8px 0 0; padding-left: 18px; }
+.iv-send-failures li { margin-top: 2px; }
 
 /* ── Pipeline Timeline (A1) ───────────────────────────────── */
 /* ── Pipeline Timeline v3 — 80/20 grid: track | countdown ──── */

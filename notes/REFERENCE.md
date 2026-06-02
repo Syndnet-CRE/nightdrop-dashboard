@@ -113,14 +113,21 @@ Last updated: 2026-05-20 (taxonomy + endpoint sweep after backend MVP rebuild)
 ### Invites (admin)
 - `GET /api/dealfeed/invites` → `{ invites: Invite[] }`
 - `POST /api/dealfeed/invites` → body `{ invites: [{email, full_name}] }` → `{ added, skipped }`
-- `POST /api/dealfeed/invites/send` → `{ sent, failed }`
+- `POST /api/dealfeed/invites/send` → bulk send the queue. HTTP `200` even with partial failures: `{ sent, failed, results: [{ email, ok, statusCode, error, token }] }`. **A 200 does NOT mean every invite sent** — read `failed` / per-result `ok`.
+- `POST /api/dealfeed/invites/resend/:id` → resend a single queued invite. `200` `{ ok, statusCode, error, email }` on success / **`502`** (same body) on delivery failure. *(Not currently called from the dashboard — no UI entry point.)*
 - `DELETE /api/dealfeed/invites/:id`
 
 ### Admin
-- `GET /api/dealfeed/admin/subscribers` → `{ subscribers }`
+- `GET /api/dealfeed/admin/subscribers` → `{ subscribers }`. Each row carries invite-lifecycle fields: `token_status` (`pending`/`claimed`/`expired`), `token_expires_at`, `token_issued_at` (when latest token issued), `token_claimed_at` (when activated), `invited_at` (set only on **successful** delivery — trustworthy), `invite_sent_count`.
 - `GET /api/dealfeed/admin/subscribers/:id` → full detail
+- `POST /api/dealfeed/admin/subscribers/invite` → create + invite a subscriber. Body `{ email, first_name, last_name, full_name }`. **`201`** `{ ok, statusCode, error, email }` on success / **`502`** (same body) on delivery failure. **Stop treating any 2xx as success — key off `ok`.**
+- `POST /api/dealfeed/admin/subscribers/:id/resend-invite` → resend invite to an existing subscriber. **`200`** `{ ok, statusCode, error, email }` on success / **`502`** (same body) on delivery failure.
+- `DELETE /api/dealfeed/admin/subscribers/:id` → revoke access
+- `DELETE /api/dealfeed/admin/subscribers/:id/purge` → hard delete
 - `GET /api/dealfeed/admin/runs` → `{ runs: AgentRun[] }`
 - `POST /api/dealfeed/admin/runs/trigger` → triggers deal-feed run
+
+> Delivery-status contract (the three single-send endpoints above + `/invites/resend/:id`): `ok` is true only when Resend accepted the email; `statusCode` is the raw Resend status (or `null` if never dispatched); `error` is a human-readable reason on failure, `null` on success. See `notes/postmortems/invite-false-success.md`.
 
 ### Agent
 - `GET /api/dealfeed/agent/messages` → `{ messages }` — oldest first
