@@ -1,51 +1,45 @@
 HANDOFF
-Date: 2026-05-28 (session 7 — baseline refresh on merged main + 7-item queued backlog, each its own TDD PR)
+Date: 2026-06-01 (session 8 — invite delivery-status contract + post-mortem)
 Repo: nightdrop-dashboard
-Status: COMPLETE. PRs #13 and #14 are MERGED to main. All 7 queued items + the baseline refresh shipped as 8 focused PRs (#15-#22), each green (tests + lint + build). All OPEN awaiting Brady's review/merge. Two items (E, D-deed) had decisions; E resolved via Brady (native share), D-deed flagged for backend.
+Status: COMPLETE. Branch `feat/invite-delivery-status` committed (`69b3f5a`). Not yet pushed / no PR opened.
+
+Session objective: Update the dashboard to the nightdrop-api PR #4 invite contract (honest 502 delivery status + token_issued_at/token_claimed_at), and write a post-mortem of the false-success bug.
 
 ---
 
-## What was done this session
+## What was done
 
-### Git reconciliation (start of session)
-- Confirmed PR #13 (`6764f4c`) and PR #14 (`75b8ea7`) merged to `main`.
-- Found a dangling rebased branch tip (`2a53491`) with ~20 commits of theme/logo/follow-up work. Proved its tree is BYTE-IDENTICAL to merged main (`785ab41…`) — i.e. everything already landed via the #14 merge. Nothing lost. Deleted the recovery branch.
-- `.light-theme-audit/` (3.9M of screenshots) gitignored (committed in PR #16).
+### Post-mortem
+- `notes/postmortems/invite-false-success.md` — full incident write-up (root cause: dishonest 2xx-on-failure backend + frontend assuming any resolved call = success; ties to the repo's recurring silent-failure pattern: MOCK_DEALS fallback, saveNote no-catch).
 
-### Baseline refresh
-- `/update-codemaps` → refreshed frontend.md + architecture.md for the V1 deal-detail migration. **PR #16** (`chore/codemap-refresh-session-7`).
-- `/evolve` → 16 instincts, all high-confidence, 0 clusters ready to promote. Nothing generated.
+### Change 1 — honest send status
+- `src/lib/inviteHelpers.js`: added pure helpers `inviteErrorMessage(err, fallback)`, `isSendOk(body)`, `summarizeBulkSend(data)`.
+- `src/views/AccountsView.jsx`:
+  - Resend path (`handleAction`) no longer shows blanket "Action failed" — surfaces the real backend `error` via `inviteErrorMessage(err)`, and checks `isSendOk` on the 2xx body.
+  - `InvitePanel.send` captures the response and treats `ok:false` as failure even on 2xx.
+- `src/views/InviteView.jsx`: bulk send (`handleSendAll`) now lists each failed recipient + their `error` (was "check Resend logs"). Added `.iv-send-result-warn` / `.iv-send-failures` styles in `styles.css`.
 
-### The 8 PRs (all OPEN, all green)
-| PR | Branch | Item | What |
-|---|---|---|---|
-| #15 | `feat/adapter-ext-land-bldg` | **D** | Wire `ext.landVal`←`briefJson.land_value`, `ext.bldgVal`←`briefJson.improvement_value`. `deed` left `'—'` (no backend source). 6 tests. |
-| #16 | `chore/codemap-refresh-session-7` | — | Codemap refresh + gitignore audit dir. |
-| #17 | `feat/rebrand-text-sweep` | **B** | User-visible Nightdrop→PropCloud text (Login wordmark+contact, BuyBoxPage7, BuyBoxWizard aria, Ask PropCloud). Technical `nightdrop-*` keys preserved. Source-scan guard test (6). |
-| #18 | `test/excel-feed-stage-2` | **A** | Phase 4 Stage 2 Playwright brought current (dynamic dates + F12 rewrite). **Closed #12** as superseded. 10 specs pass. |
-| #19 | `fix/deal-detail-v1-cosmetics` | **C** | Real owner-entity badge (was hardcoded 'LLC') + removed dead Intel KPI band. Audit documented in bmad/deal-detail-v1/architecture.md. 8 tests. |
-| #20 | `chore/favicon-propcloud` | **H** | favicon.svg: purple lightning → green cloud+pin PropCloud mark. Visually verified. |
-| #21 | `chore/remove-dead-gmaps-loader` | **F** | Deleted orphaned `src/lib/googleMapsLoader.js` (zero imports, no key). |
-| #22 | `feat/share-brief-button` | **E** | `.aico.sh` "Share brief" → native `navigator.share` + clipboard fallback (Brady's choice). 7 tests + E2E-verified the button fires in the live bundle. |
+### Change 2 — timestamps
+- `inviteTimeline(sub)` helper: claimed → `{Activated, token_claimed_at}`, pending → `{Invited, token_issued_at ?? invited_at}`, else null.
+- AccountsView "Invited" column renders the timeline ("Invited <date>" / "Activated <date>").
 
----
+### Docs
+- `notes/REFERENCE.md`: documented `POST /admin/subscribers/invite` (201/502), `POST /admin/subscribers/:id/resend-invite` (200/502), `POST /invites/resend/:id` (200/502, not wired in UI), updated bulk `/invites/send` shape, and the new subscriber timestamp fields. Added the delivery-status contract note pointing to the post-mortem.
 
-## OPEN flags / decisions for Brady
+### Verification
+- `npm test` → 391 pass (16 new unit cases on the helpers, covering the exact contract shapes: thrown-502 body, 2xx ok:false, partial bulk failure, claimed/pending timelines).
+- `npm run lint` → clean. `npm run build` → green (only the pre-existing chunk-size warning).
 
-1. **(D) `deed` field** — no backend source. `document_type` lives only on the sales-transaction table, never written to `brief_json` / `normalizeDeal`. To wire it: add `document_type` to backend `normalizeDeal` (`~/nightdrop-api/routes/dealfeed/deals.js`) or `deal_writer.py` brief_json, then a 1-line adapter read.
-2. **(B) LoginView contact mailto** still `hello@nightdrop.io` — left to avoid a dead link. Update to the propcloud.ai inbox once it's live.
-3. **(B) `buy-box-wizard.css:64`** still references `nightdrop-logo.png` (`.brand-logo-mark` background) — a missed spot in the logo rebrand. TopHeader uses the new `propcloud-logo-*.png`. Worth a follow-up.
-4. **(C) Product decisions** (documented in bmad/deal-detail-v1/architecture.md): hide disabled CTAs (Generate Packet / Add to List) vs. "Coming Soon" labels; visually mark DealCalculator estimates; hide Photo tab until upload exists.
-5. **(F) Street View** — if wanted, provision `VITE_GOOGLE_MAPS_API_KEY` and the loader is ~40 lines to recreate (preserved in git history of PR #21).
-
----
+## What was NOT done / honest gaps
+- **No automated E2E.** I wrote a route-mocked Playwright spec to drive the live forced-502 path, but the admin Accounts view is unreachable in the harness: the map-view `<footer class="footer">` overlays the LeftPanel bottom nav (where the Account item sits), so clicks never land — confirmed across force-click, dispatchEvent, native click, pointer-events:none, and a tall viewport. The existing `tests/critical-flows.spec.js` avoids LeftPanel nav for the same reason (it uses TopHeader `.pb-tab`, which has no path to Accounts). Spec was removed rather than committed flaky. The contract's QA checklist (forcing a real Resend 502 via RESEND_FROM_EMAIL) is inherently a backend-env exercise anyway.
+- Third endpoint `POST /invites/resend/:id` is documented but NOT wired — no UI entry point exists. Flag from the plan; left out by design (asked Brady, no answer yet).
 
 ## Next session
-
-Merge PRs #15-#22 (suggested order: #16 codemaps, then the independent feature/fix/chore PRs in any order — they touch disjoint surfaces, so conflicts are unlikely). Then address the flags above as Brady prioritizes.
+- Push branch + open PR; manual visual pass on the live app (Accounts → send invite, force a backend failure to confirm the error toast, confirm Invited/Activated dates).
+- Optional: add a TopHeader-reachable E2E hook or fix the map-footer overlay so admin views are testable, then add the invite-delivery E2E.
 
 `cd ~/nightdrop-dashboard && claude --dangerously-skip-permissions`
 
 ## Blockers for Brady
-- Review/merge the 8 open PRs.
-- Decide on the 5 flags above (especially the propcloud.ai contact inbox and the wizard logo asset).
+- Decide whether `POST /invites/resend/:id` needs a UI button.
+- Branch is committed but not pushed — say the word to push + open the PR.
