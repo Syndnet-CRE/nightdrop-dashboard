@@ -537,7 +537,7 @@
 }
 
 .metric-tile.clickable { cursor: pointer; }
-.metric-tile.clickable:hover { border-color: var(--border-strong); background: var(--bg-1); }
+.metric-tile.clickable:hover { border-color: var(--border-strong); background: var(--bg-1, var(--bg-card-hover)); }
 
 .metric-tile.active {
   border-color: var(--nightdrop-green-700);
