@@ -29,7 +29,7 @@
 .acc-search {
   width: 220px;
   padding: 7px 12px;
-  background: var(--bg-input);
+  background: var(--bg-input, var(--app-bg));
   border: 1px solid var(--border-2);
   border-radius: var(--r-sm);
   font-size: 13px;
@@ -121,7 +121,7 @@
 }
 .acc-field input {
   padding: 7px 11px;
-  background: var(--bg-input);
+  background: var(--bg-input, var(--app-bg));
   border: 1px solid var(--border-2);
   border-radius: var(--r-sm);
   font-size: 13px;
