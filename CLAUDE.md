@@ -94,9 +94,8 @@ Dangerous files — edit carefully:
 - `src/components/BuyBoxWizard.jsx` — wizard shell + `NATIVE_FORM` + `nativeToPayload` + `toNativeForm`. Active create/edit logic. ~30 of the backend's 91 patchable fields are wired; the other ~60 are silently dropped.
 
 Orphaned (zero imports — safe to delete in next cleanup):
-- `src/components/BuyBoxConfigurator/` (10 files, ~1,280 lines)
-- `src/components/BuyBoxEditModal.jsx`
-- `src/lib/wizardHelpers.js` + `wizardHelpers.test.js` (~30–40 tests will drop with these)
+- `src/lib/anchorMetric.js`, `src/lib/taxonomy.js`, `src/vendor/deal-feed/sidebar-tweaks.js` (per `npm run knip`)
+> Already deleted (2026-06-29 weekly audit): `src/components/BuyBoxConfigurator/`, `src/components/BuyBoxEditModal.jsx`, `src/lib/wizardHelpers.js` + `wizardHelpers.test.js`. List above was stale — these no longer exist.
 
 ## KNOWN LANDMINES
 
