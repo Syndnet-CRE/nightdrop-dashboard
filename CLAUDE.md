@@ -93,8 +93,9 @@ Dangerous files — edit carefully:
 - `src/lib/buyBoxTaxonomy.js` — asset class taxonomy. **STALE as of 2026-05-20:** still 8 classes; backend rebuilt to 10 (see BACKEND CONTRACT below). Must be updated before the next wizard create flow works against migration 049 fields.
 - `src/components/BuyBoxWizard.jsx` — wizard shell + `NATIVE_FORM` + `nativeToPayload` + `toNativeForm`. Active create/edit logic. ~30 of the backend's 91 patchable fields are wired; the other ~60 are silently dropped.
 
-Orphaned (zero imports — safe to delete in next cleanup):
-- `src/lib/anchorMetric.js`, `src/lib/taxonomy.js`, `src/vendor/deal-feed/sidebar-tweaks.js` (per `npm run knip`)
+Orphaned (zero imports — safe to delete in next cleanup, per `npm run knip`):
+- `src/lib/anchorMetric.js`, `src/lib/taxonomy.js`, `src/vendor/deal-feed/sidebar-tweaks.js`
+- Added 2026-07-06 weekly audit (4 net-new orphans, verified zero references): `src/components/DealDetail/narrative.helpers.js`, `src/components/OverflowMenu.jsx`, `src/components/ScoreBadge.jsx`, `src/hooks/useStickyCollapse.js`
 > Already deleted (2026-06-29 weekly audit): `src/components/BuyBoxConfigurator/`, `src/components/BuyBoxEditModal.jsx`, `src/lib/wizardHelpers.js` + `wizardHelpers.test.js`. List above was stale — these no longer exist.
 
 ## KNOWN LANDMINES
