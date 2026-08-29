@@ -1,46 +1,42 @@
 HANDOFF
-Date: 2026-06-01 (session 8 — invite delivery-status contract + post-mortem)
+Date: 2026-07-01 (session 9 — buy box configurator curated handoff package)
 Repo: nightdrop-dashboard
-Status: COMPLETE. Merged and pushed to `main`. Resend endpoint now wired (per Brady).
+Status: COMPLETE. Deliverable is a handoff ZIP. No app source changed (docs-only by design). Nothing committed.
 
-Session objective: Update the dashboard to the nightdrop-api PR #4 invite contract (honest 502 delivery status + token_issued_at/token_claimed_at), and write a post-mortem of the false-success bug.
+Session objective: Produce a portable handoff package of the buy box experience for a different team/platform, then update it to a curated scope.
 
 ---
 
 ## What was done
 
-### Post-mortem
-- `notes/postmortems/invite-false-success.md` — full incident write-up (root cause: dishonest 2xx-on-failure backend + frontend assuming any resolved call = success; ties to the repo's recurring silent-failure pattern: MOCK_DEALS fallback, saveNote no-catch).
+Built `notes/handoff/buy-box-configurator/` staging + `notes/handoff/buy-box-configurator-handoff.zip` (242K), plus a copy at `~/Downloads/buy-box-configurator-handoff.zip` (integrity-tested `unzip -tq`).
 
-### Change 1 — honest send status
-- `src/lib/inviteHelpers.js`: added pure helpers `inviteErrorMessage(err, fallback)`, `isSendOk(body)`, `summarizeBulkSend(data)`.
-- `src/views/AccountsView.jsx`:
-  - Resend path (`handleAction`) no longer shows blanket "Action failed" — surfaces the real backend `error` via `inviteErrorMessage(err)`, and checks `isSendOk` on the 2xx body.
-  - `InvitePanel.send` captures the response and treats `ok:false` as failure even on 2xx.
-- `src/views/InviteView.jsx`: bulk send (`handleSendAll`) now lists each failed recipient + their `error` (was "check Resend logs"). Added `.iv-send-result-warn` / `.iv-send-failures` styles in `styles.css`.
+Package = 28 verbatim source files under `source/` (mirrors `src/`) + 12 docs under `docs/` + `FILE-MANIFEST.md`.
 
-### Change 2 — timestamps
-- `inviteTimeline(sub)` helper: claimed → `{Activated, token_claimed_at}`, pending → `{Invited, token_issued_at ?? invited_at}`, else null.
-- AccountsView "Invited" column renders the timeline ("Invited <date>" / "Activated <date>").
+Two rounds:
+- Round 1: full-feature handoff (24 source, 8 docs) via a dynamic Workflow (6 analyze + 8 author agents).
+- Round 2 (Brady's curated spec): reorganized to 12 curated-first docs via a second Workflow (10 authors). Added 4 missing source files: `wizardFormState.js` (373-line payload brain), `LeftPanel.jsx` (metric boxes), `ConfirmModal.jsx`, `BuyerSearchComingSoonModal.jsx`.
 
-### Docs
-- `notes/REFERENCE.md`: documented `POST /admin/subscribers/invite` (201/502), `POST /admin/subscribers/:id/resend-invite` (200/502), `POST /invites/resend/:id` (200/502, not wired in UI), updated bulk `/invites/send` shape, and the new subscriber timestamp fields. Added the delivery-status contract note pointing to the post-mortem.
+Curated scope encoded with a [PORT]/[CUT]/[BUILD] legend:
+- Management page [PORT]: Kanban 5 lanes (Pending/Validating/Active/Paused/Coverage gap, gap rejects drops), drag->patchBuyBox status, cards, LeftPanel metric boxes, New buyer search (Coming-Soon stub) + New buy box, pause/resume/reconfigure.
+- Wizard -> 6 steps: Target (zip [CUT]) -> Profile (physical only, financial [CUT]) -> Owner (kept; tax-delinquent + active-foreclosure kept as plain owner flags) -> Location/risk -> Threshold 70/80/90 -> Review & activate (cadence + activation dialog + Build another). Distress step [CUT] entirely.
+- [BUILD]: per-day Mon-Sun schedule editor (does NOT exist today; only Daily/Weekly/Real-time cadence -> run_schedule.days; card week strip is read-only). Full spec in `docs/07-SCHEDULE-EDITOR-SPEC.md`.
+- `docs/01-SCOPE.md` = authoritative IN/OUT with exact cut ranges; `docs/09-CODE-MAP.md` = feature->file:line index.
 
-### Verification
-- `npm test` → 391 pass (16 new unit cases on the helpers, covering the exact contract shapes: thrown-502 body, 2xx ok:false, partial bulk failure, claimed/pending timelines).
-- `npm run lint` → clean. `npm run build` → green (only the pre-existing chunk-size warning).
+Verification (main thread owned the gate): 28 source + 12 docs + manifest present, zero empty entries, zero em dashes in the 12 docs (stripped with perl); em dashes intentionally preserved in verbatim source/.
 
-### Resend button (added after Brady's go-ahead)
-- `src/views/InviteView.jsx`: "Resend" button on already-sent queue rows → `POST /api/dealfeed/invites/resend/:id`, using `isSendOk` / `inviteErrorMessage` to toast the real error on 502 (not a false success). Styles `.iv-row-actions` / `.iv-resend-btn` in `styles.css`. REFERENCE.md note updated to "wired".
+Session file: `~/.claude/session-data/2026-07-01-buybox-handoff-session.tmp`.
 
-## What was NOT done / honest gaps
-- **No automated E2E.** I wrote a route-mocked Playwright spec to drive the live forced-502 path, but the admin Accounts/Invites views are unreachable in the harness: the map-view `<footer class="footer">` overlays the LeftPanel nav, so clicks never land — confirmed across force-click, dispatchEvent, native click, pointer-events:none, and a tall viewport. The existing `tests/critical-flows.spec.js` avoids LeftPanel nav for the same reason (it uses TopHeader `.pb-tab`, which has no path to these views). Spec was removed rather than committed flaky. The contract's QA checklist (forcing a real Resend 502 via RESEND_FROM_EMAIL) is inherently a backend-env exercise anyway.
+## What was NOT done
+- App source (`src/**`) was NOT modified. The wizard still has 7 steps, zip, financial, and distress. Curation lives only in the handoff docs, by decision (source stays verbatim).
+- Nothing committed to git (working tree has the new `notes/handoff/` files untracked).
+- The Mon-Sun editor is spec'd only, not built.
 
 ## Next session
-- Manual visual pass on the live app: Accounts → send invite (force a backend failure to confirm the error toast, confirm Invited/Activated dates); Invites queue → Resend on a sent row.
-- Optional: add a TopHeader-reachable E2E hook or fix the map-footer overlay so admin views are testable, then add the invite-delivery E2E.
+No pending task unless Brady requests one. If asked to curate the actual app: start from `docs/01-SCOPE.md` cut ranges + `docs/09-CODE-MAP.md`; distress removal requires step renumbering in `BuyBoxWizard.jsx` (STEPS 19-27, renderPage switch 296-305, and buildFilters/buildSummary/clearFilter/filterKey refs).
 
 `cd ~/nightdrop-dashboard && claude --dangerously-skip-permissions`
 
 ## Blockers for Brady
-- None. Watch the Netlify deploy from `main` (auto-deploys to dashboard.propcloud.ai).
+- None. The ZIP is in `~/Downloads/` ready to transfer. If you want the `notes/handoff/` files committed to git, say so (currently untracked, uncommitted).
+- Two honest facts flagged this session: "up to 3" applies to sub-asset chips (primary asset class is single-select); the editable Mon-Sun schedule does not exist yet (it is a [BUILD] item).

@@ -1,0 +1,241 @@
+/* buy-box-wizard.css — wizard shell styles */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap');
+
+.buy-box-wizard {
+  --bg: #0D0D0D; --surface: #1E1E24; --surface-2: #25252C;
+  --surface-sub: rgba(255,255,255,0.04); --surface-hi: rgba(255,255,255,0.06);
+  --fg: #F4F5F7; --fg-2: #B6BBC4; --fg-mute: #9097A1;
+  --green: var(--primary); --green-deep: var(--primary); --green-light: var(--chart-1);
+  --green-tint: rgba(29,175,41,0.18); --green-tint-fg: var(--chart-1);
+  --warn: #F4B73E; --danger: var(--destructive);
+  --border: rgba(255,255,255,0.10); --border-sub: rgba(255,255,255,0.06); --border-hi: rgba(255,255,255,0.18);
+  --dot: #2a2a2a;
+  --r-chip: 4px; --r-input: 6px; --r-card: 10px; --r-card-lg: 14px; --r-pill: 999px;
+  --fast: 120ms; --base: 200ms; --ease: cubic-bezier(.22, 1, .36, 1);
+  --ring: 0 0 0 3px rgba(29, 175, 41, 0.35);
+  --font-ui: 'DM Sans', system-ui, sans-serif;
+  --font-secondary: 'Inter', system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  position: fixed; inset: 0; z-index: 200; overflow: hidden;
+  font-family: var(--font-ui); color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+}
+.buy-box-wizard * { box-sizing: border-box; }
+
+/* Dot-grid backdrop */
+.buy-box-wizard .backdrop {
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 0) 0 0 / 24px 24px;
+  background-color: var(--bg);
+  z-index: 0;
+}
+.buy-box-wizard .backdrop::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: radial-gradient(80% 60% at 50% 30%, transparent 0%, rgba(0,0,0,0.5) 100%);
+  pointer-events: none;
+}
+
+/* App shell */
+.buy-box-wizard .app {
+  position: relative; height: 100%; z-index: 1;
+  display: flex; flex-direction: column;
+}
+
+/* Topbar */
+.buy-box-wizard .topbar {
+  height: 56px; flex: 0 0 56px;
+  display: flex; align-items: center;
+  padding: 0 24px; gap: 24px;
+  border-bottom: 1px solid var(--border-sub);
+  background: rgba(13,13,13,0.72);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  position: relative; z-index: 5;
+}
+.buy-box-wizard .brand {
+  display: flex; align-items: center; gap: 10px;
+  font-weight: 700; letter-spacing: -0.01em;
+}
+.buy-box-wizard .brand-logo-mark {
+  display: inline-block;
+  width: 40px;
+  height: 32px;
+  background-image: url('../assets/nightdrop-logo.png');
+  background-size: auto 100%;
+  background-position: left center;
+  background-repeat: no-repeat;
+}
+.buy-box-wizard .brand-sep { color: var(--fg-mute); font-weight: 400; margin-left: 4px; }
+.buy-box-wizard .brand-context { color: var(--fg-2); font-size: 14px; font-weight: 500; }
+
+/* Stepper */
+.buy-box-wizard .stepper { display: flex; align-items: center; gap: 6px; flex: 1; justify-content: center; }
+.buy-box-wizard .step {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 6px 14px 6px 10px; border-radius: var(--r-pill);
+  font-size: 13px; font-family: var(--font-ui);
+  color: var(--fg-mute); background: transparent;
+  border: 1px solid transparent; cursor: pointer;
+  transition: color var(--fast) var(--ease), background var(--fast) var(--ease), border-color var(--fast) var(--ease);
+  -webkit-appearance: none; appearance: none;
+}
+.buy-box-wizard .step:hover { color: var(--fg-2); background: var(--surface-hi); }
+.buy-box-wizard .step.active { color: var(--fg); background: var(--surface); border-color: var(--border-sub); }
+.buy-box-wizard .step.done { color: var(--fg-2); }
+.buy-box-wizard .step.done:hover { background: var(--surface-hi); }
+.buy-box-wizard .step-num {
+  font-family: var(--font-secondary); font-size: 11px;
+  width: 20px; height: 20px; display: grid; place-items: center;
+  border-radius: 999px; border: 1px solid var(--border); color: var(--fg-mute);
+}
+.buy-box-wizard .step.active .step-num { background: var(--green); color: var(--primary-foreground); border-color: var(--green); font-weight: 700; }
+.buy-box-wizard .step.done .step-num { background: rgba(91,204,72,0.12); color: var(--green); border-color: rgba(91,204,72,0.4); }
+.buy-box-wizard .step.done .step-num::before { content: "✓"; font-family: var(--font-ui); font-size: 11px; font-weight: 700; }
+.buy-box-wizard .step.done .step-num-text { display: none; }
+.buy-box-wizard .step-bar { width: 28px; height: 1px; background: var(--border); }
+.buy-box-wizard .step-bar.done { background: var(--green); }
+
+.buy-box-wizard .topbar-right { display: flex; align-items: center; gap: 8px; color: var(--fg-mute); font-size: 12px; }
+.buy-box-wizard .kbd {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 6px; border: 1px solid var(--border); border-radius: 4px;
+  font-family: var(--font-secondary); font-size: 10px; color: var(--fg-2); background: var(--surface-sub);
+}
+.buy-box-wizard .icon-btn {
+  width: 32px; height: 32px; display: grid; place-items: center;
+  border-radius: var(--r-input); background: transparent;
+  border: 1px solid transparent; color: var(--fg-mute); cursor: pointer;
+  transition: all var(--fast) var(--ease);
+}
+.buy-box-wizard .icon-btn:hover { background: var(--surface-hi); color: var(--fg); }
+
+/* Main layout */
+.buy-box-wizard .main {
+  flex: 1; min-height: 0;
+  display: grid; grid-template-columns: minmax(0, 1fr) 400px;
+}
+.buy-box-wizard .content-col { display: flex; flex-direction: column; min-width: 0; min-height: 0; position: relative; }
+.buy-box-wizard .scroll-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 76px;
+  transform: translateX(-50%);
+  color: var(--green);
+  animation: scroll-hint-bounce 1.6s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 10;
+}
+@keyframes scroll-hint-bounce {
+  0%, 100% { transform: translate(-50%, 0); }
+  50%      { transform: translate(-50%, 4px); }
+}
+/* MVP rebuild 2026-05-20: no-scroll constraint per step. Each step must fit the
+ * viewport. If a step overflows it is a content-density bug, not a CSS bug —
+ * compact field rows further or split the step. */
+.buy-box-wizard .content {
+  flex: 1; min-height: 0; overflow-y: auto;
+  padding: 28px 48px 20px; position: relative;
+  scrollbar-width: none;
+}
+.buy-box-wizard .content::-webkit-scrollbar { display: none; width: 0; height: 0; }
+.buy-box-wizard .content-inner { max-width: 1000px; margin: 0 auto; }
+
+/* Page header — tightened for no-scroll */
+.buy-box-wizard .page-head { margin-bottom: 18px; display: block; }
+.buy-box-wizard .page-eyebrow {
+  display: flex; align-items: center; gap: 12px;
+  color: var(--fg-mute); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 8px;
+}
+.buy-box-wizard .page-eyebrow .mono-step { color: var(--green); }
+.buy-box-wizard .page-eyebrow .sep { width: 4px; height: 4px; background: var(--border-hi); border-radius: 999px; }
+.buy-box-wizard .page-title { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; margin: 0 0 6px; }
+.buy-box-wizard .page-sub { font-size: 13px; color: var(--fg-2); line-height: 1.5; max-width: 600px; }
+
+/* Sections — tightened */
+.buy-box-wizard .section { margin-top: 18px; }
+.buy-box-wizard .section:first-of-type { margin-top: 14px; }
+.buy-box-wizard .section-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 20px; border-bottom: 1px solid var(--border-sub); padding-bottom: 14px;
+}
+.buy-box-wizard .section-title {
+  font-size: 13px; font-weight: 700; color: var(--fg);
+  letter-spacing: 0.04em; text-transform: uppercase;
+  display: flex; align-items: center; gap: 10px;
+}
+.buy-box-wizard .section-title-num { font-family: var(--font-secondary); color: var(--fg-mute); font-weight: 500; }
+.buy-box-wizard .section-meta { color: var(--fg-mute); font-size: 12px; font-family: var(--font-secondary); }
+
+/* Footer */
+.buy-box-wizard .footer {
+  flex: 0 0 auto; padding: 16px 64px;
+  display: flex; justify-content: space-between; align-items: center;
+  background: var(--bg); border-top: 1px solid var(--border-sub); position: relative;
+}
+.buy-box-wizard .footer::before {
+  content: ""; position: absolute; left: 0; right: 0; top: -32px; height: 32px;
+  background: linear-gradient(180deg, transparent 0%, var(--bg) 100%); pointer-events: none;
+}
+
+/* Buttons */
+.buy-box-wizard .btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 16px; border-radius: var(--r-input);
+  font-family: var(--font-ui); font-size: 14px; font-weight: 600;
+  border: 1px solid transparent; background: transparent; color: var(--fg);
+  cursor: pointer; transition: all var(--fast) var(--ease);
+}
+.buy-box-wizard .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.buy-box-wizard .btn-ghost { color: var(--fg-2); }
+.buy-box-wizard .btn-ghost:hover:not(:disabled) { color: var(--fg); background: var(--surface-hi); }
+.buy-box-wizard .btn-secondary { background: var(--surface); border-color: var(--border-sub); }
+.buy-box-wizard .btn-secondary:hover:not(:disabled) { background: var(--surface-2); border-color: var(--border); }
+.buy-box-wizard .btn-primary { background: var(--green); color: var(--primary-foreground); font-weight: 700; }
+.buy-box-wizard .btn-primary:hover:not(:disabled) { background: var(--green-light); }
+.buy-box-wizard .btn-primary .kbd { background: rgba(0,0,0,0.18); border-color: rgba(0,0,0,0.18); color: rgba(6,32,11,0.7); }
+.buy-box-wizard .btn-fire {
+  background: var(--green); color: var(--primary-foreground); font-weight: 800;
+  font-size: 16px; padding: 14px 22px; letter-spacing: -0.01em;
+}
+.buy-box-wizard .btn-fire:hover:not(:disabled) { background: var(--green-light); transform: translateY(-1px); }
+.buy-box-wizard .btn-fire:active:not(:disabled) { transform: translateY(0); }
+
+/* Typography helpers */
+.buy-box-wizard .mono { font-family: var(--font-secondary); font-feature-settings: 'tnum','zero'; letter-spacing: -0.01em; }
+.buy-box-wizard .caption { font-size: 13px; color: var(--fg-mute); }
+.buy-box-wizard .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-mute); }
+
+/* Misc */
+.buy-box-wizard .page-fade { opacity: 1; }
+.buy-box-wizard .row { display: flex; align-items: center; gap: 8px; }
+.buy-box-wizard .spacer { flex: 1; }
+.buy-box-wizard .muted { color: var(--fg-mute); }
+.buy-box-wizard .green { color: var(--green); }
+.buy-box-wizard .divider { height: 1px; background: var(--border-sub); margin: 28px 0; }
+
+/* ── Light theme overrides ─────────────────────────────────── */
+[data-theme="light"] .buy-box-wizard {
+  --bg: #FAFBFD;
+  --surface: #FFFFFF;
+  --surface-2: #F5F7FA;
+  --surface-sub: rgba(0,0,0,0.02);
+  --surface-hi: rgba(0,0,0,0.04);
+  --fg: #0D0D0D;
+  --fg-2: #40424D;
+  --fg-mute: #6E7180;
+  --border: rgba(0,0,0,0.10);
+  --border-sub: rgba(0,0,0,0.06);
+  --border-hi: rgba(0,0,0,0.18);
+  --dot: rgba(0,0,0,0.055);
+}
+[data-theme="light"] .buy-box-wizard .topbar {
+  background: rgba(250,251,253,0.88);
+}
+[data-theme="light"] .buy-box-wizard .backdrop::after {
+  background: none;
+}
+[data-theme="light"] .buy-box-wizard .chip-x:hover {
+  background: rgba(0,0,0,0.06);
+}

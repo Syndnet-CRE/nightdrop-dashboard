@@ -1,0 +1,397 @@
+/* ─────────────────────────────────────────────────────────────
+   Nightdrop Design System — Colors & Type
+   Source: Nightdrop Brand Guidelines (2026)
+   ───────────────────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&family=DM+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+:root, [data-theme="light"] {
+  /* ─────────────────────────────────────────────────────────
+     Shadcn-style design tokens — LIGHT theme (source of truth)
+     Locked 2026-05-22. Eye-fatigue softening pass: 2026-05-28.
+
+     Changes from the original locked spec:
+     - --background: pure #ffffff → #F5F7FA (warm off-white; cards
+       still pure white so they sit above the page background)
+     - --foreground: #333333 → #1F2937 (zinc-800; gentler on the
+       eyes than near-black while still strong contrast)
+     - --primary: saturated #49be1d → #359625 (still recognizable
+       brand green, less neon on white surfaces)
+     - --ring: #2da200 → #359625 (matches new primary)
+     - --muted-foreground: saturated #2d9221 → #6B7280 (zinc-500;
+       was a green that bled into "secondary text" everywhere and
+       contributed to the green-on-white fatigue)
+     - --secondary-foreground: greenish #50634b → #374151 (zinc-700;
+       neutral gray secondary text)
+     - --chart-1: #53d11c → #4FA634 (matched-saturation chart green)
+     ───────────────────────────────────────────────────────── */
+  --background:             #F5F7FA;
+  --card:                   #ffffff;
+  --foreground:             #1F2937;
+  --card-foreground:        #1F2937;
+  --popover:                #ffffff;
+  --popover-foreground:     #1F2937;
+  --primary:                #359625;
+  --primary-foreground:     #ffffff;
+  --secondary:              #f3f4f6;
+  --secondary-foreground:   #374151;
+  --muted:                  #a2f040;
+  --muted-foreground:       #6B7280;
+  --accent:                 #ddfadd;
+  --accent-foreground:      #646464;
+  --destructive:            #ef4444;
+  --destructive-foreground: #ffffff;
+  --border:                 #e5e7eb;
+  --input:                  #e5e7eb;
+  --ring:                   #359625;
+  --chart-1:                #4FA634;
+  --chart-2:                #008806;
+
+  /* ── Brand greens (anchors rewired to shadcn primary) ───── */
+  --nightdrop-ink:        #0D0D0D;
+  --nightdrop-green-900:  var(--primary);
+  --nightdrop-green-700:  var(--primary);
+  --nightdrop-green-500:  var(--primary);
+  --nightdrop-green-300:  var(--chart-1);
+
+  /* Convenience aliases */
+  --green:             var(--primary);
+  --green-deep:        var(--primary);
+  --green-bright:      var(--chart-1);
+
+  /* ── Grayscale (kept for spec compatibility) ────────────── */
+  --cloud:    #EDEFF7;
+  --smoke:    #D3D6E0;
+  --steel:    #BCBFCC;
+  --space:    #9DA2B3;
+  --graphite: #6E7180;
+  --arsenic:  #40424D;
+  --phantom:  #1E1E24;
+  --black:    #000000;
+
+  /* ── Semantic foreground (consume shadcn tokens) ──────────
+     Legacy --fg-3 / --fg-4 / --fg-disabled aliases get a neutral gray
+     instead of --muted-foreground, because the spec value for
+     --muted-foreground is a brand green (#2d9221 light / #a3a3a3 dark)
+     and the dashboard uses these aliases for labels, timestamps,
+     captions, and footers where green would break information hierarchy.
+     --muted-foreground itself stays at the spec value for any future
+     shadcn-style consumer that explicitly opts into it. */
+  --text-muted-neutral: #6b7280;
+  --fg-1: var(--foreground);
+  --fg-2: var(--foreground);
+  --fg-3: var(--text-muted-neutral);
+  --fg-4: var(--text-muted-neutral);
+  --fg-disabled: #9ca3af;
+
+  /* ── Semantic background ────────────────────────────────── */
+  --bg-page:    var(--background);
+  --bg-subtle:  var(--secondary);
+  --bg-card:    var(--card);
+  --bg-inverse: var(--foreground);
+
+  /* ── Borders / dividers ─────────────────────────────────────
+     Spec --border (#e5e7eb light) is too faint on pure-white cards
+     for the existing card-heavy layout. --border-1 (the load-bearing
+     "card / table / input outline" alias) takes a darker neutral in
+     light mode so cards and field boundaries actually demarcate.
+     --border-2 stays at spec for true hairlines. */
+  --border-1: #d4d4d8;
+  --border-2: var(--border);
+  --border-strong: #71717a;
+
+  /* ── Accent / interaction
+     Per the shadcn meaning swap (Decision 2 / 2026-05-22):
+     - --accent is the neutral surface tone (set in the shadcn block above)
+     - --accent-hover / --accent-press / --on-accent retain their CTA semantics
+       so legacy consumers keep working without rename — values now derive
+       from --primary instead of the old standalone --accent green.
+     ───────────────────────────────────────────────────────── */
+  --accent-hover:  var(--primary);
+  --accent-press:  var(--primary);
+  --accent-soft:   var(--accent);
+  --on-accent:     var(--primary-foreground);
+  --link:          #1366CC;
+
+  /* Status (warning + info kept; success / danger ride new tokens) */
+  --success: var(--primary);
+  --warning: #F4B73E;
+  --danger:  var(--destructive);
+  --info:    #3E7BFA;
+
+  /* ── Pill / badge tokens ────────────────────────────────── */
+  --pill-green-bg: color-mix(in srgb, var(--primary) 14%, var(--background));
+  --pill-green-fg: var(--primary);
+  --pill-amber-bg: #FDF1D5;  --pill-amber-fg: #8a5a00;
+  --pill-red-bg:   color-mix(in srgb, var(--destructive) 14%, var(--background));
+  --pill-red-fg:   var(--destructive);
+  --pill-blue-bg:  #D9E8FB;  --pill-blue-fg:  #0F4A99;
+  --pill-gray-bg:  var(--secondary);
+  --pill-gray-fg:  var(--muted-foreground);
+
+  /* ── Typography ─────────────────────────────────────────── */
+  --font-sans: 'Manrope', system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-display: var(--font-sans);
+
+  /* Weights — Manrope */
+  --w-light:     300;
+  --w-regular:   400;
+  --w-medium:    500;
+  --w-semibold:  600;
+  --w-bold:      700;
+  --w-extrabold: 800;
+
+  /* Type scale (per brand guide) */
+  --t-h1:  64px;   /* Heading 1 */
+  --t-h2:  48px;   /* Heading 2 */
+  --t-sh1: 32px;   /* Subheader 1 */
+  --t-sh2: 24px;   /* Subheader 2 */
+  --t-p1:  18px;   /* Paragraph 1 */
+  --t-p2:  16px;   /* Paragraph 2 */
+  --t-cap: 13px;   /* Caption (derived) */
+  --t-micro: 11px; /* Eyebrow (derived) */
+
+  /* Line heights */
+  --lh-tight:  1.05;
+  --lh-snug:   1.2;
+  --lh-normal: 1.45;
+  --lh-loose:  1.6;
+
+  /* Tracking */
+  --track-tight:  -0.02em;
+  --track-normal: 0;
+  --track-wide:   0.04em;
+  --track-eyebrow: 0.12em;
+
+  /* ── Radii ─────────────────────────────────────────────── */
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+  --r-2xl: 28px;
+  --r-pill: 999px;
+
+  /* ── Spacing scale (4px base) ──────────────────────────── */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-7: 32px;
+  --s-8: 40px;
+  --s-9: 48px;
+  --s-10: 64px;
+  --s-11: 80px;
+  --s-12: 120px;
+
+  /* ── Shadows (soft, neutral — fits clean SaaS aesthetic) ── */
+  --shadow-xs: 0 1px 2px rgba(13, 13, 13, 0.05);
+  --shadow-sm: 0 2px 6px rgba(13, 13, 13, 0.06), 0 1px 2px rgba(13, 13, 13, 0.04);
+  --shadow-md: 0 8px 24px rgba(13, 13, 13, 0.08), 0 2px 6px rgba(13, 13, 13, 0.04);
+  --shadow-lg: 0 24px 48px rgba(13, 13, 13, 0.12), 0 4px 12px rgba(13, 13, 13, 0.06);
+  --shadow-glow: 0 0 0 6px color-mix(in srgb, var(--ring) 18%, transparent);
+
+  /* Rings (focus / selection) — `--ring` is the color token (shadcn);
+     `--ring-shadow` is the focus-halo shorthand legacy consumers use. */
+  --ring-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 35%, transparent);
+  --ring-danger: 0 0 0 3px color-mix(in srgb, var(--destructive) 35%, transparent);
+
+  /* Motion */
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+  --ease-in-out: cubic-bezier(.65, 0, .35, 1);
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 360ms;
+
+  /* Dot grid background */
+  --dot-grid-color: rgba(0, 0, 0, 0.055);
+  --dot-grid-size: 24px;
+
+  /* ── Feed / layout surface tokens ──────────────────────────── */
+  --bg-card-hover:  var(--secondary);
+  --bg-agent-card:  var(--secondary);
+  --bg-user-card:   var(--secondary);
+  --bg-nav-active:  var(--secondary);
+  --left-panel-w:   280px;
+  --left-panel-collapsed-w: 60px;
+  --top-header-h:   56px;
+  --pipeline-h:     0px;
+  --right-rail-w:   360px;
+
+  /* ── Wizard-specific tokens ──────────────────────────────── */
+  --fg-light-mute: var(--muted-foreground);
+  --green-text-fg: var(--primary);
+  --success-red-fg: var(--destructive);
+  --wizard-dark-bg: var(--primary-foreground);
+
+  /* ── buyBoxes.css + legacy compatibility aliases ──────────── */
+  --bg: var(--background);
+  --fg: var(--foreground);
+  --fg-dim: var(--muted-foreground);
+  --fg-muted: var(--muted-foreground);
+  --fg-inverse: var(--primary-foreground);
+  --accent-hi: var(--primary);
+  --accent-tint: var(--accent);
+  --surface: var(--card);
+  --surface-hi: var(--secondary);
+  --surface-hi-2: var(--secondary);
+  --bg-sunken: var(--secondary);
+  --border-faint: var(--border);
+  --warn: var(--warning);
+  --danger-hi: color-mix(in srgb, var(--destructive) 70%, white);
+  --danger-tint: color-mix(in srgb, var(--destructive) 15%, transparent);
+
+  /* ── Pipeline timeline (TopHeader strip) ──────────────────────
+     Tokens for PipelineTrack.jsx + PipelineTimeline.jsx. Default
+     values here are the LIGHT-mode variants (since :root is the
+     light-theme baseline per the file convention at line 6).
+     The dark overrides live in the [data-theme="dark"] block below. */
+  --stat-label-fg: #6b7280;            /* zinc-500 — readable on white */
+  --stat-value-fg: #1f2937;            /* zinc-800 — strong on white */
+  --eq-pending-bar: rgba(0, 0, 0, 0.08);
+  --diamond-pending-bg: #d4d4d8;       /* zinc-300 — soft gray, not stark black */
+  --diamond-pending-border: #a1a1aa;   /* zinc-400 */
+  --diamond-shadow-bg: #ffffff;        /* matches header bg in light mode */
+  --diamond-label-pending: #6b7280;    /* matches stat label */
+  --rocket-flame-end: rgba(0, 0, 0, 0.6);
+  --pipeline-divider: rgba(0, 0, 0, 0.08);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Dark mode token overrides
+   Applied via [data-theme="dark"] on <html>
+   ───────────────────────────────────────────────────────────── */
+[data-theme="dark"] {
+  /* ─────────────────────────────────────────────────────────
+     Shadcn-style design tokens — DARK theme overrides
+     ───────────────────────────────────────────────────────── */
+  --background:             #171717;
+  --card:                   #262626;
+  --foreground:             #e5e5e5;
+  --card-foreground:        #e5e5e5;
+  --popover:                #262626;
+  --popover-foreground:     #e5e5e5;
+  --primary:                #2da200;
+  --primary-foreground:     #ffffff;
+  --secondary:              #262626;
+  --secondary-foreground:   #e5e5e5;
+  --muted:                  #262626;
+  --muted-foreground:       #a3a3a3;
+  --accent:                 #191818;
+  --accent-foreground:      #ebebeb;
+  --destructive:            #ef4444;
+  --destructive-foreground: #ffffff;
+  --border:                 #404040;
+  --input:                  #404040;
+  --ring:                   #2da200;
+  --chart-1:                #7af74d;
+  --chart-2:                #2da200;
+
+  /* Dark mode reuses --muted-foreground (#a3a3a3 is already neutral gray)
+     so the legacy aliases stay readable without a separate value. */
+  --text-muted-neutral: #a3a3a3;
+  --fg-disabled: #71717a;
+
+  /* Dark mode borders are crisp enough at spec value — restore the
+     light-mode darker override back to the spec --border. */
+  --border-1: var(--border);
+  --border-strong: var(--muted-foreground);
+
+  /* Link colour stays readable on the new dark surface */
+  --link: #6BA8F2;
+
+  /* Dot grid background — visible dots on dark */
+  --dot-grid-color: #2a2a2a;
+
+  /* Pipeline timeline — dark overrides for the tokens defined in :root.
+     These were the inline-hardcoded values in PipelineTrack.jsx /
+     PipelineTimeline.jsx before the 2026-05-28 light-theme migration. */
+  --stat-label-fg: #5C6070;
+  --stat-value-fg: #C9CCD6;
+  --eq-pending-bar: rgba(255, 255, 255, 0.10);
+  --diamond-pending-bg: #0D0D0D;
+  --diamond-pending-border: #3a3d48;
+  --diamond-shadow-bg: #0D0D0D;
+  --diamond-label-pending: #5C6070;
+  --rocket-flame-end: rgba(255, 255, 255, 1);
+  --pipeline-divider: rgba(255, 255, 255, 0.06);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Semantic typography styles — apply to elements directly
+   ───────────────────────────────────────────────────────────── */
+html, body {
+  font-family: var(--font-sans);
+  color: var(--fg-1);
+  background-color: var(--bg-page);
+  background-image: radial-gradient(circle, var(--dot-grid-color) 1px, transparent 1px);
+  background-size: var(--dot-grid-size) var(--dot-grid-size);
+}
+
+.h1, h1 {
+  font-family: var(--font-display);
+  font-weight: var(--w-extrabold);
+  font-size: var(--t-h1);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--track-tight);
+  color: var(--fg-1);
+  margin: 0;
+}
+.h2, h2 {
+  font-family: var(--font-display);
+  font-weight: var(--w-bold);
+  font-size: var(--t-h2);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--track-tight);
+  color: var(--fg-1);
+  margin: 0;
+}
+.sh1, h3 {
+  font-family: var(--font-display);
+  font-weight: var(--w-semibold);
+  font-size: var(--t-sh1);
+  line-height: var(--lh-snug);
+  color: var(--fg-1);
+  margin: 0;
+}
+.sh2, h4 {
+  font-family: var(--font-display);
+  font-weight: var(--w-semibold);
+  font-size: var(--t-sh2);
+  line-height: var(--lh-normal);
+  color: var(--fg-1);
+  margin: 0;
+}
+.p1, p {
+  font-size: var(--t-p1);
+  line-height: var(--lh-loose);
+  color: var(--fg-2);
+  margin: 0;
+}
+.p2 {
+  font-size: var(--t-p2);
+  line-height: var(--lh-loose);
+  color: var(--fg-2);
+}
+.caption, small {
+  font-size: var(--t-cap);
+  line-height: var(--lh-normal);
+  color: var(--fg-3);
+}
+.eyebrow {
+  font-size: var(--t-micro);
+  font-weight: var(--w-bold);
+  letter-spacing: var(--track-eyebrow);
+  text-transform: uppercase;
+  color: var(--graphite);
+}
+code, .mono {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+}
+
+/* Selection */
+::selection { background: var(--green-bright); color: var(--nightdrop-ink); }
